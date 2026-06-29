@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     'rest_framework',
     "rest_framework_simplejwt.token_blacklist",
 
-
     # Local Apps
     'apps.core.apps.CoreConfig',
     'apps.users.apps.UsersConfig',
@@ -105,6 +104,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'apps.users.authentication.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 REST_FRAMEWORK = {
