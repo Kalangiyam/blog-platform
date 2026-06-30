@@ -46,13 +46,13 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 02)
+# Current Database Schema (Feature 03)
 
-At the completion of **Feature 02**, the database contains a single business entity:
+At the completion of Feature 03, the database still contains a single business entity:
 
-```text
 User
-```
+
+Feature 03 introduced JWT-based authentication and user authentication APIs without requiring any changes to the existing database schema.
 
 Additional entities will be introduced incrementally as new features are completed.
 
@@ -173,7 +173,8 @@ The project follows a migration-first approach.
 
 * Custom User model implemented before the first migration.
 * `AUTH_USER_MODEL` configured successfully.
-* Database schema prepared for future authentication features.
+* Database schema successfully supports JWT authentication  without requiring additional database tables or modifications to the custom User model.
+* Authentication functionality has been implemented while preserving the existing schema.
 
 This avoids one of the most common architectural mistakes in Django projects—changing the user model after migrations have already been created.
 
@@ -202,10 +203,10 @@ Current:
 
 Future:
 
-* Username index optimization
-* Email lookup optimization
-* Slug indexes
-* Composite indexes where appropriate
+- Email lookup optimization
+- Slug indexes
+- Composite indexes
+- Full-text search indexes (when search functionality is introduced)
 
 Indexes will be added only when justified by application requirements.
 
@@ -220,6 +221,7 @@ Data integrity is maintained through:
 * Model validation
 * Migration history
 * Backend validation
+* JWT authentication
 * Authentication and permission checks
 
 The frontend is never responsible for enforcing database integrity.
@@ -232,11 +234,14 @@ The frontend is never responsible for enforcing database integrity.
 
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
+* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 
 ## Current Database Version
 
-Initial schema with a custom User model foundation.
+Initial schema with a custom User model supporting JWT-based authentication.
+
+No schema changes were required during Feature 03.
 
 ## Next Planned Database Changes
 
-Feature 03 will introduce the authentication foundation while continuing to use the existing custom User model without requiring schema redesign.
+Feature 04 will introduce the first major domain models, including the Post entity and its relationships with the User model.
