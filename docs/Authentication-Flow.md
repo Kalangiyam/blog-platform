@@ -2,13 +2,13 @@
 
 # Authentication Overview
 
-The Blog Platform uses Django's authentication system as the foundation and will implement **JWT (JSON Web Token) authentication** for secure communication between the React frontend and Django REST Framework backend.
+The Blog Platform uses Django's authentication system together with Django REST Framework and Simple JWT to provide secure JWT-based authentication between the React frontend and Django backend.
 
-The authentication system is being developed incrementally. At the completion of **Feature 02**, only the authentication foundation has been established.
+Authentication has been fully implemented in Feature 03 and serves as the security foundation for all protected APIs.
 
 ---
 
-# Current Status (Feature 02)
+# Current Status (Feature 03)
 
 ## Completed
 
@@ -17,19 +17,30 @@ The authentication system is being developed incrementally. At the completion of
 * ✅ User model inherits from `AbstractUser`
 * ✅ `AUTH_USER_MODEL` configured before the first migration
 * ✅ Authentication architecture established
+* ✅ Email-based authentication
+* ✅ Custom Email Authentication Backend
+* ✅ User Registration API
+* ✅ User Login API
+* ✅ JWT Authentication
+* ✅ JWT Access Token
+* ✅ JWT Refresh Token
+* ✅ Current User API (`/api/auth/me/`)
+* ✅ Logout API
+* ✅ Refresh Token Blacklisting
+* ✅ Token Refresh Endpoint
+* ✅ Token Verify Endpoint
 
-## Not Yet Implemented
+## Remaining Authentication Features
 
-* User Registration
-* User Login
-* JWT Authentication
-* Refresh Tokens
-* Logout
+The authentication foundation is complete.
+
+Future authentication enhancements include:
+
+* Password Change
 * Password Reset
 * Email Verification
-* User Profile Management
-
-These features will be introduced in future iterations.
+* Multi-Factor Authentication (Optional)
+* Social Authentication (Optional)
 
 ---
 
@@ -41,10 +52,14 @@ The authentication system follows a layered architecture.
 React Frontend
         │
         ▼
-Django REST Framework
+Authentication API
+(Register / Login / Logout / Me)
         │
         ▼
-Authentication Layer
+Serializers
+        │
+        ▼
+Email Authentication Backend
         │
         ▼
 Custom User Model
@@ -61,7 +76,9 @@ All authentication, authorization, and permission checks are performed on the ba
 
 # Current Authentication Foundation
 
-The project currently uses a **custom User model** as the foundation for all future authentication features.
+The authentication module is built on top of the custom User model and Django's authentication framework.
+
+Authentication is performed using a custom Email Authentication Backend, while JWT access and refresh tokens are managed by Django REST Framework Simple JWT.
 
 Why a custom User model?
 
@@ -76,25 +93,30 @@ Implementing the custom User model before the initial migration is considered a 
 
 ---
 
-# Planned Authentication Features
+# Authentication Features
 
-The following authentication features are planned:
+## Implemented
 
 * User Registration
 * User Login
 * JWT Access Token
 * JWT Refresh Token
+* Protected User Endpoint
 * Logout
+* Refresh Token Blacklisting
+* Token Refresh
+* Token Verification
+
+## Planned
+
 * Password Change
 * Password Reset
 * Email Verification
-* User Profile Management
-
-Each feature will be implemented as a separate milestone.
+* Profile Editing
 
 ---
 
-# Planned JWT Authentication Flow
+# JWT Authentication Flow
 
 ```text
 React Frontend
@@ -103,29 +125,36 @@ React Frontend
 Login Request
         │
         ▼
-Django REST API
+Email Authentication Backend
         │
         ▼
-Validate Credentials
+JWT Access Token
+JWT Refresh Token
         │
         ▼
-Generate JWT Tokens
+Protected API Requests
         │
         ▼
-Return Access & Refresh Tokens
+Access Token Expires
         │
         ▼
-Frontend Stores Tokens
+Refresh Token
         │
         ▼
-Authenticated API Requests
+New Access Token
+        │
+        ▼
+Logout
+        │
+        ▼
+Refresh Token Blacklisted
 ```
 
 ---
 
 # Request Flow
 
-Future login request:
+login request:
 
 ```text
 Client
@@ -134,32 +163,43 @@ Client
 POST /api/auth/login/
    │
    ▼
-Validate Credentials
+LoginAPIView
+   │
+   ▼
+LoginSerializer
+   │
+   ▼
+authenticate()
+   │
+   ▼
+EmailBackend
    │
    ▼
 Generate JWT Tokens
    │
    ▼
-Return JSON Response
+JSON Response
 ```
 
 ---
 
 # Response Flow
 
-Future successful authentication response:
+successful authentication response:
 
 ```text
 Client
    │
    ▼
-Authentication Request
+Login Request
    │
    ▼
 JWT Tokens Generated
    │
    ▼
-JSON Response
+Access Token
+Refresh Token
+User Information
    │
    ▼
 React Stores Tokens
@@ -179,20 +219,17 @@ The authentication system will follow these security practices:
 * Secure password validation
 * Object-level permissions
 * Never trust frontend validation
+* Refresh token blacklisting
+* Generic authentication error messages
+* Custom email authentication backend
 
 ---
 
-# Future Authorization Strategy
+# Authorization Strategy
 
-After authentication is implemented, authorization will be based on:
+Authentication is complete.
 
-* Authenticated users
-* User roles
-* Django permissions
-* Object-level permissions
-* Ownership checks
-
-Permissions will always be enforced on the backend.
+Future features will build authorization on top of the existing JWT authentication system.
 
 ---
 
@@ -202,13 +239,49 @@ Permissions will always be enforced on the backend.
 
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
+* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 
 ## Current Authentication State
 
-Authentication foundation established.
+Authentication module fully implemented.
 
-No authentication endpoints have been implemented yet.
+The application now supports registration, login, logout, JWT authentication, protected endpoints, refresh token rotation, and token blacklisting.
+
+# Authentication API Flow
+
+```text
+Register
+    │
+    ▼
+User Created
+    │
+    ▼
+Login
+    │
+    ▼
+Access Token + Refresh Token
+    │
+    ▼
+Protected APIs
+    │
+    ▼
+Access Token Expires
+    │
+    ▼
+Token Refresh
+    │
+    ▼
+New Access Token
+    │
+    ▼
+Logout
+    │
+    ▼
+Refresh Token Blacklisted
+```
 
 ## Next Feature
 
-Feature 03 will introduce the custom User Manager and begin implementing the authentication system.
+Feature 04 will build the Posts domain on top of the existing authentication system.
+
+All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.

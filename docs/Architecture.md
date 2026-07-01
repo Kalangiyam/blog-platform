@@ -27,9 +27,13 @@ This project emphasizes production-ready software engineering practices, includi
 
 * PostgreSQL
 
-### Authentication *(Planned)*
+### Authentication
 
-* JWT Authentication
+- JWT Authentication (Simple JWT)
+- Email-Based Authentication
+- JWT Access Tokens
+- JWT Refresh Tokens
+- Refresh Token Blacklisting
 
 ### Deployment *(Planned)*
 
@@ -189,24 +193,29 @@ The project adopts a **custom Django User model** from the beginning of developm
 
 Choosing a custom user model before the first database migration prevents costly schema migrations later and provides flexibility for future authentication requirements.
 
-## Current Status (Feature 02)
+## Current Status (Feature 03)
 
-Implemented:
+### Implemented:
 
-* Custom User model using `AbstractUser`
-* `AUTH_USER_MODEL` configured
-* Dedicated `users` application
-* Foundation for future authentication features
+- Custom User model
+- AUTH_USER_MODEL configured
+- Email-based authentication backend
+- JWT Authentication using Simple JWT
+- User Registration API
+- User Login API
+- User Logout API
+- Current User API
+- Refresh Token API
+- Token Verification API
+- Refresh Token Blacklisting
 
-Planned:
+### Planned:
 
-* JWT Authentication
-* Login
-* Registration
-* Password Reset
-* Refresh Tokens
-* Role-Based Authorization
-* User Profiles
+- Password Change
+- Password Reset
+- Email Verification
+- User Profiles
+- Role-Based Authorization
 
 ---
 
@@ -215,21 +224,33 @@ Planned:
 Current request flow:
 
 ```text
-Client
-   │
-   ▼
+React Frontend
+        │
+        ▼
+HTTP Request
+        │
+        ▼
 Django URL Router
-   │
-   ▼
-Django REST Framework View
-   │
-   ▼
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Permissions
+        │
+        ▼
+APIView
+        │
+        ▼
+Serializer
+        │
+        ▼
 Business Logic
-   │
-   ▼
+        │
+        ▼
 Django ORM
-   │
-   ▼
+        │
+        ▼
 PostgreSQL
 ```
 
@@ -255,7 +276,7 @@ Serializer
 JSON Response
    │
    ▼
-Frontend
+React Frontend
 ```
 
 Responses are serialized into JSON before being returned to the client.
@@ -266,15 +287,16 @@ Responses are serialized into JSON before being returned to the client.
 
 The backend is responsible for enforcing all security rules.
 
-Current security principles include:
+## Current security principles include:
 
-* Never trust client input.
-* Enforce permissions on the backend.
-* Validate all incoming data.
-* Use Django ORM to prevent SQL injection.
-* Store passwords using Django's secure password hashing.
-* Prepare for JWT-based authentication.
-* Support object-level permissions in future features.
+- Never trust client input.
+- Enforce permissions on the backend.
+- Validate all incoming data.
+- Use Django ORM to prevent SQL injection.
+- Store passwords using Django's secure password hashing.
+- Authenticate protected endpoints using JWT.
+- Blacklist refresh tokens during logout.
+- Support object-level permissions in future features.
 
 ---
 
@@ -285,7 +307,7 @@ The architecture is designed to support future growth without major refactoring.
 Planned scalability features include:
 
 * Independent Django applications
-* JWT Authentication
+* JWT Authentication (Implemented)
 * Pagination
 * Search and filtering
 * Caching
@@ -302,18 +324,20 @@ Planned scalability features include:
 
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
-
+* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 ## In Progress
 
 * None
 
 ## Next Feature
 
-* Feature 03 — Custom User Manager & Authentication Foundation
+* Feature 04 — Posts Domain Architecture & Database Design
 
 ---
 
 # Future Architecture Evolution
+
+Future applications will reuse the existing authentication infrastructure and JWT-protected API architecture established in Feature 03.
 
 As development progresses, the architecture will expand with additional domain applications, including:
 

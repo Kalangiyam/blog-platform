@@ -97,41 +97,41 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 02)
+# Current Testing Status (Feature 03)
 
 ## Implemented
 
-None
+No automated test suite has been created yet.
 
-The project is currently focused on establishing the application architecture and authentication foundation.
+However, the complete authentication module has been manually tested through API requests during Feature 03 development.
 
-Automated tests will begin alongside future feature implementations.
+The project currently has a documented testing strategy and validated authentication behavior through manual API testing.
+
+Automated tests will be introduced incrementally as the project grows.
 
 ---
 
-# Planned Tests
+# Planned Automated Tests
 
-## Feature 02
+## Authentication Module
 
 The following tests will be added when the testing phase begins:
 
-### User Model Tests
+### User Authentication Tests
 
-* User creation
-* Password hashing
-* Default field values
-* String representation (if customized)
-
-### Custom User Manager Tests
-
-* Regular user creation
-* Superuser creation
-* Required field validation
-
-### Migration Tests
-
-* Custom User model migration integrity
-* Database schema validation
+* User registration
+* Duplicate username validation
+* Duplicate email validation
+* Password confirmation validation
+* Password strength validation
+* Successful login
+* Invalid login credentials
+* Protected endpoint authentication
+* Missing access token
+* Invalid access token
+* Logout
+* Refresh token blacklisting
+* Token refresh
 
 ---
 
@@ -141,12 +141,20 @@ As new features are completed, testing coverage will expand to include:
 
 ## Authentication
 
+### Implemented:
+
 * Registration
 * Login
 * Logout
-* Password reset
-* JWT token generation
-* Token refresh
+* JWT Access Token
+* JWT Refresh Token
+* Protected User Endpoint
+
+### Future:
+
+* Password Change
+* Password Reset
+* Email Verification
 
 ---
 
@@ -185,6 +193,24 @@ As new features are completed, testing coverage will expand to include:
 * Admin permissions
 * Object-level ownership checks
 
+---
+# Manual Verification Completed
+
+During Feature 03, the following authentication scenarios were manually verified using API requests:
+
+* User registration
+* Duplicate email validation
+* Duplicate username validation
+* Password confirmation validation
+* Successful login
+* Invalid login
+* JWT token generation
+* Accessing protected endpoints
+* Unauthorized requests
+* Logout
+* Refresh token blacklisting
+* Token refresh endpoint
+* Token verification endpoint
 ---
 
 # Test Organization
@@ -247,13 +273,20 @@ Additional tools may be introduced later if project requirements evolve.
 
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
+* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+
+All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
 ## Testing Progress
 
-Testing has not yet been implemented.
+Automated testing has not yet been implemented.
+
+Authentication functionality has been manually verified through comprehensive API testing during Feature 03.
 
 The testing strategy is defined, and automated tests will begin with upcoming features.
 
 ## Next Testing Milestone
 
-Feature 03 will introduce the first automated tests for the custom User model, custom User manager, and authentication foundation.
+Feature 04 will introduce the first automated tests for the Posts domain, including model, serializer, API, and permission tests.
+
+Authentication tests will also begin to be automated as the project testing suite is established.

@@ -4,7 +4,9 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of **Feature 02**, no API endpoints have been implemented yet. This document defines the planned API structure and will be updated incrementally as each feature is completed.
+At the completion of Feature 03, the authentication module has been fully implemented using JWT Authentication with Django REST Framework and Simple JWT.
+
+Future features will continue extending this document as new API modules are introduced.
 
 ---
 
@@ -43,23 +45,71 @@ https://your-domain.com/api/
 
 ## Current Status
 
-**Not implemented**
+Implemented ✅
 
-The authentication architecture has been established, but the API endpoints will be introduced in future features.
+The authentication module is fully functional and provides registration, login, logout, current-user retrieval, token refresh, and token verification APIs.
+
+| Method | Endpoint | Authentication | Status |
+|--------|----------|----------------|--------|
+| POST | /api/auth/register/ | Public | ✅ Implemented |
+| POST | /api/auth/login/ | Public | ✅ Implemented |
+| GET | /api/auth/me/ | JWT Access Token | ✅ Implemented |
+| POST | /api/auth/logout/ | JWT Access Token | ✅ Implemented |
+| POST | /api/auth/token/refresh/ | Refresh Token | ✅ Implemented |
+| POST | /api/auth/token/verify/ | Public | ✅ Implemented |
+
+---
+## Authentication Request Examples
+
+### Register
+
+POST `/api/auth/register/`
+
+```json
+{
+    "username": "john",
+    "email": "john@example.com",
+    "password": "StrongPassword@123",
+    "password_confirm": "StrongPassword@123"
+}
+```
 
 ---
 
-## Planned Endpoints
+### Login
 
-| Method | Endpoint                     | Status  |
-| ------ | ---------------------------- | ------- |
-| POST   | `/api/auth/register/`        | Planned |
-| POST   | `/api/auth/login/`           | Planned |
-| POST   | `/api/auth/logout/`          | Planned |
-| POST   | `/api/auth/refresh/`         | Planned |
-| GET    | `/api/auth/me/`              | Planned |
-| PATCH  | `/api/auth/me/`              | Planned |
-| POST   | `/api/auth/change-password/` | Planned |
+POST `/api/auth/login/`
+
+```json
+{
+    "email": "john@example.com",
+    "password": "StrongPassword@123"
+}
+```
+
+---
+
+### Current User
+
+GET `/api/auth/me/`
+
+Authorization Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+---
+
+### Logout
+
+POST `/api/auth/logout/`
+
+```json
+{
+    "refresh": "<refresh_token>"
+}
+```
 
 ---
 
@@ -162,11 +212,17 @@ The project will use standard HTTP status codes.
 
 # Authentication Strategy
 
-Future authentication will use:
+The project currently uses JWT Authentication via Django REST Framework Simple JWT.
+
+Authentication is based on:
 
 * JWT Access Token
 * JWT Refresh Token
 * Authorization Header
+
+Access tokens authenticate protected API requests.
+
+Refresh tokens are used only to obtain new access tokens and to support secure logout through token blacklisting.
 
 Example:
 
@@ -198,13 +254,27 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
+* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 
 ## Current API State
 
-No API endpoints have been implemented yet.
+Authentication APIs have been fully implemented and tested.
+
+Future features will extend the API with posts, categories, tags, comments, reactions, and profile management.
 
 The project currently provides the architectural foundation for future REST API development.
 
+# Authentication Endpoints
+
+| Endpoint | Description |
+|-----------|-------------|
+| POST /api/auth/register/ | Register a new account |
+| POST /api/auth/login/ | Authenticate user and receive JWT tokens |
+| GET /api/auth/me/ | Retrieve the authenticated user's profile |
+| POST /api/auth/logout/ | Blacklist the refresh token |
+| POST /api/auth/token/refresh/ | Obtain a new access token |
+| POST /api/auth/token/verify/ | Verify the validity of a JWT |
+
 ## Next Update
 
-Feature 03 will introduce the first authentication-related APIs and this document will be updated to include request/response examples, validation rules, and endpoint details.
+Feature 04 will introduce the Posts API, including CRUD operations, ownership checks, publishing workflow, and permissions.
