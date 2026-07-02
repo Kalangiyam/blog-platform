@@ -31,22 +31,30 @@ class SoftDeleteModel(models.Model):
     )
 
     objects = SoftDeleteManager()
+    all_objects = models.Manager()
 
     class Meta:
         abstract = True
 
-    def delete(self, using=None, keep_parents=False):
+    def delete(self, using=None, keep_parents=False, *,  user=None):
         """
         Soft delete the current instance.
         """
+        if self.is_deleted:
+            return
+
         self.is_deleted = True
         self.deleted_at = timezone.now()
-        self.save(update_fields=["is_deleted", "deleted_at"])
+        self.deleted_by = user
+        self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
 
-    def restore(self):
+    def restore(self, *,  user=None):
         """
         Restore a previously soft deleted instance.
         """
+        if not self.is_deleted:
+            return
+        
         self.is_deleted = False
         self.deleted_at = None
         self.deleted_by = None

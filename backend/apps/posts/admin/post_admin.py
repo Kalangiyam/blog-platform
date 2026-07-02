@@ -1,6 +1,12 @@
 from django.contrib import admin
 
 from ..models import Post
+from .action import (
+    soft_delete_posts,
+    restore_posts,
+    publish_posts,
+    draft_posts
+)
 
 
 @admin.register(Post)
@@ -15,12 +21,14 @@ class PostAdmin(admin.ModelAdmin):
         "status",
         "published_at",
         "created_at",
+        "is_deleted",        
     )
 
     list_filter = (
         "status",
         "author",
         "created_at",
+        "is_deleted",
     )
 
     search_fields = (
@@ -43,6 +51,7 @@ class PostAdmin(admin.ModelAdmin):
         "updated_at",
         "created_by",
         "updated_by",
+        "is_deleted",
         "deleted_at",
         "deleted_by",
     )
@@ -96,3 +105,25 @@ class PostAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    actions = (
+        soft_delete_posts,
+        draft_posts,
+        publish_posts,
+        restore_posts
+    )
+
+    def get_queryset(self, request):
+        return Post.all_objects.all()
+
+    def save_model(self, request, obj, form, change):
+        """
+        Automatically populate audit fields when saving a post
+        through the Django admin.
+        """
+        if not change:
+            obj.created_by = request.user
+
+        obj.updated_by = request.user
+
+        super().save_model(request, obj, form, change)
