@@ -35,6 +35,15 @@ class Post(
         help_text="The user who owns this post.",
     )
 
+    excerpt = models.TextField(
+        blank=True,
+        help_text="Optional short summary of the blog post.",
+    )
+
+    content = models.TextField(
+        help_text="Main content of the blog post.",
+    )
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "Post"
