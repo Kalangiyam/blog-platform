@@ -59,9 +59,18 @@ class Post(
     )
 
     class Meta:
-        ordering = ("-created_at",)
+        ordering = (
+            "-published_at",
+            "-created_at",
+        )
         verbose_name = "Post"
         verbose_name_plural = "Posts"
+
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["published_at"]),
+            models.Index(fields=["author"]),
+        ]
 
     def __str__(self):
         return self.title
