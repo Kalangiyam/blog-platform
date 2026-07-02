@@ -6,6 +6,7 @@ from apps.core.models import (
     SoftDeleteModel,
     TimeStampedModel,
 )
+from apps.posts.choices import PostStatus
 
 
 class Post(
@@ -42,6 +43,19 @@ class Post(
 
     content = models.TextField(
         help_text="Main content of the blog post.",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=PostStatus.choices,
+        default=PostStatus.DRAFT,
+        help_text="Current publication status of the post.",
+    )
+
+    published_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="The date and time when the post was published.",
     )
 
     class Meta:
