@@ -13,6 +13,7 @@ from apps.posts.serializers import (
 
 class PostViewSet(
     mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
@@ -25,6 +26,7 @@ class PostViewSet(
     """
 
     serializer_class = PostCreateSerializer
+    lookup_field = "slug"
 
     def get_queryset(self):
         """
@@ -48,6 +50,9 @@ class PostViewSet(
         if self.action == "list":
             return PostListSerializer
 
+        if self.action == "retrieve":
+            return PostDetailSerializer
+        
         return PostDetailSerializer
 
     def get_permissions(self):
@@ -55,7 +60,7 @@ class PostViewSet(
         Return the permissions required for the current action.
         """
 
-        if self.action == "list":
+        if self.action in ("list","retrieve"):
             permission_classes = (AllowAny,)
         else:
             permission_classes = (IsAuthenticated,)
