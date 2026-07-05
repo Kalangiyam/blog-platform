@@ -4,10 +4,12 @@ from rest_framework.response import Response
 
 from apps.posts.models import Post
 from apps.posts.choices import PostStatus
+from apps.posts.permissions import IsPostAuthor
 from apps.posts.serializers import (
     PostCreateSerializer,
     PostDetailSerializer,
     PostListSerializer,
+    PostUpdateSerializer,
 )
 
 
@@ -15,6 +17,7 @@ class PostViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -23,6 +26,8 @@ class PostViewSet(
     Currently supports:
     - Create Post
     - List Post
+    - Detail Post
+    - Update Post
     """
 
     serializer_class = PostCreateSerializer
@@ -52,16 +57,21 @@ class PostViewSet(
 
         if self.action == "retrieve":
             return PostDetailSerializer
-        
-        return PostDetailSerializer
+
+        if self.action in ("update", "partial_update"):
+            return PostUpdateSerializer
+
+        return self.serializer_class
 
     def get_permissions(self):
         """
         Return the permissions required for the current action.
         """
 
-        if self.action in ("list","retrieve"):
+        if self.action in ("list", "retrieve"):
             permission_classes = (AllowAny,)
+        elif self.action in ("update", "partial_update"):
+            permission_classes = (IsAuthenticated, IsPostAuthor)
         else:
             permission_classes = (IsAuthenticated,)
 
@@ -86,3 +96,14 @@ class PostViewSet(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
+    
+    def get_object(self):
+        """
+        Retrieve the object and enforce object-level permissions.
+        """
+
+        obj = super().get_object()
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
