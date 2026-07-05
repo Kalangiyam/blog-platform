@@ -1,14 +1,19 @@
-from rest_framework import mixins, viewsets
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import status, mixins, viewsets
 from rest_framework.response import Response
 
 from apps.posts.models import Post
-from apps.posts.serializers import PostCreateSerializer, PostDetailSerializer
+from apps.posts.choices import PostStatus
+from apps.posts.serializers import (
+    PostCreateSerializer,
+    PostDetailSerializer,
+    PostListSerializer,
+)
 
 
 class PostViewSet(
     mixins.CreateModelMixin,
+    mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -16,13 +21,21 @@ class PostViewSet(
 
     Currently supports:
     - Create Post
+    - List Post
     """
-
-    queryset = Post.objects.all()
 
     serializer_class = PostCreateSerializer
 
-    permission_classes = (IsAuthenticated,)
+    def get_queryset(self):
+        """
+        Return the queryset for the current action.
+        """
+
+        queryset = Post.objects.filter(
+            status=PostStatus.PUBLISHED,
+        ).select_related("author")
+
+        return queryset
 
     def get_serializer_class(self):
         """
@@ -32,8 +45,23 @@ class PostViewSet(
         if self.action == "create":
             return PostCreateSerializer
 
+        if self.action == "list":
+            return PostListSerializer
+
         return PostDetailSerializer
-    
+
+    def get_permissions(self):
+        """
+        Return the permissions required for the current action.
+        """
+
+        if self.action == "list":
+            permission_classes = (AllowAny,)
+        else:
+            permission_classes = (IsAuthenticated,)
+
+        return [permission() for permission in permission_classes]
+
     def create(self, request, *args, **kwargs):
         """
         Create a post and return its detailed representation.
