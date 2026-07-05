@@ -46,15 +46,22 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 03)
+# Current Database Schema (Feature 04)
 
-At the completion of Feature 03, the database still contains a single business entity:
+At the completion of Feature 04, the database contains two primary business entities:
 
-User
+- User
+- Post
 
-Feature 03 introduced JWT-based authentication and user authentication APIs without requiring any changes to the existing database schema.
+The Post entity introduces the application's first business domain and establishes the foundation for future content management features.
 
-Additional entities will be introduced incrementally as new features are completed.
+Shared abstract base models provide reusable functionality for:
+
+- Timestamp tracking
+- Audit fields
+- Soft deletion
+
+Future entities will reuse these base models to maintain consistency across the project.
 
 ---
 
@@ -66,15 +73,37 @@ Additional entities will be introduced incrementally as new features are complet
 ├───────────────────────────────┤
 │ id                            │
 │ username                      │
-│ first_name                    │
-│ last_name                     │
-│ email                         │
-│ password                      │
-│ is_staff                      │
-│ is_superuser                  │
-│ is_active                     │
-│ date_joined                   │
-└───────────────────────────────┘
+│ first_name                    │            1
+│ last_name                     │───────────────────────┐
+│ email                         │                       |
+│ password                      │                       |    
+│ is_staff                      │                       |
+│ is_superuser                  │                       |
+│ is_active                     │                       |
+│ date_joined                   │                       |
+└───────────────────────────────┘                       │
+                                                        │
+                                                        │
+                                                        ▼
+                                            ┌──────────────────────┐
+                                            │         Post         │
+                                            ├──────────────────────┤
+                                            │ id                   │
+                                            │ title                │
+                                            │ slug                 │
+                                            │ excerpt              │
+                                            │ content              │
+                                            │ status               │
+                                            │ published_at         │
+                                            │ author_id (FK)       │
+                                            │ created_by_id (FK)   │
+                                            │ updated_by_id (FK)   │
+                                            │ deleted_by_id (FK)   │
+                                            │ created_at           │
+                                            │ updated_at           │
+                                            │ is_deleted           │
+                                            │ deleted_at           │
+                                            └──────────────────────┘
 ```
 
 ---
@@ -119,15 +148,63 @@ No custom database fields have been added yet. This feature establishes the arch
 
 ---
 
+# Post Entity
+
+## Model
+
+```text
+Post
+```
+
+## Responsibilities
+
+The Post model represents blog content created by authenticated users.
+
+Current capabilities include:
+
+- Draft creation
+- Slug generation
+- Public publishing foundation
+- Author ownership
+- Audit tracking
+- Soft deletion
+
+## Relationships
+
+| Relationship | Target | Type |
+|--------------|--------|------|
+| author | User | ForeignKey |
+| created_by | User | ForeignKey |
+| updated_by | User | ForeignKey |
+| deleted_by | User | ForeignKey |
+
+## Important Fields
+
+- title
+- slug
+- excerpt
+- content
+- status
+- published_at
+- created_at
+- updated_at
+- is_deleted
+- deleted_at
+
+---
+
 # Current Relationships
 
 At this stage:
 
 ```text
 User
+ └── Post (One-to-Many)
 ```
 
-No foreign key or one-to-one relationships have been introduced yet.
+A single user can author multiple posts.
+
+Each post belongs to exactly one author.
 
 ---
 
@@ -137,7 +214,7 @@ As additional features are implemented, the User model will become the central e
 
 ```text
 User
-├── Posts (One-to-Many)
+├── Posts (One-to-Many) (Implemented)
 ├── Comments (One-to-Many)
 ├── Profile (One-to-One)
 ├── Bookmarks (Many-to-Many)
@@ -154,7 +231,7 @@ The following database tables are planned:
 
 * Users
 * Profiles
-* Posts
+* ✅ Posts 
 * Categories
 * Tags
 * Comments
@@ -175,8 +252,10 @@ The project follows a migration-first approach.
 * `AUTH_USER_MODEL` configured successfully.
 * Database schema successfully supports JWT authentication  without requiring additional database tables or modifications to the custom User model.
 * Authentication functionality has been implemented while preserving the existing schema.
-
-This avoids one of the most common architectural mistakes in Django projects—changing the user model after migrations have already been created.
+* Posts application successfully introduced through incremental migrations.
+* Foreign key relationships established between `User` and `Post`.
+* Shared abstract base models reused for audit fields, timestamps, and soft deletion.
+* Database schema supports ownership tracking and future publishing workflows.
 
 ---
 
@@ -191,6 +270,10 @@ The project follows these principles:
 * Backend ownership enforcement
 * No duplicated business data
 * ORM-based database access only
+* Slug-based resource identification
+* Soft deletion instead of physical deletion
+* Audit trail for data changes
+* Reusable abstract base models
 
 ---
 
@@ -200,11 +283,10 @@ Current:
 
 * Primary key index on `id`
 * Default indexes provided by Django
+* Indexed unique slug for post lookup
 
 Future:
 
-- Email lookup optimization
-- Slug indexes
 - Composite indexes
 - Full-text search indexes (when search functionality is introduced)
 
@@ -223,6 +305,9 @@ Data integrity is maintained through:
 * Backend validation
 * JWT authentication
 * Authentication and permission checks
+* Object-level permission enforcement
+* Soft-delete protection
+* Ownership validation
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -235,13 +320,40 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+* ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ## Current Database Version
+Current schema includes:
 
-Initial schema with a custom User model supporting JWT-based authentication.
+- Custom User model
+- Post model
+- Audit tracking
+- Timestamp tracking
+- Soft deletion
+- User–Post relationships
 
-No schema changes were required during Feature 03.
+The database now supports the first business domain of the application while remaining fully normalized.
+
+## Shared Abstract Models
+
+The project uses reusable abstract base models to avoid duplicated code.
+
+| Base Model | Responsibility |
+|------------|----------------|
+| TimeStampedModel | created_at, updated_at |
+| AuditModel | created_by, updated_by |
+| SoftDeleteModel | is_deleted, deleted_at, deleted_by |
+
+All future business entities should inherit from these models where appropriate to ensure consistent auditing, lifecycle management, and maintainability.
 
 ## Next Planned Database Changes
 
-Feature 04 will introduce the first major domain models, including the Post entity and its relationships with the User model.
+Feature 05 will extend the Posts domain by introducing the publishing workflow.
+
+Future database enhancements may include:
+
+- Publication state transitions
+- Additional publication metadata
+- Categories
+- Tags
+- Comment relationships

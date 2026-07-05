@@ -4,7 +4,14 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 03, the authentication module has been fully implemented using JWT Authentication with Django REST Framework and Simple JWT.
+At the completion of Feature 04, the platform provides two API modules:
+
+- Authentication APIs
+- Posts APIs
+
+Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
+
+The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, and soft deletion.
 
 Future features will continue extending this document as new API modules are introduced.
 
@@ -113,18 +120,71 @@ POST `/api/auth/logout/`
 
 ---
 
+# Posts APIs
+
+## Current Status
+
+Implemented ✅
+
+The Posts module provides CRUD functionality for blog posts while enforcing ownership rules and soft deletion.
+
+| Method | Endpoint | Authentication | Status |
+|--------|----------|----------------|--------|
+| POST | /api/posts/ | JWT Access Token | ✅ Implemented |
+| GET | /api/posts/ | Public | ✅ Implemented |
+| GET | /api/posts/{slug}/ | Public | ✅ Implemented |
+| PATCH | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
+| DELETE | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
+
+### Create Post
+
+```http
+POST /api/posts/
+```
+
+### List Published Posts
+
+```http
+GET /api/posts/
+```
+
+### Retrieve Single Post
+
+```http
+GET /api/posts/{slug}/
+```
+
+### Update Post
+
+```http
+PATCH /api/posts/{slug}/
+```
+
+### Delete Post (Soft Delete)
+
+```http
+DELETE /api/posts/{slug}/
+```
+
+### Business Rules
+
+- Only authenticated users can create posts.
+- Newly created posts are saved as **Draft**.
+- Only **Published** posts are publicly visible.
+- Only the post author can update or delete a post.
+- Posts are soft deleted and remain in the database for auditing and future restoration.
+
+---
+
 # Future API Modules
 
 As the project grows, additional API modules will be added.
 
-## Posts
+## Publishing Workflow
 
 ```text
-GET     /api/posts/
-GET     /api/posts/{slug}/
-POST    /api/posts/
-PATCH   /api/posts/{id}/
-DELETE  /api/posts/{id}/
+POST   /api/posts/{slug}/publish/
+POST   /api/posts/{slug}/unpublish/
 ```
 
 ---
@@ -255,16 +315,25 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+* ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ## Current API State
 
-Authentication APIs have been fully implemented and tested.
+Authentication and Posts APIs have been fully implemented and manually tested.
 
-Future features will extend the API with posts, categories, tags, comments, reactions, and profile management.
+The platform currently supports:
 
-The project currently provides the architectural foundation for future REST API development.
+- User registration and authentication
+- JWT-based authorization
+- Post creation
+- Public listing of published posts
+- Retrieval by slug
+- Author-only updates
+- Author-only soft deletion
 
-# Authentication Endpoints
+Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
+
+## Authentication Endpoints
 
 | Endpoint | Description |
 |-----------|-------------|
@@ -275,6 +344,16 @@ The project currently provides the architectural foundation for future REST API 
 | POST /api/auth/token/refresh/ | Obtain a new access token |
 | POST /api/auth/token/verify/ | Verify the validity of a JWT |
 
+## Posts Endpoints
+
+| Endpoint | Description |
+|-----------|-------------|
+| POST /api/posts/ | Create a new draft post |
+| GET /api/posts/ | List all published posts |
+| GET /api/posts/{slug}/ | Retrieve a published post |
+| PATCH /api/posts/{slug}/ | Update a post owned by the authenticated user |
+| DELETE /api/posts/{slug}/ | Soft delete a post owned by the authenticated user |
+
 ## Next Update
 
-Feature 04 will introduce the Posts API, including CRUD operations, ownership checks, publishing workflow, and permissions.
+Feature 05 will introduce the publishing workflow, allowing authors (and future editors) to publish and unpublish posts while enforcing status transition rules and publication timestamps.

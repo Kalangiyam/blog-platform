@@ -97,17 +97,26 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 03)
+# Current Testing Status (Feature 04)
 
 ## Implemented
 
-No automated test suite has been created yet.
+An automated test suite has not yet been created.
 
-However, the complete authentication module has been manually tested through API requests during Feature 03 development.
+However, both the Authentication and Posts modules have been comprehensively verified through manual API testing during development.
 
-The project currently has a documented testing strategy and validated authentication behavior through manual API testing.
+Manual testing currently validates:
 
-Automated tests will be introduced incrementally as the project grows.
+- Authentication workflows
+- Request validation
+- Response formats
+- Authorization
+- Object-level permissions
+- Ownership enforcement
+- Soft deletion
+- Business rules
+
+Automated tests will be introduced incrementally in future features.
 
 ---
 
@@ -132,6 +141,42 @@ The following tests will be added when the testing phase begins:
 * Logout
 * Refresh token blacklisting
 * Token refresh
+
+
+## Posts Module
+
+The following automated tests are planned for the Posts application:
+
+### Model Tests
+
+- Slug generation
+- Soft delete
+- Restore functionality
+- Audit field updates
+
+### Serializer Tests
+
+- Create serializer validation
+- Update serializer validation
+- Required field validation
+- Empty title/content validation
+
+### API Tests
+
+- Create post
+- List published posts
+- Retrieve post by slug
+- Update own post
+- Delete own post
+
+### Permission Tests
+
+- Anonymous read access
+- Authenticated create access
+- Author update access
+- Non-author update denial
+- Author delete access
+- Non-author delete denial
 
 ---
 
@@ -160,11 +205,24 @@ As new features are completed, testing coverage will expand to include:
 
 ## Posts
 
-* Create post
-* Update own post
-* Delete own post
-* Publish workflow
-* Slug generation
+### Completed (Manual Verification)
+
+- Create post
+- List published posts
+- Retrieve single post
+- Update own post
+- Soft delete own post
+- Slug generation
+- Ownership enforcement
+- Object-level permissions
+
+### Future (Automated Tests)
+
+- Publish workflow
+- Restore deleted posts
+- Pagination
+- Filtering
+- Search
 
 ---
 
@@ -196,7 +254,9 @@ As new features are completed, testing coverage will expand to include:
 ---
 # Manual Verification Completed
 
-During Feature 03, the following authentication scenarios were manually verified using API requests:
+During Features 03 and 04, the following scenarios were manually verified using API requests:
+
+### Authentication
 
 * User registration
 * Duplicate email validation
@@ -211,6 +271,21 @@ During Feature 03, the following authentication scenarios were manually verified
 * Refresh token blacklisting
 * Token refresh endpoint
 * Token verification endpoint
+
+### Posts
+
+- Create post
+- Create post without authentication
+- Blank title validation
+- Blank content validation
+- Duplicate title with unique slug generation
+- List published posts
+- Retrieve post by slug
+- Update own post
+- Prevent updating another user's post
+- Soft delete own post
+- Prevent deleting another user's post
+- Audit field verification (`created_by`, `updated_by`, `deleted_by`)
 ---
 
 # Test Organization
@@ -232,9 +307,11 @@ apps/
 ├── posts/
 │   └── tests/
 │       ├── test_models.py
+│       ├── test_serializers.py
 │       ├── test_views.py
 │       ├── test_permissions.py
-│       └── ...
+│       ├── test_managers.py
+│       └── test_api.py
 ```
 
 This structure keeps tests close to the code they verify.
@@ -274,6 +351,7 @@ Additional tools may be introduced later if project requirements evolve.
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+* ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -281,12 +359,29 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication functionality has been manually verified through comprehensive API testing during Feature 03.
+Authentication and Posts functionality have been comprehensively verified through manual API testing.
 
-The testing strategy is defined, and automated tests will begin with upcoming features.
+The project currently has validated:
+
+- Authentication workflows
+- CRUD operations for Posts
+- Authorization
+- Object-level permissions
+- Ownership enforcement
+- Soft deletion
+- Request validation
+
+The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 04 will introduce the first automated tests for the Posts domain, including model, serializer, API, and permission tests.
+Feature 05 will continue expanding the Posts domain while laying the foundation for automated testing.
 
-Authentication tests will also begin to be automated as the project testing suite is established.
+The initial automated test suite will focus on:
+
+- Authentication APIs
+- Posts APIs
+- Serializer validation
+- Object-level permissions
+- Soft deletion
+- Publishing workflow

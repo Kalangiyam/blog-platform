@@ -4,7 +4,9 @@
 
 The Blog Platform uses Django's authentication system together with Django REST Framework and Simple JWT to provide secure JWT-based authentication between the React frontend and Django backend.
 
-Authentication has been fully implemented in Feature 03 and serves as the security foundation for all protected APIs.
+Authentication was fully implemented in Feature 03 and now serves as the security foundation for all protected APIs across the platform.
+
+Feature 04 builds on this foundation by using JWT authentication and object-level authorization to secure the Posts APIs.
 
 ---
 
@@ -217,7 +219,9 @@ The authentication system will follow these security practices:
 * Backend permission enforcement
 * Token expiration
 * Secure password validation
-* Object-level permissions
+* Object-level permissions for resource ownership
+* Ownership enforcement using `request.user`
+* Action-based permission enforcement
 * Never trust frontend validation
 * Refresh token blacklisting
 * Generic authentication error messages
@@ -229,7 +233,16 @@ The authentication system will follow these security practices:
 
 Authentication is complete.
 
-Future features will build authorization on top of the existing JWT authentication system.
+Feature 04 introduces the first authorization layer through object-level permissions.
+
+Current authorization capabilities include:
+
+- Public read access for published posts.
+- Authenticated users can create posts.
+- Only the author of a post can update or delete it.
+- Ownership is enforced using `request.user` together with a custom DRF permission class.
+
+Future features will extend this authorization model with editor, moderator, and administrator roles.
 
 ---
 
@@ -240,12 +253,22 @@ Future features will build authorization on top of the existing JWT authenticati
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+* ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ## Current Authentication State
 
 Authentication module fully implemented.
 
-The application now supports registration, login, logout, JWT authentication, protected endpoints, refresh token rotation, and token blacklisting.
+The application now supports:
+
+- User registration
+- User login
+- JWT authentication
+- Protected endpoints
+- Refresh token rotation
+- Token blacklisting
+- Ownership-based authorization for Posts APIs
+- Object-level permission enforcement
 
 # Authentication API Flow
 
@@ -282,6 +305,6 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 04 will build the Posts domain on top of the existing authentication system.
+Feature 05 will extend the authorization model by introducing the publishing workflow.
 
-All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
+Publishing and unpublishing operations will continue to rely on the authenticated user (`request.user`) while preparing the architecture for future editor and administrator roles.

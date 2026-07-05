@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-06-30
+**Last Updated:** 2026-07-05
 
-**Current Milestone:** ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+**Current Milestone:** ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ---
 
@@ -66,13 +66,22 @@ blog-platform/
 ├── backend/
 │   ├── apps/
 │   │   ├── core/
-│   │   └── users/
-│   │       ├── authentication.py
-│   │       ├── admin.py
+│   │   ├── users/
+│   │   |    ├── authentication.py
+│   │   |    ├── admin.py
+│   │   |    ├── models.py
+│   │   |    ├── serializers.py
+│   │   |    ├── urls.py
+│   │   |    ├── views.py
+│   │   |    └── ...
+│   │   └── posts/
 │   │       ├── models.py
-│   │       ├── serializers.py
+│   │       ├── serializers/
+│   │       ├── permissions.py
 │   │       ├── urls.py
 │   │       ├── views.py
+│   │       ├── choices.py
+│   │       ├── admin/
 │   │       └── ...
 │   │
 │   ├── config/
@@ -224,6 +233,61 @@ Successfully verified:
 
 **Status:** Completed
 
+## ✅ Feature 04 — Posts Domain Architecture & Database Design
+
+### Objective
+
+Implement the first business domain of the application by introducing blog post management with production-ready architecture and ownership enforcement.
+
+### Completed
+
+#### Domain Model
+
+- Posts application
+- Post model
+- Slug generation
+- Draft status
+- Published status foundation
+
+#### APIs
+
+- Create Post API
+- List Published Posts API
+- Retrieve Single Post API
+- Update Own Post API
+- Soft Delete Own Post API
+
+#### Security
+
+- JWT-protected write operations
+- Object-level permissions
+- Author ownership enforcement
+
+#### Architecture
+
+- Action-specific serializers
+- ViewSet with DRF mixins
+- Soft delete support
+- Audit fields
+- Slug-based routing
+
+#### Manual Testing
+
+Successfully verified:
+
+- Create post
+- List posts
+- Retrieve post
+- Update own post
+- Prevent updating another user's post
+- Soft delete own post
+- Prevent deleting another user's post
+- Slug uniqueness
+- Audit fields
+- Permission enforcement
+
+**Status:** Completed
+
 ---
 
 # Current Backend Modules
@@ -232,7 +296,7 @@ Successfully verified:
 |----------|--------|
 | Core | ✅ Completed |
 | Users | ✅ Completed |
-| Posts | ⏳ Planned |
+| Posts | ✅ Completed |
 | Categories | ⏳ Planned |
 | Tags | ⏳ Planned |
 | Comments | ⏳ Planned |
@@ -256,7 +320,13 @@ Implemented
 
 ## Posts APIs
 
-Not Started
+Implemented
+
+- POST `/api/posts/`
+- GET `/api/posts/`
+- GET `/api/posts/{slug}/`
+- PATCH `/api/posts/{slug}/`
+- DELETE `/api/posts/{slug}/`
 
 ---
 
@@ -283,10 +353,10 @@ Not Started
 ## Implemented Tables
 
 - User
+- Post
 
 ## Planned Tables
 
-- Post
 - Category
 - Tag
 - Comment
@@ -336,6 +406,7 @@ Completed Feature Reports:
 - ✅ Feature 01 — Project Foundation & Architecture
 - ✅ Feature 02 — Custom User Model & User App Architecture
 - ✅ Feature 03 — JWT Authentication Foundation
+- ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ---
 
@@ -357,9 +428,11 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the authentication module.
+Completed for the Authentication and Posts modules.
 
 Verified:
+
+### Authentication
 
 - Registration
 - Login
@@ -367,6 +440,16 @@ Verified:
 - Protected endpoints
 - Token Refresh
 - Token Verification
+
+### Posts
+
+- Create
+- List
+- Retrieve
+- Update
+- Soft Delete
+- Ownership enforcement
+- Object-level permissions
 
 ## Automated Testing
 
@@ -380,10 +463,10 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 04 — Posts Domain Architecture & Database Design
-- Feature 05 — Categories
-- Feature 06 — Tags
-- Feature 07 — Comments
+- Feature 05 — Publishing Workflow
+- Feature 06 — Categories
+- Feature 07 — Tags
+- Feature 08 — Comments
 
 ## Phase 2 — User Experience
 
@@ -401,7 +484,7 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ **Feature 03 — JWT Authentication Foundation & User Authentication APIs**
+✅ Feature 04 — Posts Domain Architecture & Database Design
 
 Status: **Completed**
 
@@ -409,24 +492,19 @@ Status: **Completed**
 
 # Next Milestone
 
-## Feature 04 — Posts Domain Architecture & Database Design
+## Feature 05 — Publishing Workflow
 
-The next feature will establish the core business domain of the application.
+The next feature will complete the Post lifecycle by introducing publishing and unpublishing capabilities.
 
 Planned topics include:
 
-- Business requirements
-- Database design
-- Post model
-- User relationship
-- Slug strategy
-- Draft vs Published workflow
-- Ownership rules
-- Permissions
-- API design
-- Scalability considerations
-
-Implementation will begin only after the architecture has been finalized.
+- Publish API
+- Unpublish API
+- Publication timestamps
+- Status transitions
+- Publishing permissions
+- Business rules
+- Validation
 
 ---
 
@@ -443,6 +521,12 @@ The project currently follows these key architectural decisions:
 - JWT Authentication (Simple JWT)
 - Backend-Enforced Permissions
 - Documentation-Driven Development
+- Modular Posts domain
+- Action-specific serializers
+- Slug-based resource routing
+- Soft delete architecture
+- Object-level permissions
+- Audit trail through abstract base models
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -468,12 +552,23 @@ Every feature follows the same engineering workflow:
 
 # Next Chat Handoff
 
-**Starting Point:** Feature 04 — Posts Domain Architecture & Database Design
+**Starting Point:** Feature 05 — Publishing Workflow
 
-Before implementation:
+Current project state:
 
-- Review the current project architecture.
-- Preserve all completed features.
-- Do not redesign completed modules unless explicitly requested.
-- Follow the established Architecture-First workflow.
-- Update documentation incrementally as new features are completed.
+- Features 00–04 completed.
+- Authentication and Posts modules fully implemented.
+- Documentation updated through Feature 04.
+- Manual testing completed for Authentication and Posts.
+- Automated testing planned for future features.
+
+Next steps:
+
+1. Design the publishing workflow.
+2. Define business rules and status transitions.
+3. Implement publish and unpublish APIs.
+4. Perform manual testing.
+5. Update documentation incrementally.
+6. Prepare the Feature 05 Completion Report.
+
+Continue following the established Architecture-First and Vertical Slice development workflow.
