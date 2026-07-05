@@ -18,6 +18,7 @@ class PostViewSet(
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -28,6 +29,7 @@ class PostViewSet(
     - List Post
     - Detail Post
     - Update Post
+    - Delete Post
     """
 
     serializer_class = PostCreateSerializer
@@ -70,7 +72,7 @@ class PostViewSet(
 
         if self.action in ("list", "retrieve"):
             permission_classes = (AllowAny,)
-        elif self.action in ("update", "partial_update"):
+        elif self.action in ("update", "partial_update", "destroy"):
             permission_classes = (IsAuthenticated, IsPostAuthor)
         else:
             permission_classes = (IsAuthenticated,)
@@ -96,7 +98,7 @@ class PostViewSet(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
-    
+
     def get_object(self):
         """
         Retrieve the object and enforce object-level permissions.
@@ -107,3 +109,10 @@ class PostViewSet(
         self.check_object_permissions(self.request, obj)
 
         return obj
+
+    def perform_destroy(self, instance):
+        """
+        Soft delete the post.
+        """
+
+        instance.delete(user=self.request.user)

@@ -48,7 +48,7 @@ class SoftDeleteModel(models.Model):
         self.deleted_by = user
         self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
 
-    def restore(self, *,  user=None):
+    def restore(self):
         """
         Restore a previously soft deleted instance.
         """
