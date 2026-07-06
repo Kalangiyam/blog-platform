@@ -12,20 +12,20 @@ This project emphasizes production-ready software engineering practices, includi
 
 ### Frontend
 
-* React
-* Vite
-* Tailwind CSS
-* React Router *(planned)*
-* Axios *(planned)*
+- React
+- Vite
+- Tailwind CSS
+- React Router _(planned)_
+- Axios _(planned)_
 
 ### Backend
 
-* Django
-* Django REST Framework
+- Django
+- Django REST Framework
 
 ### Database
 
-* PostgreSQL
+- PostgreSQL
 
 ### Authentication
 
@@ -35,12 +35,12 @@ This project emphasizes production-ready software engineering practices, includi
 - JWT Refresh Tokens
 - Refresh Token Blacklisting
 
-### Deployment *(Planned)*
+### Deployment _(Planned)_
 
-* Docker
-* Gunicorn
-* Nginx
-* Linux Server
+- Docker
+- Gunicorn
+- Nginx
+- Linux Server
 
 ---
 
@@ -83,14 +83,14 @@ The frontend never communicates directly with the database. Every request passes
 
 The project follows these engineering principles:
 
-* API-First Development
-* Separation of Concerns
-* Single Responsibility Principle (SRP)
-* SOLID Principles
-* Clean Code
-* Production-Ready Folder Structure
-* Backend-Enforced Security
-* Incremental Feature Development
+- API-First Development
+- Separation of Concerns
+- Single Responsibility Principle (SRP)
+- SOLID Principles
+- Clean Code
+- Production-Ready Folder Structure
+- Backend-Enforced Security
+- Incremental Feature Development
 
 ---
 
@@ -98,18 +98,18 @@ The project follows these engineering principles:
 
 ## Technology
 
-* React
-* Vite
-* Tailwind CSS
+- React
+- Vite
+- Tailwind CSS
 
 ## Responsibilities
 
-* Render the user interface.
-* Manage client-side state.
-* Consume REST APIs.
-* Handle routing.
-* Manage authentication state.
-* Display server responses and validation errors.
+- Render the user interface.
+- Manage client-side state.
+- Consume REST APIs.
+- Handle routing.
+- Manage authentication state.
+- Display server responses and validation errors.
 
 The frontend is responsible only for presentation and user interaction. It never contains business rules or permission enforcement.
 
@@ -119,18 +119,18 @@ The frontend is responsible only for presentation and user interaction. It never
 
 ## Technology
 
-* Django
-* Django REST Framework
+- Django
+- Django REST Framework
 
 ## Responsibilities
 
-* Business logic
-* Authentication
-* Authorization
-* Request validation
-* Response serialization
-* Permission enforcement
-* Database interaction
+- Business logic
+- Authentication
+- Authorization
+- Request validation
+- Response serialization
+- Permission enforcement
+- Database interaction
 
 The backend is the single source of truth for all application rules and security.
 
@@ -140,16 +140,16 @@ The backend is the single source of truth for all application rules and security
 
 ## Technology
 
-* PostgreSQL
+- PostgreSQL
 
 ## Responsibilities
 
-* Persistent data storage
-* Relationship management
-* Data integrity
-* Constraints
-* Indexes
-* Transaction support
+- Persistent data storage
+- Relationship management
+- Data integrity
+- Constraints
+- Indexes
+- Transaction support
 
 All database operations are performed through Django's ORM.
 
@@ -162,7 +162,8 @@ backend/
 │
 ├── apps/
 │   ├── core/
-│   └── users/
+│   ├── users/
+│   └── posts/
 │
 ├── config/
 │
@@ -184,6 +185,22 @@ Contains shared functionality used across multiple applications.
 ### users/
 
 Responsible for user management and the custom user model.
+
+### posts/
+
+Responsible for blog content management.
+
+Current responsibilities include:
+
+- Post creation
+- Published post listing
+- Single post retrieval
+- Author-owned post updates
+- Soft deletion
+- Slug generation
+- Post lifecycle foundation (Draft → Published)
+
+The application follows the same architectural principles as the rest of the project by separating responsibilities across models, serializers, permissions, viewsets, and routing.
 
 ---
 
@@ -283,6 +300,59 @@ Responses are serialized into JSON before being returned to the client.
 
 ---
 
+# Posts Architecture
+
+The Posts application is implemented as an independent domain module following the project's modular architecture.
+
+### Current Design
+
+- Dedicated `Post` model
+- Slug-based resource lookup
+- Separate serializers for create, list, retrieve, and update operations
+- DRF `GenericViewSet` with action-specific mixins
+- Object-level authorization using a custom permission class
+- Soft deletion through an abstract base model
+- Audit fields for creation, updates, and deletion
+
+### Request Processing
+
+Each Posts API request follows this flow:
+
+```text
+React Frontend
+        │
+        ▼
+HTTP Request
+        │
+        ▼
+Django URL Router
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Permissions
+        │
+        ▼
+APIView
+        │
+        ▼
+Serializer
+        │
+        ▼
+Business Logic
+        │
+        ▼
+Django ORM
+        │
+        ▼
+PostgreSQL
+```
+
+This separation of concerns keeps validation, authorization, business logic, and persistence independent and maintainable.
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -296,7 +366,9 @@ The backend is responsible for enforcing all security rules.
 - Store passwords using Django's secure password hashing.
 - Authenticate protected endpoints using JWT.
 - Blacklist refresh tokens during logout.
-- Support object-level permissions in future features.
+- Enforce object-level permissions for resource ownership.
+- Restrict post updates and deletion to the resource owner.
+- Use soft deletion to preserve audit history and prevent accidental data loss.
 
 ---
 
@@ -306,15 +378,15 @@ The architecture is designed to support future growth without major refactoring.
 
 Planned scalability features include:
 
-* Independent Django applications
-* JWT Authentication (Implemented)
-* Pagination
-* Search and filtering
-* Caching
-* Object-level permissions
-* Docker deployment
-* Reverse proxy with Nginx
-* Horizontal scaling
+- Independent Django applications
+- JWT Authentication (Implemented)
+- Pagination
+- Search and filtering
+- Caching
+- Object-level permissions
+- Docker deployment
+- Reverse proxy with Nginx
+- Horizontal scaling
 
 ---
 
@@ -322,29 +394,40 @@ Planned scalability features include:
 
 ## Completed
 
-* ✅ Feature 01 — Project Foundation & Architecture
-* ✅ Feature 02 — Custom User Model & User App Architecture
-* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+- ✅ Feature 01 — Project Foundation & Architecture
+- ✅ Feature 02 — Custom User Model & User App Architecture
+- ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+- ✅ Feature 04 — Posts Domain Architecture & Database Design
+
 ## In Progress
 
-* None
+- None
 
 ## Next Feature
 
-* Feature 04 — Posts Domain Architecture & Database Design
+- Feature 05 — Publishing Workflow
 
 ---
 
 # Future Architecture Evolution
 
-Future applications will reuse the existing authentication infrastructure and JWT-protected API architecture established in Feature 03.
+Future applications will reuse the authentication infrastructure introduced in Feature 03 and the modular domain architecture established in Feature 04.
+
+The Posts application serves as the reference implementation for future domain modules by demonstrating:
+
+- ViewSet-based API design
+- Action-specific serializers
+- Object-level permissions
+- Soft deletion
+- Slug-based routing
+- Ownership enforcement
 
 As development progresses, the architecture will expand with additional domain applications, including:
 
-* Posts
-* Categories
-* Tags
-* Comments
-* Profiles
+- Posts
+- Categories
+- Tags
+- Comments
+- Profiles
 
 Each application will remain independent while communicating through shared project architecture and REST APIs, preserving modularity and maintainability.

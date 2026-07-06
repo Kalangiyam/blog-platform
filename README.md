@@ -75,6 +75,7 @@ The project currently includes:
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+* ✅ Feature 04 — Posts Domain Architecture & Database Design
 
 ---
 
@@ -86,7 +87,8 @@ blog-platform/
 ├── backend/
 │   ├── apps/
 │   │   ├── core/
-│   │   └── users/
+│   │   ├── users/
+│   │   └── posts/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -120,7 +122,9 @@ blog-platform/
 
 # Current API
 
-Implemented authentication endpoints:
+Implemented APIs:
+
+### Authentication
 
 ```text
 POST   /api/auth/register/
@@ -129,6 +133,15 @@ GET    /api/auth/me/
 POST   /api/auth/logout/
 POST   /api/auth/token/refresh/
 POST   /api/auth/token/verify/
+```
+### Posts
+
+```text
+POST    /api/posts/
+GET     /api/posts/
+GET     /api/posts/{slug}/
+PATCH   /api/posts/{slug}/
+DELETE  /api/posts/{slug}/
 ```
 
 Additional APIs will be introduced as future features are completed.
@@ -155,7 +168,6 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* Posts Domain
 * Categories
 * Tags
 * Comments
@@ -187,8 +199,18 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** Feature 03 Complete
+**Current Milestone:** Feature 04 Complete
 
-The authentication foundation is fully implemented and tested.
+The blog platform now includes a production-ready Posts domain with support for creating, listing, retrieving, updating, and soft deleting blog posts.
 
-The next milestone is **Feature 04 — Posts Domain Architecture & Database Design**.
+Implemented capabilities include:
+
+- Slug-based post URLs
+- Draft and published post workflow foundation
+- Public read access for published posts
+- Author ownership enforcement
+- Object-level permissions
+- Soft delete with audit trail
+- Optimized querysets using `select_related()`
+
+The next milestone is **Feature 05 — Publishing Workflow**.
