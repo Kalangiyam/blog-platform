@@ -42,7 +42,7 @@ This project emphasizes production-ready software engineering practices, includi
 - Nginx
 - Linux Server
 
----
+---     
 
 # Architecture Style
 
@@ -192,13 +192,15 @@ Responsible for blog content management.
 
 Current responsibilities include:
 
-- Post creation
-- Published post listing
-- Single post retrieval
-- Author-owned post updates
-- Soft deletion
-- Slug generation
-- Post lifecycle foundation (Draft → Published)
+* Post creation
+* Published post listing
+* Single post retrieval
+* Author-owned post updates
+* Soft deletion
+* Slug generation
+* Draft and published post lifecycle management
+* Publish and unpublish workflows
+
 
 The application follows the same architectural principles as the rest of the project by separating responsibilities across models, serializers, permissions, viewsets, and routing.
 
@@ -313,6 +315,28 @@ The Posts application is implemented as an independent domain module following t
 - Object-level authorization using a custom permission class
 - Soft deletion through an abstract base model
 - Audit fields for creation, updates, and deletion
+- Dedicated workflow serializers for publishing actions
+- Custom ViewSet actions for publish and unpublish operations
+- Backend-enforced status transition validation
+- Automatic publication timestamp management
+
+### Publishing Workflow
+
+Publishing is modeled as a domain workflow rather than a standard CRUD operation.
+
+Instead of exposing the `status` field through the update endpoint, the Posts module provides two dedicated actions:
+
+* `POST /api/posts/{slug}/publish/`
+* `POST /api/posts/{slug}/unpublish/`
+
+Workflow-specific serializers encapsulate the business rules for valid state transitions:
+
+* Draft → Published
+* Published → Draft
+
+This approach centralizes workflow validation, prevents invalid state changes, and keeps business logic separate from content editing.
+
+The backend automatically manages the `published_at` timestamp to ensure consistency between publication status and publication date.
 
 ### Request Processing
 
@@ -367,8 +391,11 @@ The backend is responsible for enforcing all security rules.
 - Authenticate protected endpoints using JWT.
 - Blacklist refresh tokens during logout.
 - Enforce object-level permissions for resource ownership.
-- Restrict post updates and deletion to the resource owner.
+- Restrict post updates, deletion, publishing, and unpublishing to the resource owner.
+- Validate publishing state transitions on the backend.
+- Automatically manage publication timestamps on the backend.
 - Use soft deletion to preserve audit history and prevent accidental data loss.
+
 
 ---
 
@@ -398,6 +425,7 @@ Planned scalability features include:
 - ✅ Feature 02 — Custom User Model & User App Architecture
 - ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 - ✅ Feature 04 — Posts Domain Architecture & Database Design
+- ✅ Feature 05 — Publishing Workflow
 
 ## In Progress
 
@@ -405,7 +433,7 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 05 — Publishing Workflow
+- Feature 06 — Categories
 
 ---
 

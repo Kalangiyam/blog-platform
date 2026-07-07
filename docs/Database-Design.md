@@ -46,12 +46,14 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 04)
+# Current Database Schema (Feature 05)
 
-At the completion of Feature 04, the database contains two primary business entities:
+At the completion of Feature 05, the database contains two primary business entities:
 
 - User
 - Post
+
+Feature 05 introduces the publishing workflow by utilizing the existing status and published_at fields of the Post model. No database schema changes or additional migrations were required.
 
 The Post entity introduces the application's first business domain and establishes the foundation for future content management features.
 
@@ -164,7 +166,7 @@ Current capabilities include:
 
 - Draft creation
 - Slug generation
-- Public publishing foundation
+- Public publishing
 - Author ownership
 - Audit tracking
 - Soft deletion
@@ -255,7 +257,7 @@ The project follows a migration-first approach.
 * Posts application successfully introduced through incremental migrations.
 * Foreign key relationships established between `User` and `Post`.
 * Shared abstract base models reused for audit fields, timestamps, and soft deletion.
-* Database schema supports ownership tracking and future publishing workflows.
+* Database schema supports ownership tracking and the implemented publishing workflow without requiring additional schema changes.
 
 ---
 
@@ -308,6 +310,8 @@ Data integrity is maintained through:
 * Object-level permission enforcement
 * Soft-delete protection
 * Ownership validation
+* Backend validation of publishing state transitions
+* Automatic management of publication timestamps
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -321,6 +325,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
+* ✅ Feature 05 — Publishing Workflow
 
 ## Current Database Version
 Current schema includes:
@@ -328,11 +333,13 @@ Current schema includes:
 - Custom User model
 - Post model
 - Audit tracking
+- Publication status management
+- Publication timestamp tracking
 - Timestamp tracking
 - Soft deletion
 - User–Post relationships
 
-The database now supports the first business domain of the application while remaining fully normalized.
+The publishing workflow introduced in Feature 05 is implemented entirely through application logic and reuses the existing database schema.
 
 ## Shared Abstract Models
 
@@ -348,12 +355,13 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 05 will extend the Posts domain by introducing the publishing workflow.
+Feature 06 will introduce Categories as a new business entity.
 
 Future database enhancements may include:
 
-- Publication state transitions
-- Additional publication metadata
-- Categories
-- Tags
-- Comment relationships
+* Categories
+* Tags
+* Comment relationships
+* Profile relationships
+* Bookmarks
+* Likes

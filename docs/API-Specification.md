@@ -135,6 +135,8 @@ The Posts module provides CRUD functionality for blog posts while enforcing owne
 | GET | /api/posts/{slug}/ | Public | ✅ Implemented |
 | PATCH | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
 | DELETE | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
+| POST | /api/posts/{slug}/publish/ | JWT Access Token (Author Only) | ✅ Implemented |
+| POST | /api/posts/{slug}/unpublish/ | JWT Access Token (Author Only) | ✅ Implemented |
 
 ### Create Post
 
@@ -166,28 +168,35 @@ PATCH /api/posts/{slug}/
 DELETE /api/posts/{slug}/
 ```
 
+### Publish Post
+
+```http
+POST /api/posts/{slug}/publish/
+```
+
+### Unublish Post
+
+```http
+POST /api/posts/{slug}/unpublish/
+```
+
 ### Business Rules
 
-- Only authenticated users can create posts.
-- Newly created posts are saved as **Draft**.
-- Only **Published** posts are publicly visible.
-- Only the post author can update or delete a post.
-- Posts are soft deleted and remain in the database for auditing and future restoration.
+* Only authenticated users can create posts.
+* Newly created posts are saved as **Draft**.
+* Only **Published** posts are publicly visible.
+* Only the post author can update, delete, publish, or unpublish a post.
+* A post can only transition from **Draft → Published**.
+* A post can only transition from **Published → Draft**.
+* The backend automatically manages the `published_at` timestamp.
+* Posts are soft deleted and remain in the database for auditing and future restoration.
+
 
 ---
 
 # Future API Modules
 
 As the project grows, additional API modules will be added.
-
-## Publishing Workflow
-
-```text
-POST   /api/posts/{slug}/publish/
-POST   /api/posts/{slug}/unpublish/
-```
-
----
 
 ## Categories
 
@@ -316,6 +325,7 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
+* ✅ Feature 05 — Publishing Workflow
 
 ## Current API State
 
@@ -330,6 +340,9 @@ The platform currently supports:
 - Retrieval by slug
 - Author-only updates
 - Author-only soft deletion
+- Author-only publishing
+- Author-only unpublishing
+- Backend-enforced publishing workflow
 
 Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
 
@@ -353,7 +366,9 @@ Future features will extend the API with publishing workflows, categories, tags,
 | GET /api/posts/{slug}/ | Retrieve a published post |
 | PATCH /api/posts/{slug}/ | Update a post owned by the authenticated user |
 | DELETE /api/posts/{slug}/ | Soft delete a post owned by the authenticated user |
+| POST /api/posts/{slug}/publish/ | Publish a draft post |
+| POST /api/posts/{slug}/unpublish/ | Move a published post back to draft |
 
 ## Next Update
 
-Feature 05 will introduce the publishing workflow, allowing authors (and future editors) to publish and unpublish posts while enforcing status transition rules and publication timestamps.
+Feature 06 will introduce Categories, providing category management for blog posts and laying the foundation for improved content organization and filtering.

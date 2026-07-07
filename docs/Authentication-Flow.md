@@ -6,7 +6,10 @@ The Blog Platform uses Django's authentication system together with Django REST 
 
 Authentication was fully implemented in Feature 03 and now serves as the security foundation for all protected APIs across the platform.
 
-Feature 04 builds on this foundation by using JWT authentication and object-level authorization to secure the Posts APIs.
+Feature 04 introduced JWT authentication and object-level authorization for the Posts APIs.
+
+Feature 05 extends this foundation by securing the publishing workflow, allowing only authenticated post authors to publish and unpublish their own posts while enforcing backend business rules for valid status transitions.
+
 
 ---
 
@@ -237,10 +240,11 @@ Feature 04 introduces the first authorization layer through object-level permiss
 
 Current authorization capabilities include:
 
-- Public read access for published posts.
-- Authenticated users can create posts.
-- Only the author of a post can update or delete it.
-- Ownership is enforced using `request.user` together with a custom DRF permission class.
+* Public read access for published posts.
+* Authenticated users can create posts.
+* Only the author of a post can update, delete, publish, or unpublish it.
+* Ownership is enforced using `request.user` together with a custom DRF permission class.
+* Publishing state transitions are validated on the backend to prevent invalid workflow changes.
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
 
@@ -254,6 +258,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
+* ✅ Feature 05 — Publishing Workflow
 
 ## Current Authentication State
 
@@ -269,6 +274,8 @@ The application now supports:
 - Token blacklisting
 - Ownership-based authorization for Posts APIs
 - Object-level permission enforcement
+- Author-only publishing and unpublishing workflows
+- Backend validation of publishing state transitions
 
 # Authentication API Flow
 
@@ -305,6 +312,6 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 05 will extend the authorization model by introducing the publishing workflow.
+Feature 06 will introduce Categories for organizing blog content.
 
-Publishing and unpublishing operations will continue to rely on the authenticated user (`request.user`) while preparing the architecture for future editor and administrator roles.
+The existing authentication and authorization infrastructure will continue to secure category management endpoints, while the publishing workflow introduced in Feature 05 provides the foundation for future editor and administrator publishing permissions.

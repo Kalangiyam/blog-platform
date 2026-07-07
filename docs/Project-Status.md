@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-05
+**Last Updated:** 2026-07-07
 
-**Current Milestone:** ✅ Feature 04 — Posts Domain Architecture & Database Design
+**Current Milestone:** ✅ Feature 05 — Publishing Workflow
 
 ---
 
@@ -288,6 +288,54 @@ Successfully verified:
 
 **Status:** Completed
 
+## ✅ Feature 05 — Publishing Workflow
+
+### Objective
+
+Complete the post lifecycle by implementing a backend-enforced publishing workflow with validated status transitions.
+
+### Completed
+
+#### Workflow
+
+* Publish draft posts
+* Unpublish published posts
+* Backend status transition validation
+* Automatic publication timestamp management
+
+#### APIs
+
+* Publish Post API
+* Unpublish Post API
+
+#### Security
+
+* JWT-protected publishing endpoints
+* Author-only publishing
+* Author-only unpublishing
+* Backend workflow validation
+
+#### Architecture
+
+* Dedicated workflow serializers
+* Custom ViewSet actions
+* Separation of CRUD operations from workflow actions
+
+#### Manual Testing
+
+Successfully verified:
+
+* Publish draft post
+* Prevent publishing an already published post
+* Unpublish published post
+* Prevent unpublishing a draft post
+* Author-only publishing permissions
+* Authentication requirements
+* Invalid slug handling
+* Publication timestamp management
+
+**Status:** Completed
+
 ---
 
 # Current Backend Modules
@@ -296,7 +344,7 @@ Successfully verified:
 |----------|--------|
 | Core | ✅ Completed |
 | Users | ✅ Completed |
-| Posts | ✅ Completed |
+| Posts | ✅ Completed (Publishing Workflow Included) |
 | Categories | ⏳ Planned |
 | Tags | ⏳ Planned |
 | Comments | ⏳ Planned |
@@ -327,6 +375,8 @@ Implemented
 - GET `/api/posts/{slug}/`
 - PATCH `/api/posts/{slug}/`
 - DELETE `/api/posts/{slug}/`
+- POST `/api/posts/{slug}/publish/`
+- POST `/api/posts/{slug}/unpublish/`
 
 ---
 
@@ -354,6 +404,8 @@ Not Started
 
 - User
 - Post
+
+The publishing workflow introduced in Feature 05 reuses the existing Post schema and does not require additional database tables or migrations.
 
 ## Planned Tables
 
@@ -407,6 +459,7 @@ Completed Feature Reports:
 - ✅ Feature 02 — Custom User Model & User App Architecture
 - ✅ Feature 03 — JWT Authentication Foundation
 - ✅ Feature 04 — Posts Domain Architecture & Database Design
+- ✅ Feature 05 — Publishing Workflow
 
 ---
 
@@ -448,8 +501,12 @@ Verified:
 - Retrieve
 - Update
 - Soft Delete
+- Publish
+- Unpublish
+- Publishing workflow validation
 - Ownership enforcement
 - Object-level permissions
+- Publication timestamp management
 
 ## Automated Testing
 
@@ -463,7 +520,6 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 05 — Publishing Workflow
 - Feature 06 — Categories
 - Feature 07 — Tags
 - Feature 08 — Comments
@@ -484,7 +540,7 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 04 — Posts Domain Architecture & Database Design
+✅ Feature 05 — Publishing Workflow
 
 Status: **Completed**
 
@@ -492,19 +548,19 @@ Status: **Completed**
 
 # Next Milestone
 
-## Feature 05 — Publishing Workflow
+## Feature 06 — Categories
 
-The next feature will complete the Post lifecycle by introducing publishing and unpublishing capabilities.
+The next feature introduces Categories as a dedicated domain for organizing blog posts.
 
 Planned topics include:
 
-- Publish API
-- Unpublish API
-- Publication timestamps
-- Status transitions
-- Publishing permissions
-- Business rules
-- Validation
+* Category model
+* CRUD APIs
+* Slug generation
+* Category permissions
+* Category assignment to posts
+* Validation
+* Manual testing
 
 ---
 
@@ -527,6 +583,9 @@ The project currently follows these key architectural decisions:
 - Soft delete architecture
 - Object-level permissions
 - Audit trail through abstract base models
+- Dedicated workflow serializers for publishing actions
+- Custom ViewSet actions for domain workflows
+- Backend-enforced publishing state transitions
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -550,25 +609,25 @@ Every feature follows the same engineering workflow:
 
 ---
 
-# Next Chat Handoff
+# Next Feature
 
-**Starting Point:** Feature 05 — Publishing Workflow
+**Starting Point:** Feature 06 — Categories
 
 Current project state:
 
-- Features 00–04 completed.
-- Authentication and Posts modules fully implemented.
-- Documentation updated through Feature 04.
-- Manual testing completed for Authentication and Posts.
-- Automated testing planned for future features.
+* Features 00–05 completed.
+* Authentication and Posts modules fully implemented.
+* Publishing workflow completed and manually tested.
+* Documentation updated through Feature 05.
+* Automated testing planned for future features.
 
 Next steps:
 
-1. Design the publishing workflow.
-2. Define business rules and status transitions.
-3. Implement publish and unpublish APIs.
+1. Design the Categories domain.
+2. Define relationships between Posts and Categories.
+3. Implement Category model and CRUD APIs.
 4. Perform manual testing.
 5. Update documentation incrementally.
-6. Prepare the Feature 05 Completion Report.
+6. Prepare the Feature 06 Completion Report.
 
 Continue following the established Architecture-First and Vertical Slice development workflow.
