@@ -67,6 +67,21 @@ The project currently includes:
 * Refresh Token Blacklisting
 * Current User Endpoint (`/api/auth/me/`)
 
+# Current Capabilities
+
+The platform currently supports:
+
+* JWT-based authentication
+* Email-based login
+* Draft post creation
+* Public listing of published posts
+* Slug-based post retrieval
+* Author-only post updates
+* Author-only soft deletion
+* Publish and unpublish workflows
+* Backend-enforced ownership validation
+* Automatic publication timestamp management
+
 ---
 
 # Completed Features
@@ -76,6 +91,7 @@ The project currently includes:
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
+* ✅ Feature 05 — Publishing Workflow
 
 ---
 
@@ -142,8 +158,9 @@ GET     /api/posts/
 GET     /api/posts/{slug}/
 PATCH   /api/posts/{slug}/
 DELETE  /api/posts/{slug}/
+POST    /api/posts/{slug}/publish/
+POST    /api/posts/{slug}/unpublish/
 ```
-
 Additional APIs will be introduced as future features are completed.
 
 ---
@@ -199,18 +216,23 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** Feature 04 Complete
+# Current Status
 
-The blog platform now includes a production-ready Posts domain with support for creating, listing, retrieving, updating, and soft deleting blog posts.
+**Current Milestone:** ✅ Feature 05 — Publishing Workflow
+
+The blog platform now includes a production-ready Posts domain with a complete publishing lifecycle.
 
 Implemented capabilities include:
 
-- Slug-based post URLs
-- Draft and published post workflow foundation
-- Public read access for published posts
-- Author ownership enforcement
-- Object-level permissions
-- Soft delete with audit trail
-- Optimized querysets using `select_related()`
+* Slug-based post URLs
+* Draft and published post lifecycle
+* Publish and unpublish workflows
+* Backend-enforced status transitions
+* Automatic publication timestamp management
+* Public read access for published posts
+* Author ownership enforcement
+* Object-level permissions
+* Soft delete with audit trail
+* Optimized querysets using `select_related()`
 
-The next milestone is **Feature 05 — Publishing Workflow**.
+The next milestone is **Feature 06 — Categories**, which will introduce category management and post categorization.

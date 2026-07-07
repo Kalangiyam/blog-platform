@@ -97,7 +97,7 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 04)
+# Current Testing Status (Feature 05)
 
 ## Implemented
 
@@ -107,14 +107,16 @@ However, both the Authentication and Posts modules have been comprehensively ver
 
 Manual testing currently validates:
 
-- Authentication workflows
-- Request validation
-- Response formats
-- Authorization
-- Object-level permissions
-- Ownership enforcement
-- Soft deletion
-- Business rules
+* Authentication workflows
+* Request validation
+* Response formats
+* Authorization
+* Object-level permissions
+* Ownership enforcement
+* Soft deletion
+* Publishing workflow
+* Publication timestamp management
+* Backend business rule enforcement
 
 Automated tests will be introduced incrementally in future features.
 
@@ -163,20 +165,28 @@ The following automated tests are planned for the Posts application:
 
 ### API Tests
 
-- Create post
-- List published posts
-- Retrieve post by slug
-- Update own post
-- Delete own post
+* Create post
+* List published posts
+* Retrieve post by slug
+* Update own post
+* Delete own post
+* Publish draft post
+* Unpublish published post
+* Reject invalid publishing transitions
+* Verify publication timestamps
 
 ### Permission Tests
 
-- Anonymous read access
-- Authenticated create access
-- Author update access
-- Non-author update denial
-- Author delete access
-- Non-author delete denial
+* Anonymous read access
+* Authenticated create access
+* Author update access
+* Non-author update denial
+* Author delete access
+* Non-author delete denial
+* Author publish access
+* Non-author publish denial
+* Author unpublish access
+* Non-author unpublish denial
 
 ---
 
@@ -207,14 +217,18 @@ As new features are completed, testing coverage will expand to include:
 
 ### Completed (Manual Verification)
 
-- Create post
-- List published posts
-- Retrieve single post
-- Update own post
-- Soft delete own post
-- Slug generation
-- Ownership enforcement
-- Object-level permissions
+* Create post
+* List published posts
+* Retrieve single post
+* Update own post
+* Soft delete own post
+* Publish draft post
+* Unpublish published post
+* Invalid publishing transitions
+* Publication timestamp management
+* Slug generation
+* Ownership enforcement
+* Object-level permissions
 
 ### Future (Automated Tests)
 
@@ -274,18 +288,26 @@ During Features 03 and 04, the following scenarios were manually verified using 
 
 ### Posts
 
-- Create post
-- Create post without authentication
-- Blank title validation
-- Blank content validation
-- Duplicate title with unique slug generation
-- List published posts
-- Retrieve post by slug
-- Update own post
-- Prevent updating another user's post
-- Soft delete own post
-- Prevent deleting another user's post
-- Audit field verification (`created_by`, `updated_by`, `deleted_by`)
+* Create post
+* Create post without authentication
+* Blank title validation
+* Blank content validation
+* Duplicate title with unique slug generation
+* List published posts
+* Retrieve post by slug
+* Update own post
+* Prevent updating another user's post
+* Soft delete own post
+* Prevent deleting another user's post
+* Publish draft post
+* Prevent publishing an already published post
+* Unpublish published post
+* Prevent unpublishing a draft post
+* Prevent publishing another user's post
+* Verify `published_at` is set during publishing
+* Verify `published_at` is cleared during unpublishing
+* Audit field verification (`created_by`, `updated_by`, `deleted_by`)
+
 ---
 
 # Test Organization
@@ -352,6 +374,7 @@ Additional tools may be introduced later if project requirements evolve.
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
+* ✅ Feature 05 — Publishing Workflow
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -363,25 +386,29 @@ Authentication and Posts functionality have been comprehensively verified throug
 
 The project currently has validated:
 
-- Authentication workflows
-- CRUD operations for Posts
-- Authorization
-- Object-level permissions
-- Ownership enforcement
-- Soft deletion
-- Request validation
+* Authentication workflows
+* CRUD operations for Posts
+* Publishing workflow
+* Authorization
+* Object-level permissions
+* Ownership enforcement
+* Soft deletion
+* Publication timestamp management
+* Request validation
+* Backend workflow validation
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 05 will continue expanding the Posts domain while laying the foundation for automated testing.
+Feature 06 will introduce the Categories domain.
 
-The initial automated test suite will focus on:
+The initial automated test suite will continue focusing on:
 
-- Authentication APIs
-- Posts APIs
-- Serializer validation
-- Object-level permissions
-- Soft deletion
-- Publishing workflow
+* Authentication APIs
+* Posts APIs
+* Categories APIs
+* Serializer validation
+* Object-level permissions
+* Publishing workflow
+* Category assignment validation
