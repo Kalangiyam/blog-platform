@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status, mixins, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.posts.models import Post
@@ -10,6 +11,8 @@ from apps.posts.serializers import (
     PostDetailSerializer,
     PostListSerializer,
     PostUpdateSerializer,
+    PostPublishSerializer,
+    PostUnpublishSerializer,
 )
 
 
@@ -30,6 +33,8 @@ class PostViewSet(
     - Detail Post
     - Update Post
     - Delete Post
+    - Publish Post
+    - Unpublish Post
     """
 
     serializer_class = PostCreateSerializer
@@ -40,11 +45,18 @@ class PostViewSet(
         Return the queryset for the current action.
         """
 
-        queryset = Post.objects.filter(
+        if self.action in (
+            "update",
+            "partial_update",
+            "destroy",
+            "publish",
+            "unpublish",
+        ):
+            return Post.objects.select_related("author")
+
+        return Post.objects.filter(
             status=PostStatus.PUBLISHED,
         ).select_related("author")
-
-        return queryset
 
     def get_serializer_class(self):
         """
@@ -63,6 +75,12 @@ class PostViewSet(
         if self.action in ("update", "partial_update"):
             return PostUpdateSerializer
 
+        if self.action == "publish":
+            return PostPublishSerializer
+
+        if self.action == "unpublish":
+            return PostUnpublishSerializer
+
         return self.serializer_class
 
     def get_permissions(self):
@@ -72,7 +90,13 @@ class PostViewSet(
 
         if self.action in ("list", "retrieve"):
             permission_classes = (AllowAny,)
-        elif self.action in ("update", "partial_update", "destroy"):
+        elif self.action in (
+            "update",
+            "partial_update",
+            "destroy",
+            "publish",
+            "unpublish",
+        ):
             permission_classes = (IsAuthenticated, IsPostAuthor)
         else:
             permission_classes = (IsAuthenticated,)
@@ -116,3 +140,45 @@ class PostViewSet(
         """
 
         instance.delete(user=self.request.user)
+
+    @action(detail=True, methods=["post"])
+    def publish(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        serializer = self.get_serializer(
+            instance=post,
+            data={},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_serializer = PostDetailSerializer(
+            post,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=["post"])
+    def unpublish(self, request, *args, **kwargs):
+        post = self.get_object()
+
+        serializer = self.get_serializer(
+            instance=post,
+            data={},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_serializer = PostDetailSerializer(
+            post,
+            context=self.get_serializer_context(),
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
