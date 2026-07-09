@@ -81,6 +81,10 @@ The platform currently supports:
 * Publish and unpublish workflows
 * Backend-enforced ownership validation
 * Automatic publication timestamp management
+* Public category browsing
+* Staff-managed category creation and updates
+* Slug-based category retrieval
+* Reusable category taxonomy
 
 ---
 
@@ -92,6 +96,7 @@ The platform currently supports:
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
+* ✅ Feature 06 — Categories
 
 ---
 
@@ -104,7 +109,8 @@ blog-platform/
 │   ├── apps/
 │   │   ├── core/
 │   │   ├── users/
-│   │   └── posts/
+│   │   ├── posts/
+│   │   └── categories/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -161,6 +167,16 @@ DELETE  /api/posts/{slug}/
 POST    /api/posts/{slug}/publish/
 POST    /api/posts/{slug}/unpublish/
 ```
+
+### Categories
+
+```text
+GET     /api/categories/
+GET     /api/categories/{slug}/
+POST    /api/categories/
+PATCH   /api/categories/{slug}/
+```
+
 Additional APIs will be introduced as future features are completed.
 
 ---
@@ -185,7 +201,6 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* Categories
 * Tags
 * Comments
 * Likes & Reactions
@@ -216,11 +231,9 @@ This project emphasizes:
 
 # Current Status
 
-# Current Status
+**Current Milestone:** ✅ Feature 06 — Categories
 
-**Current Milestone:** ✅ Feature 05 — Publishing Workflow
-
-The blog platform now includes a production-ready Posts domain with a complete publishing lifecycle.
+The blog platform now includes production-ready Posts and Categories domains. Posts support a complete publishing lifecycle, while Categories provide reusable taxonomy management for organizing content.
 
 Implemented capabilities include:
 
@@ -234,5 +247,9 @@ Implemented capabilities include:
 * Object-level permissions
 * Soft delete with audit trail
 * Optimized querysets using `select_related()`
+* Public category listing and retrieval
+* Staff-managed category administration
+* Slug-based category URLs
+* Active category management
 
-The next milestone is **Feature 06 — Categories**, which will introduce category management and post categorization.
+The next milestone is **Feature 07 — Tags**, which will introduce reusable tagging for posts and prepare the platform for more flexible content discovery.

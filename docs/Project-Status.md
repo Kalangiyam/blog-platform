@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-07
+**Last Updated:** 2026-07-09
 
-**Current Milestone:** ✅ Feature 05 — Publishing Workflow
+**Current Milestone:** ✅ Feature 06 — Categories
 
 ---
 
@@ -74,15 +74,23 @@ blog-platform/
 │   │   |    ├── urls.py
 │   │   |    ├── views.py
 │   │   |    └── ...
-│   │   └── posts/
-│   │       ├── models.py
-│   │       ├── serializers/
-│   │       ├── permissions.py
-│   │       ├── urls.py
-│   │       ├── views.py
-│   │       ├── choices.py
-│   │       ├── admin/
-│   │       └── ...
+│   │   ├── posts/
+│   │   |   ├── models.py
+│   │   |   ├── serializers/
+│   │   |   ├── permissions.py
+│   │   |   ├── urls.py
+│   │   |   ├── views.py
+│   │   |   ├── choices.py
+│   │   |   ├── admin/
+│   │   |   └── ...
+│   │   ├── users/
+│   │   |    ├── permissions.py
+│   │   |    ├── admin.py
+│   │   |    ├── models.py
+│   │   |    ├── serializers.py
+│   │   |    ├── urls.py
+│   │   |    ├── views.py
+│   │   |    └── ...
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -103,12 +111,14 @@ docs/
 │   ├── ADR-005-Core-App.md
 │   ├── ADR-006-Custom-User-Model.md
 │   └── ADR-007-JWT-Authentication.md
+│   └── ...
 │
 ├── feature/
 │   ├── Feature 00 — Project Dashboard.md
 │   ├── Feature 01 — Project Foundation & Architecture.md
 │   ├── Feature 02 — Custom User Model & User App Architecture.md
 │   └── Feature-03-JWT-Authentication-Foundation.md
+│   └── ...
 │
 ├── API-Specification.md
 ├── Architecture.md
@@ -336,18 +346,71 @@ Successfully verified:
 
 **Status:** Completed
 
+## ✅ Feature 06 — Categories
+
+### Objective
+
+Introduce a reusable Categories domain for organizing blog posts while establishing the application's first taxonomy module.
+
+### Completed
+
+#### Domain Model
+
+- Categories application
+- Category model
+- Unique category names
+- Automatic slug generation
+- Active status management
+
+#### APIs
+
+- Create Category API
+- List Categories API
+- Retrieve Category API
+- Update Category API
+
+#### Security
+
+- Public read access
+- Staff-only category management
+- Backend permission enforcement
+
+#### Architecture
+
+- GenericViewSet with DRF mixins
+- Action-specific serializers
+- Slug-based routing
+- Dedicated permission class
+- Audit field management
+
+#### Manual Testing
+
+Successfully verified:
+
+- Create category
+- List categories
+- Retrieve category
+- Update category
+- Duplicate name validation
+- Automatic slug generation
+- Staff-only permissions
+- Active category filtering
+
+**Status:** Completed
+
 ---
 
 # Current Backend Modules
 
-| Module | Status |
-|----------|--------|
-| Core | ✅ Completed |
-| Users | ✅ Completed |
-| Posts | ✅ Completed (Publishing Workflow Included) |
-| Categories | ⏳ Planned |
-| Tags | ⏳ Planned |
-| Comments | ⏳ Planned |
+| Module     | Status      |
+| ---------- | ----------- |
+| Core       | ✅ Completed |
+| Users      | ✅ Completed |
+| Posts      | ✅ Completed (Publishing Workflow Included)|
+| Categories | ✅ Completed |
+| Tags       | ⏳ Planned   |
+| Comments   | ⏳ Planned   |
+
 
 ---
 
@@ -382,7 +445,12 @@ Implemented
 
 ## Categories APIs
 
-Not Started
+Implemented
+
+- POST /api/categories/
+- GET /api/categories/
+- GET /api/categories/{slug}/
+- PATCH /api/categories/{slug}/
 
 ---
 
@@ -404,12 +472,16 @@ Not Started
 
 - User
 - Post
+- Category
 
-The publishing workflow introduced in Feature 05 reuses the existing Post schema and does not require additional database tables or migrations.
+Feature 06 extends the database by introducing the Category entity.
+
+The Category table provides reusable taxonomy with unique names, slug-based identification, active status management, and audit tracking.
+
+The relationship between Posts and Categories is intentionally deferred to a future feature.
 
 ## Planned Tables
 
-- Category
 - Tag
 - Comment
 
@@ -460,6 +532,7 @@ Completed Feature Reports:
 - ✅ Feature 03 — JWT Authentication Foundation
 - ✅ Feature 04 — Posts Domain Architecture & Database Design
 - ✅ Feature 05 — Publishing Workflow
+- ✅ Feature 06 — Categories
 
 ---
 
@@ -474,6 +547,9 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-005 — Core App
 - ✅ ADR-006 — Custom User Model
 - ✅ ADR-007 — JWT Authentication
+- ✅ ADR-008-Posts-Domain-Architecture
+- ✅ ADR-009-Publishing-Workflow
+- ✅ ADR-010 — Categories Domain Architecture
 
 ---
 
@@ -481,7 +557,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication and Posts modules.
+Completed for the Authentication, Posts, and Categories modules.
 
 Verified:
 
@@ -508,6 +584,17 @@ Verified:
 - Object-level permissions
 - Publication timestamp management
 
+### Categories
+
+- Create
+- List
+- Retrieve
+- Update
+- Duplicate validation
+- Slug generation
+- Staff permissions
+- Active category filtering
+
 ## Automated Testing
 
 Not yet implemented.
@@ -520,7 +607,6 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 06 — Categories
 - Feature 07 — Tags
 - Feature 08 — Comments
 
@@ -540,7 +626,7 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 05 — Publishing Workflow
+✅ Feature 06 — Categories
 
 Status: **Completed**
 
@@ -548,20 +634,19 @@ Status: **Completed**
 
 # Next Milestone
 
-## Feature 06 — Categories
+## Feature 07 — Tags
 
-The next feature introduces Categories as a dedicated domain for organizing blog posts.
+The next feature introduces Tags as the second taxonomy domain.
 
 Planned topics include:
 
-* Category model
-* CRUD APIs
-* Slug generation
-* Category permissions
-* Category assignment to posts
-* Validation
-* Manual testing
-
+- Tag model
+- CRUD APIs
+- Slug generation
+- Tag permissions
+- Many-to-many relationship planning
+- Validation
+- Manual testing
 ---
 
 # Important Architecture Decisions
@@ -586,6 +671,10 @@ The project currently follows these key architectural decisions:
 - Dedicated workflow serializers for publishing actions
 - Custom ViewSet actions for domain workflows
 - Backend-enforced publishing state transitions
+- Dedicated Categories domain
+- Active-status manager for taxonomy models
+- Staff-managed taxonomy administration
+- Reusable slug generation strategy
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -611,23 +700,23 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 06 — Categories
+**Starting Point:** Feature 07 — Tags
 
 Current project state:
 
-* Features 00–05 completed.
-* Authentication and Posts modules fully implemented.
-* Publishing workflow completed and manually tested.
-* Documentation updated through Feature 05.
-* Automated testing planned for future features.
+- Features 00–06 completed.
+- Authentication, Posts, and Categories modules fully implemented.
+- Reusable taxonomy foundation established.
+- Documentation updated through Feature 06.
+- Automated testing planned for future features.
 
 Next steps:
 
-1. Design the Categories domain.
-2. Define relationships between Posts and Categories.
-3. Implement Category model and CRUD APIs.
+1. Design the Tags domain.
+2. Implement the Tag model and CRUD APIs.
+3. Define future relationships with Posts.
 4. Perform manual testing.
 5. Update documentation incrementally.
-6. Prepare the Feature 06 Completion Report.
+6. Prepare the Feature 07 Completion Report.
 
 Continue following the established Architecture-First and Vertical Slice development workflow.

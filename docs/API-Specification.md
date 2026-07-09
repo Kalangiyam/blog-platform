@@ -4,14 +4,17 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 04, the platform provides two API modules:
+At the completion of Feature 06, the platform provides three API modules:
 
 - Authentication APIs
 - Posts APIs
+- Categories APIs
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
-The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, and soft deletion.
+The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, soft deletion, and publishing workflows.
+
+The Categories module provides reusable taxonomy management through slug-based category endpoints with staff-controlled administration.
 
 Future features will continue extending this document as new API modules are introduced.
 
@@ -191,23 +194,61 @@ POST /api/posts/{slug}/unpublish/
 * The backend automatically manages the `published_at` timestamp.
 * Posts are soft deleted and remain in the database for auditing and future restoration.
 
+# Categories APIs
+
+## Current Status
+
+Implemented ✅
+
+The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable while creation and updates are restricted to staff users.
+
+| Method | Endpoint | Authentication | Status |
+|--------|----------|----------------|--------|
+| GET | /api/categories/ | Public | ✅ Implemented |
+| GET | /api/categories/{slug}/ | Public | ✅ Implemented |
+| POST | /api/categories/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| PATCH | /api/categories/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+
+### List Categories
+
+```http
+GET /api/categories/
+```
+
+### Retrieve Category
+
+```http
+GET /api/categories/{slug}/
+```
+
+### Create Category
+
+```http
+POST /api/categories/
+```
+
+### Update Category
+
+```http
+PATCH /api/categories/{slug}/
+```
+
+### Business Rules
+
+* Category names must be unique.
+* Category slugs are generated automatically.
+* Slugs remain stable after creation.
+* Categories are publicly readable.
+* Only staff users can create or update categories.
+* Active categories are returned by default.
+* Categories are designed for future association with Posts.
+
 
 ---
 
 # Future API Modules
 
 As the project grows, additional API modules will be added.
-
-## Categories
-
-```text
-GET
-POST
-PATCH
-DELETE
-```
-
----
 
 ## Tags
 
@@ -326,10 +367,11 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
+* ✅ Feature 06 — Categories
 
 ## Current API State
 
-Authentication and Posts APIs have been fully implemented and manually tested.
+Authentication, Posts, and Categories APIs have been fully implemented and manually tested.
 
 The platform currently supports:
 
@@ -343,6 +385,11 @@ The platform currently supports:
 - Author-only publishing
 - Author-only unpublishing
 - Backend-enforced publishing workflow
+- Public category listing
+- Public category retrieval
+- Staff-managed category creation
+- Staff-managed category updates
+- Automatic slug generation for categories
 
 Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
 
@@ -369,6 +416,15 @@ Future features will extend the API with publishing workflows, categories, tags,
 | POST /api/posts/{slug}/publish/ | Publish a draft post |
 | POST /api/posts/{slug}/unpublish/ | Move a published post back to draft |
 
+## Categories Endpoints
+
+| Endpoint | Description |
+|-----------|-------------|
+| GET /api/categories/ | List active categories |
+| GET /api/categories/{slug}/ | Retrieve a category by slug |
+| POST /api/categories/ | Create a new category (Staff Only) |
+| PATCH /api/categories/{slug}/ | Update a category (Staff Only) |
+
 ## Next Update
 
-Feature 06 will introduce Categories, providing category management for blog posts and laying the foundation for improved content organization and filtering.
+Feature 07 will introduce Tags, providing reusable labeling for blog posts and preparing the platform for flexible content discovery and filtering.

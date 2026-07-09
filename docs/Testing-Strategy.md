@@ -97,13 +97,13 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 05)
+# Current Testing Status (Feature 06)
 
 ## Implemented
 
 An automated test suite has not yet been created.
 
-However, both the Authentication and Posts modules have been comprehensively verified through manual API testing during development.
+However, the Authentication, Posts, and Categories modules have been comprehensively verified through manual API testing during development.
 
 Manual testing currently validates:
 
@@ -117,6 +117,12 @@ Manual testing currently validates:
 * Publishing workflow
 * Publication timestamp management
 * Backend business rule enforcement
+* Category CRUD operations
+* Category slug generation
+* Duplicate category name validation
+* Staff-only category management
+* Public category browsing
+* Active category filtering
 
 Automated tests will be introduced incrementally in future features.
 
@@ -188,6 +194,42 @@ The following automated tests are planned for the Posts application:
 * Author unpublish access
 * Non-author unpublish denial
 
+## Categories Module
+
+The following automated tests are planned for the Categories application:
+
+### Model Tests
+
+- Category creation
+- Unique slug generation
+- Active status manager
+- Audit field updates
+
+### Serializer Tests
+
+- Create serializer validation
+- Update serializer validation
+- Duplicate category name validation
+- Blank category name validation
+
+### API Tests
+
+* Create category
+* List active categories
+* Retrieve category by slug
+* Update category
+* Reject duplicate category names
+* Verify automatic slug generation
+
+### Permission Tests
+
+* Anonymous list access
+* Anonymous retrieve access
+* Staff create access
+* Non-staff create denial
+* Staff update access
+* Non-staff update denial
+
 ---
 
 # Future Testing Coverage
@@ -249,7 +291,29 @@ As new features are completed, testing coverage will expand to include:
 
 ---
 
-## Categories & Tags
+## Categories
+
+### Completed (Manual Verification)
+
+* Create category
+* List active categories
+* Retrieve category by slug
+* Update category
+* Duplicate name validation
+* Automatic slug generation
+* Staff-only management
+* Active category filtering
+
+### Future (Automated Tests)
+
+* Model tests
+* Serializer validation
+* Permission enforcement
+* API integration tests
+
+---
+
+## Tags
 
 * CRUD operations
 * Validation
@@ -308,6 +372,19 @@ During Features 03 and 04, the following scenarios were manually verified using 
 * Verify `published_at` is cleared during unpublishing
 * Audit field verification (`created_by`, `updated_by`, `deleted_by`)
 
+### Categories
+
+* Create category
+* Prevent duplicate category names
+* Generate unique slug
+* List active categories
+* Retrieve category by slug
+* Update category
+* Prevent non-staff users from creating categories
+* Prevent non-staff users from updating categories
+* Verify audit fields (`created_by`, `updated_by`)
+* Verify inactive categories are excluded by the default manager
+
 ---
 
 # Test Organization
@@ -333,6 +410,14 @@ apps/
 │       ├── test_views.py
 │       ├── test_permissions.py
 │       ├── test_managers.py
+│       └── test_api.py
+├── categories/
+│   └── tests/
+│       ├── test_models.py
+│       ├── test_managers.py
+│       ├── test_serializers.py
+│       ├── test_permissions.py
+│       ├── test_views.py
 │       └── test_api.py
 ```
 
@@ -375,6 +460,7 @@ Additional tools may be introduced later if project requirements evolve.
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
+* ✅ Feature 06 — Categories
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -382,7 +468,7 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication and Posts functionality have been comprehensively verified through manual API testing.
+Authentication, Posts, and Categories functionality have been comprehensively verified through manual API testing.
 
 The project currently has validated:
 
@@ -396,19 +482,25 @@ The project currently has validated:
 * Publication timestamp management
 * Request validation
 * Backend workflow validation
+* Category CRUD operations
+* Staff-only category management
+* Automatic slug generation
+* Duplicate category name validation
+* Active category filtering
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 06 will introduce the Categories domain.
+Feature 07 will introduce the Tags domain.
 
 The initial automated test suite will continue focusing on:
 
 * Authentication APIs
 * Posts APIs
-* Categories APIs
+* Tags APIs
 * Serializer validation
 * Object-level permissions
 * Publishing workflow
-* Category assignment validation
+* Category management
+* Future post taxonomy relationships
