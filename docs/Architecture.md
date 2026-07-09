@@ -163,7 +163,8 @@ backend/
 ├── apps/
 │   ├── core/
 │   ├── users/
-│   └── posts/
+│   ├── posts/
+│   └── categories/
 │
 ├── config/
 │
@@ -377,6 +378,57 @@ This separation of concerns keeps validation, authorization, business logic, and
 
 ---
 
+# Categories Architecture
+
+The Categories application is implemented as an independent domain module that provides reusable taxonomy for organizing blog content.
+
+### Current Design
+
+- Dedicated `Category` model
+- Slug-based resource lookup
+- Separate serializers for create, read, and update operations
+- DRF `GenericViewSet` with explicit mixins
+- Action-based serializer selection
+- Action-based permission selection
+- Staff-managed category administration
+- Active status management through a custom manager
+- Audit fields for creation and updates
+- Automatic slug generation
+- Designed for future association with Posts
+
+### Request Processing
+
+Each Categories API request follows the standard application request flow:
+
+```text
+React Frontend
+        │
+        ▼
+HTTP Request
+        │
+        ▼
+Django URL Router
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Permissions
+        │
+        ▼
+CategoryViewSet
+        │
+        ▼
+Serializer
+        │
+        ▼
+Django ORM
+        │
+        ▼
+PostgreSQL
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -395,6 +447,10 @@ The backend is responsible for enforcing all security rules.
 - Validate publishing state transitions on the backend.
 - Automatically manage publication timestamps on the backend.
 - Use soft deletion to preserve audit history and prevent accidental data loss.
+- Restrict category creation and updates to staff users.
+- Allow public read access to active categories.
+- Generate category slugs automatically on the backend.
+- Prevent duplicate category names through backend validation.
 
 
 ---
@@ -411,6 +467,8 @@ Planned scalability features include:
 - Search and filtering
 - Caching
 - Object-level permissions
+- Independent taxonomy modules (Categories, Tags)
+- Reusable slug-based routing across domain modules
 - Docker deployment
 - Reverse proxy with Nginx
 - Horizontal scaling
@@ -426,6 +484,7 @@ Planned scalability features include:
 - ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 - ✅ Feature 04 — Posts Domain Architecture & Database Design
 - ✅ Feature 05 — Publishing Workflow
+- ✅ Feature 06 — Categories
 
 ## In Progress
 
@@ -433,7 +492,7 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 06 — Categories
+- Feature 07 — Tags
 
 ---
 
@@ -441,14 +500,16 @@ Planned scalability features include:
 
 Future applications will reuse the authentication infrastructure introduced in Feature 03 and the modular domain architecture established in Feature 04.
 
-The Posts application serves as the reference implementation for future domain modules by demonstrating:
+The Posts and Categories applications serve as reference implementations for future domain modules by demonstrating:
 
 - ViewSet-based API design
+- GenericViewSet with explicit mixins
 - Action-specific serializers
-- Object-level permissions
-- Soft deletion
+- Action-based permissions
 - Slug-based routing
-- Ownership enforcement
+- Audit field management
+- Backend-enforced validation
+- Separation of concerns
 
 As development progresses, the architecture will expand with additional domain applications, including:
 

@@ -10,6 +10,8 @@ Feature 04 introduced JWT authentication and object-level authorization for the 
 
 Feature 05 extends this foundation by securing the publishing workflow, allowing only authenticated post authors to publish and unpublish their own posts while enforcing backend business rules for valid status transitions.
 
+Feature 06 extends the authorization layer by introducing the Categories domain. Category listing and retrieval are publicly accessible, while category creation and updates are restricted to staff users through backend-enforced permissions.
+
 
 ---
 
@@ -229,6 +231,8 @@ The authentication system will follow these security practices:
 * Refresh token blacklisting
 * Generic authentication error messages
 * Custom email authentication backend
+* Staff-only authorization for category management
+* Public read access for active categories
 
 ---
 
@@ -245,6 +249,9 @@ Current authorization capabilities include:
 * Only the author of a post can update, delete, publish, or unpublish it.
 * Ownership is enforced using `request.user` together with a custom DRF permission class.
 * Publishing state transitions are validated on the backend to prevent invalid workflow changes.
+* Public read access for active categories.
+* Only staff users can create or update categories.
+* Category management is enforced using a dedicated DRF permission class.
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
 
@@ -259,6 +266,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
+* ✅ Feature 06 — Categories
 
 ## Current Authentication State
 
@@ -276,6 +284,9 @@ The application now supports:
 - Object-level permission enforcement
 - Author-only publishing and unpublishing workflows
 - Backend validation of publishing state transitions
+- Staff-only category management
+- Public category browsing
+- Action-based permission selection
 
 # Authentication API Flow
 
@@ -312,6 +323,6 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 06 will introduce Categories for organizing blog content.
+Feature 07 will introduce Tags.
 
-The existing authentication and authorization infrastructure will continue to secure category management endpoints, while the publishing workflow introduced in Feature 05 provides the foundation for future editor and administrator publishing permissions.
+The existing authentication and authorization infrastructure will continue securing protected APIs while extending reusable taxonomy management across the platform.
