@@ -85,6 +85,11 @@ The platform currently supports:
 * Staff-managed category creation and updates
 * Slug-based category retrieval
 * Reusable category taxonomy
+* Public tag browsing
+* Staff-managed tag creation and updates
+* Slug-based tag retrieval
+* Reusable tag taxonomy
+* ✅ Feature 07 — Tags
 
 ---
 
@@ -110,7 +115,8 @@ blog-platform/
 │   │   ├── core/
 │   │   ├── users/
 │   │   ├── posts/
-│   │   └── categories/
+│   │   ├── categories/
+│   │   └── tags/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -177,6 +183,15 @@ POST    /api/categories/
 PATCH   /api/categories/{slug}/
 ```
 
+### Tags
+
+```text
+GET     /api/tags/
+GET     /api/tags/{slug}/
+POST    /api/tags/
+PATCH   /api/tags/{slug}/
+```
+
 Additional APIs will be introduced as future features are completed.
 
 ---
@@ -201,7 +216,6 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* Tags
 * Comments
 * Likes & Reactions
 * User Profiles
@@ -231,9 +245,9 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 06 — Categories
+**Current Milestone:** ✅ Feature 07 — Tags
 
-The blog platform now includes production-ready Posts and Categories domains. Posts support a complete publishing lifecycle, while Categories provide reusable taxonomy management for organizing content.
+The blog platform now includes production-ready Posts, Categories, and Tags domains. Posts support a complete publishing lifecycle, while Categories and Tags provide reusable taxonomy management for organizing and classifying content.
 
 Implemented capabilities include:
 
@@ -251,5 +265,9 @@ Implemented capabilities include:
 * Staff-managed category administration
 * Slug-based category URLs
 * Active category management
+* Public tag listing and retrieval
+* Staff-managed tag administration
+* Slug-based tag URLs
+* Active tag management
 
-The next milestone is **Feature 07 — Tags**, which will introduce reusable tagging for posts and prepare the platform for more flexible content discovery.
+The next milestone is **Feature 08 — Post ↔ Category Integration**, which will connect Posts with Categories through a production-ready relationship, enabling categorized content organization and laying the foundation for advanced filtering and discovery.

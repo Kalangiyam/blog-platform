@@ -46,17 +46,20 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 06)
+# Current Database Schema (Feature 07)
 
-At the completion of Feature 06, the database contains three primary business entities:
+At the completion of Feature 07, the database contains four primary business entities:
 
 - User
 - Post
 - Category
+- Tag
 
 Feature 05 introduced the publishing workflow by utilizing the existing `status` and `published_at` fields of the `Post` model without requiring schema changes.
 
-Feature 06 introduces the `Category` entity as the platform's first reusable taxonomy domain. Categories are designed to support future relationships with Posts while remaining independently manageable.
+Feature 06 introduced the `Category` entity as the platform's first reusable taxonomy domain.
+
+Feature 07 introduces the `Tag` entity as the platform's second reusable taxonomy domain. Like Categories, Tags are designed to remain independently manageable while preparing for future relationships with Posts.
 
 The Post entity introduces the application's first business domain and establishes the foundation for future content management features.
 
@@ -111,6 +114,20 @@ Future entities will reuse these base models to maintain consistency across the 
                                             └──────────────────────┘
                 ┌───────────────────────────────┐
                 │           Category            │
+                ├───────────────────────────────┤
+                │ id                            │
+                │ name                          │
+                │ slug                          │
+                │ is_active                     │
+                │ created_by_id                 │
+                │ updated_by_id                 │
+                │ created_at                    │
+                │ updated_at                    │
+                └───────────────────────────────┘
+
+
+                ┌───────────────────────────────┐
+                │             Tag               │
                 ├───────────────────────────────┤
                 │ id                            │
                 │ name                          │
@@ -239,7 +256,39 @@ Current capabilities include:
 | created_by | User | ForeignKey |
 | updated_by | User | ForeignKey |
 
-> A many-to-many relationship between `Post` and `Category` is planned for a future feature.
+> A One-to-Many relationship between `Post` and `Category` is planned for a future feature.
+
+---
+
+# Tag Entity
+
+## Model
+
+```text
+Tag
+```
+
+## Responsibilities
+
+The Tag model provides reusable taxonomy for classifying blog posts.
+
+Current capabilities include:
+
+- Unique tag names
+- Automatic slug generation
+- Active status management
+- Audit tracking
+- Public tag browsing
+- Staff-managed administration
+
+## Relationships
+
+| Relationship | Target | Type |
+|--------------|--------|------|
+| created_by | User | ForeignKey |
+| updated_by | User | ForeignKey |
+
+> A many-to-many relationship between `Post` and `Tag` is planned for a future feature.
 
 ---
 
@@ -250,14 +299,15 @@ At this stage:
 ```text
 User
 ├── Post (One-to-Many)
-└── Category (One-to-Many via audit fields)
+├── Category (One-to-Many via audit fields)
+└── Tag (One-to-Many via audit fields)
 ```
 
 A single user can author multiple posts.
 
 Each post belongs to exactly one author.
 
-The direct relationship between Posts and Categories has intentionally been deferred until the post categorization feature is implemented.
+The direct relationships between Posts and Categories, and between Posts and Tags, have intentionally been deferred until the taxonomy integration features are implemented.
 
 ---
 
@@ -275,7 +325,8 @@ User
 ```
 ```text
 Post
-└── Categories (Many-to-Many)
+├── Category (ForeignKey)
+└── Tags (Many-to-Many)
 ```
 
 These relationships are planned and will be implemented in future features.
@@ -290,7 +341,7 @@ The following database tables are planned:
 * Profiles
 * ✅ Posts 
 * ✅ Categories
-* Tags
+* ✅Tags
 * Comments
 * Bookmarks
 * Likes
@@ -316,6 +367,9 @@ The project follows a migration-first approach.
 * Categories application introduced through incremental migrations.
 * Unique constraints established for category names and slugs.
 * Active status management implemented for reusable taxonomy records.
+* Tags application introduced through incremental migrations.
+* Unique constraints established for tag names and slugs.
+* Active status management implemented for reusable tag records.
 
 ---
 
@@ -335,6 +389,7 @@ The project follows these principles:
 * Audit trail for data changes
 * Reusable abstract base models
 * Reusable taxonomy entities
+* Independent taxonomy domains
 * Stable slug identifiers
 * Independent domain modules
 
@@ -350,6 +405,9 @@ Current:
 * Indexed unique slug for category lookup
 * Indexed unique category name
 * Index on `is_active` for category filtering (if implemented)
+* Indexed unique slug for tag lookup
+* Indexed unique tag name
+* Index on `is_active` for tag filtering (if implemented)
 
 Future:
 
@@ -379,6 +437,9 @@ Data integrity is maintained through:
 * Unique category name enforcement
 * Automatic backend slug generation
 * Active category filtering through the default manager
+* Unique tag name enforcement
+* Automatic backend slug generation for tags
+* Active tag filtering through the default manager
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -394,6 +455,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
+* ✅ Feature 07 — Tags
 
 ## Current Database Version
 Current schema includes:
@@ -410,10 +472,16 @@ Current schema includes:
 - Active status management
 - Category audit tracking
 - Slug-based category identification
+- Tag model
+- Tag audit tracking
+- Active tag management
+- Slug-based tag identification
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
-Feature 06 extends the database by introducing the `Category` entity, providing a reusable taxonomy model with unique names, slug-based identification, active status management, and audit tracking. The relationship between Posts and Categories is intentionally deferred to a future feature to allow the taxonomy domain to evolve independently.
+Feature 06 introduced the Category entity as the platform's first reusable taxonomy model.
+
+Feature 07 introduces the Tag entity as the second reusable taxonomy model. Categories and Tags are currently independent business domains with unique names, stable slugs, active status management, and audit tracking. Relationships with Posts will be introduced in future features.
 
 ## Shared Abstract Models
 
@@ -435,8 +503,7 @@ Feature 07 will introduce Tags as another reusable taxonomy entity.
 
 Future database enhancements may include:
 
-* Tags
-* Post–Category many-to-many relationship
+* Post–Category foreign key relationship
 * Post–Tag many-to-many relationship
 * Comment relationships
 * Profile relationships
