@@ -23,7 +23,7 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Category name cannot be blank.")
 
-        if Category.objects.filter(name__iexact=value).exists():
+        if Category.all_objects.filter(name__iexact=value).exists():
             raise serializers.ValidationError(
                 "A category with this name already exists."
             )

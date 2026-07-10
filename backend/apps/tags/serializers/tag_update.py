@@ -1,31 +1,31 @@
 from rest_framework import serializers
 
-from apps.categories.models import Category
+from apps.tags.models import Tag
 
 
-class CategoryUpdateSerializer(serializers.ModelSerializer):
+class TagUpdateSerializer(serializers.ModelSerializer):
     """
-    Serializer for updating a category.
+    Serializer for updating a tag.
     """
 
     class Meta:
-        model = Category
+        model = Tag
         fields = (
             "name",
         )
 
     def validate_name(self, value):
         """
-        Normalize and validate the updated category name.
+        Normalize and validate the updated tag name.
         """
         value = value.strip()
 
         if not value:
             raise serializers.ValidationError(
-                "Category name cannot be blank."
+                "Tag name cannot be blank."
             )
 
-        queryset = Category.all_objects.filter(
+        queryset = Tag.all_objects.filter(
             name__iexact=value
         ).exclude(
             pk=self.instance.pk
@@ -33,7 +33,7 @@ class CategoryUpdateSerializer(serializers.ModelSerializer):
 
         if queryset.exists():
             raise serializers.ValidationError(
-                "A category with this name already exists."
+                "A tag with this name already exists."
             )
 
         return value

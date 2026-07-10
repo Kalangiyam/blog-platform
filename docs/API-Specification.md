@@ -4,17 +4,18 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 06, the platform provides three API modules:
+At the completion of Feature 07, the platform provides four API modules:
 
 - Authentication APIs
 - Posts APIs
 - Categories APIs
+- Tags APIs
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
 The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, soft deletion, and publishing workflows.
 
-The Categories module provides reusable taxonomy management through slug-based category endpoints with staff-controlled administration.
+The Categories and Tags modules provide reusable taxonomy management through slug-based endpoints with staff-controlled administration. Both domains are designed for future integration with Posts.
 
 Future features will continue extending this document as new API modules are introduced.
 
@@ -243,23 +244,60 @@ PATCH /api/categories/{slug}/
 * Active categories are returned by default.
 * Categories are designed for future association with Posts.
 
+# Tags APIs
+
+## Current Status
+
+Implemented ✅
+
+The Tags module provides reusable taxonomy for classifying blog content. Tags are publicly readable while creation and updates are restricted to staff users.
+
+| Method | Endpoint | Authentication | Status |
+|--------|----------|----------------|--------|
+| GET | /api/tags/ | Public | ✅ Implemented |
+| GET | /api/tags/{slug}/ | Public | ✅ Implemented |
+| POST | /api/tags/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| PATCH | /api/tags/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+
+### List Tags
+
+```http
+GET /api/tags/
+```
+
+### Retrieve Tag
+
+```http
+GET /api/tags/{slug}/
+```
+
+### Create Tag
+
+```http
+POST /api/tags/
+```
+
+### Update Tag
+
+```http
+PATCH /api/tags/{slug}/
+```
+
+### Business Rules
+
+* Tag names must be unique.
+* Tag slugs are generated automatically.
+* Slugs remain stable after creation.
+* Tags are publicly readable.
+* Only staff users can create or update tags.
+* Active tags are returned by default.
+* Tags are designed for future many-to-many association with Posts.
 
 ---
 
 # Future API Modules
 
 As the project grows, additional API modules will be added.
-
-## Tags
-
-```text
-GET
-POST
-PATCH
-DELETE
-```
-
----
 
 ## Comments
 
@@ -368,10 +406,11 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
+* ✅ Feature 07 — Tags
 
 ## Current API State
 
-Authentication, Posts, and Categories APIs have been fully implemented and manually tested.
+Authentication, Posts, Categories, and Tags APIs have been fully implemented and manually tested.
 
 The platform currently supports:
 
@@ -390,6 +429,11 @@ The platform currently supports:
 - Staff-managed category creation
 - Staff-managed category updates
 - Automatic slug generation for categories
+- Public tag listing
+- Public tag retrieval
+- Staff-managed tag creation
+- Staff-managed tag updates
+- Automatic slug generation for tags
 
 Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
 
@@ -425,6 +469,15 @@ Future features will extend the API with publishing workflows, categories, tags,
 | POST /api/categories/ | Create a new category (Staff Only) |
 | PATCH /api/categories/{slug}/ | Update a category (Staff Only) |
 
+## Tags Endpoints
+
+| Endpoint | Description |
+|-----------|-------------|
+| GET /api/tags/ | List active tags |
+| GET /api/tags/{slug}/ | Retrieve a tag by slug |
+| POST /api/tags/ | Create a new tag (Staff Only) |
+| PATCH /api/tags/{slug}/ | Update a tag (Staff Only) |
+
 ## Next Update
 
-Feature 07 will introduce Tags, providing reusable labeling for blog posts and preparing the platform for flexible content discovery and filtering.
+Feature 08 will introduce Post ↔ Category Integration, establishing a production-ready relationship between Posts and Categories. This feature will enable categorized content organization while preparing the platform for efficient filtering, navigation, and future search capabilities.

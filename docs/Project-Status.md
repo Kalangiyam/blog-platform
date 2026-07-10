@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-09
+**Last Updated:** 2026-07-10
 
-**Current Milestone:** ✅ Feature 06 — Categories
+**Current Milestone:** ✅ Feature 07 — Tags
 
 ---
 
@@ -83,7 +83,15 @@ blog-platform/
 │   │   |   ├── choices.py
 │   │   |   ├── admin/
 │   │   |   └── ...
-│   │   ├── users/
+│   │   ├── categories/
+│   │   |    ├── permissions.py
+│   │   |    ├── admin.py
+│   │   |    ├── models.py
+│   │   |    ├── serializers.py
+│   │   |    ├── urls.py
+│   │   |    ├── views.py
+│   │   |    └── ...
+│   │   ├── tags/
 │   │   |    ├── permissions.py
 │   │   |    ├── admin.py
 │   │   |    ├── models.py
@@ -398,6 +406,58 @@ Successfully verified:
 
 **Status:** Completed
 
+## ✅ Feature 07 — Tags
+
+### Objective
+
+Introduce a reusable Tags domain as the platform's second taxonomy module, providing flexible labeling for blog posts while remaining independent from the Posts domain until future integration.
+
+### Completed
+
+#### Domain Model
+
+- Tags application
+- Tag model
+- Unique tag names
+- Automatic slug generation
+- Active status management
+
+#### APIs
+
+- Create Tag API
+- List Tags API
+- Retrieve Tag API
+- Update Tag API
+
+#### Security
+
+- Public read access
+- Staff-only tag management
+- Backend permission enforcement
+
+#### Architecture
+
+- GenericViewSet with DRF mixins
+- Action-specific serializers
+- Slug-based routing
+- Dedicated permission class
+- Audit field management
+
+#### Manual Testing
+
+Successfully verified:
+
+- Create tag
+- List tags
+- Retrieve tag
+- Update tag
+- Duplicate name validation
+- Automatic slug generation
+- Staff-only permissions
+- Active tag filtering
+
+**Status:** Completed
+
 ---
 
 # Current Backend Modules
@@ -408,7 +468,7 @@ Successfully verified:
 | Users      | ✅ Completed |
 | Posts      | ✅ Completed (Publishing Workflow Included)|
 | Categories | ✅ Completed |
-| Tags       | ⏳ Planned   |
+| Tags       | ✅ Completed |
 | Comments   | ⏳ Planned   |
 
 
@@ -456,7 +516,12 @@ Implemented
 
 ## Tags APIs
 
-Not Started
+Implemented
+
+- POST /api/tags/
+- GET /api/tags/
+- GET /api/tags/{slug}/
+- PATCH /api/tags/{slug}/
 
 ---
 
@@ -473,16 +538,21 @@ Not Started
 - User
 - Post
 - Category
+- Tag
 
-Feature 06 extends the database by introducing the Category entity.
+Feature 07 extends the database by introducing the Tag entity.
 
-The Category table provides reusable taxonomy with unique names, slug-based identification, active status management, and audit tracking.
+The platform now includes two reusable taxonomy tables:
 
-The relationship between Posts and Categories is intentionally deferred to a future feature.
+- Category
+- Tag
+
+Both provide unique names, stable slug-based identification, active status management, and audit tracking.
+
+Relationships between Posts and Categories, and Posts and Tags, are intentionally deferred to future features.
 
 ## Planned Tables
 
-- Tag
 - Comment
 
 ---
@@ -533,6 +603,7 @@ Completed Feature Reports:
 - ✅ Feature 04 — Posts Domain Architecture & Database Design
 - ✅ Feature 05 — Publishing Workflow
 - ✅ Feature 06 — Categories
+- ✅ Feature 07 — Tags
 
 ---
 
@@ -550,6 +621,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-008-Posts-Domain-Architecture
 - ✅ ADR-009-Publishing-Workflow
 - ✅ ADR-010 — Categories Domain Architecture
+- ✅ ADR-011 — Tags Domain Architecture
 
 ---
 
@@ -557,7 +629,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication, Posts, and Categories modules.
+Completed for the Authentication, Posts, Categories, and Tags modules.
 
 Verified:
 
@@ -595,6 +667,17 @@ Verified:
 - Staff permissions
 - Active category filtering
 
+### Tags
+
+- Create
+- List
+- Retrieve
+- Update
+- Duplicate validation
+- Slug generation
+- Staff permissions
+- Active tag filtering
+
 ## Automated Testing
 
 Not yet implemented.
@@ -607,26 +690,27 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 07 — Tags
-- Feature 08 — Comments
+- Feature 08 — Post–Category Relationship
+- Feature 09 — Post–Tag Relationship
+- Feature 10 — Comments
 
 ## Phase 2 — User Experience
 
-- Feature 08 — User Profiles
-- Feature 09 — Search
-- Feature 10 — Media Uploads
+- Feature 11 — User Profiles
+- Feature 12 — Search
+- Feature 13 — Media Uploads
 
 ## Phase 3 — Advanced Features
 
-- Feature 11 — Permissions & Authorization
-- Feature 12 — Performance Optimization
-- Feature 13 — Deployment & CI/CD
+- Feature 14 — Permissions & Authorization
+- Feature 15 — Performance Optimization
+- Feature 16 — Deployment & CI/CD
 
 ---
 
 # Current Milestone
 
-✅ Feature 06 — Categories
+✅ Feature 07 — Tags
 
 Status: **Completed**
 
@@ -634,20 +718,18 @@ Status: **Completed**
 
 # Next Milestone
 
-## Feature 07 — Tags
+## Feature 08 — Post–Category Relationship
 
-The next feature introduces Tags as the second taxonomy domain.
+The next feature will associate Posts with Categories.
 
 Planned topics include:
 
-- Tag model
-- CRUD APIs
-- Slug generation
-- Tag permissions
-- Many-to-many relationship planning
+- Add a ForeignKey from Post to Category
+- Update Post serializers
+- Update Post APIs
 - Validation
 - Manual testing
----
+- Documentation updates
 
 # Important Architecture Decisions
 
@@ -675,6 +757,9 @@ The project currently follows these key architectural decisions:
 - Active-status manager for taxonomy models
 - Staff-managed taxonomy administration
 - Reusable slug generation strategy
+- Dedicated Tags domain
+- Reusable taxonomy architecture
+- Shared taxonomy implementation pattern
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -700,23 +785,23 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 07 — Tags
+**Starting Point:** Feature 08 — Post–Category Relationship
 
 Current project state:
 
-- Features 00–06 completed.
-- Authentication, Posts, and Categories modules fully implemented.
+- Features 00–07 completed.
+- Authentication, Posts, Categories, and Tags modules fully implemented.
 - Reusable taxonomy foundation established.
-- Documentation updated through Feature 06.
+- Documentation updated through Feature 07.
 - Automated testing planned for future features.
 
 Next steps:
 
-1. Design the Tags domain.
-2. Implement the Tag model and CRUD APIs.
-3. Define future relationships with Posts.
+1. Associate Posts with Categories.
+2. Update Post serializers and APIs.
+3. Implement backend validation.
 4. Perform manual testing.
 5. Update documentation incrementally.
-6. Prepare the Feature 07 Completion Report.
+6. Prepare the Feature 08 Completion Report.
 
-Continue following the established Architecture-First and Vertical Slice development workflow.
+Continue following the established Architecture-First and Vertical Slice Development workflow.
