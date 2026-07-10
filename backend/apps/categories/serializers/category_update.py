@@ -25,7 +25,7 @@ class CategoryUpdateSerializer(serializers.ModelSerializer):
                 "Category name cannot be blank."
             )
 
-        queryset = Category.objects.filter(
+        queryset = Category.all_objects.filter(
             name__iexact=value
         ).exclude(
             pk=self.instance.pk
