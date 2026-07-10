@@ -26,4 +26,8 @@ urlpatterns = [
         "api/categories/",
         include("apps.categories.urls"),
     ),
+    path(
+        "api/tags/",
+        include("apps.tags.urls"),
+    ),
 ]
