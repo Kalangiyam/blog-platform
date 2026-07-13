@@ -52,11 +52,15 @@ class PostViewSet(
             "publish",
             "unpublish",
         ):
-            return Post.objects.select_related("author")
+            return Post.objects.select_related("author").prefetch_related("categories")
 
-        return Post.objects.filter(
-            status=PostStatus.PUBLISHED,
-        ).select_related("author")
+        return (
+            Post.objects.filter(
+                status=PostStatus.PUBLISHED,
+            )
+            .select_related("author")
+            .prefetch_related("categories")
+        )
 
     def get_serializer_class(self):
         """
@@ -121,6 +125,31 @@ class PostViewSet(
         return Response(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update a post and return its detailed representation.
+        """
+
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_update(serializer)
+
+        return Response(
+            PostDetailSerializer(
+                instance,
+                context=self.get_serializer_context(),
+            ).data
         )
 
     def get_object(self):
