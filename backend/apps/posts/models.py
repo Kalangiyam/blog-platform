@@ -43,6 +43,13 @@ class Post(
         help_text="Categories used to organize this post.",
     )
 
+    tags = models.ManyToManyField(
+        "tags.Tag",
+        related_name="posts",
+        blank=True,
+        help_text="Tags used to organize this post.",
+    )
+
     excerpt = models.TextField(
         blank=True,
         help_text="Optional short summary of the blog post.",
