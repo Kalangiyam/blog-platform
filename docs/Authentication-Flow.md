@@ -14,10 +14,11 @@ Feature 06 extends the authorization layer by introducing the Categories domain.
 
 Feature 07 extends the same authorization model to the Tags domain. Tag listing and retrieval are publicly accessible, while tag creation and updates are restricted to staff users through dedicated backend-enforced permissions.
 
+Feature 08 extends the authorization model by introducing the Post–Category relationship. Authenticated post authors may assign active categories to their own posts, while category lifecycle management remains restricted to staff users.
 
 ---
 
-# Current Status (Feature 03)
+# Current Status (Feature 08)
 
 ## Completed
 
@@ -237,6 +238,12 @@ The authentication system will follow these security practices:
 * Public read access for active categories
 * Staff-only authorization for tag management
 * Public read access for active tags
+* Validate category assignments on the backend
+* Reject inactive categories during relationship assignment
+* Reject invalid category slugs during relationship assignment
+* Reject duplicate category assignments
+* Enforce post ownership before category relationship updates
+* Separate category administration from category assignment responsibilities
 
 ---
 
@@ -259,6 +266,12 @@ Current authorization capabilities include:
 * Public read access for active tags.
 * Only staff users can create or update tags.
 * Tag management is enforced using a dedicated DRF permission class.
+* Authenticated post authors may assign active categories to their own posts.
+* Only active categories may be assigned through the Posts API.
+* Category assignments are validated through serializers before persistence.
+* Category administration remains restricted to staff users.
+* Posts may reference categories, but Posts APIs cannot create or modify Category records.
+* Existing object-level permissions continue protecting post ownership during category updates.
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
 
@@ -275,6 +288,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
+* ✅ Feature 08 — Post–Category Relationship
 
 ## Current Authentication State
 
@@ -298,6 +312,11 @@ The application now supports:
 - Staff-only tag management
 - Public tag browsing
 - Dedicated tag permission enforcement
+- Author-controlled category assignment
+- Backend validation of category relationships
+- Active category enforcement
+- Ownership-protected category updates
+- Separation between category management and category assignment
 
 # Authentication API Flow
 
@@ -334,6 +353,8 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 08 will introduce Post ↔ Category Integration.
+Feature 09 will introduce the Post ↔ Tag relationship.
 
-The existing authentication and authorization infrastructure will continue securing protected APIs while extending ownership validation and taxonomy relationships between Posts and Categories.
+The existing authentication and authorization infrastructure will continue securing protected APIs while extending ownership validation and reusable taxonomy relationships between Posts and Tags.
+
+The authorization model established for category assignment will be reused for tag assignment, ensuring consistent backend validation and ownership enforcement across taxonomy relationships.

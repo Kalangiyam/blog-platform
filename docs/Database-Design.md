@@ -46,7 +46,7 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 07)
+# Current Database Schema (Feature 08)
 
 At the completion of Feature 07, the database contains four primary business entities:
 
@@ -59,7 +59,11 @@ Feature 05 introduced the publishing workflow by utilizing the existing `status`
 
 Feature 06 introduced the `Category` entity as the platform's first reusable taxonomy domain.
 
-Feature 07 introduces the `Tag` entity as the platform's second reusable taxonomy domain. Like Categories, Tags are designed to remain independently manageable while preparing for future relationships with Posts.
+Feature 07 introduced the Tag entity as the platform's second reusable taxonomy domain.
+
+Feature 08 introduces the first taxonomy relationship by associating Posts and Categories through a many-to-many relationship.
+
+Categories remain independently manageable while now supporting reusable assignment across multiple posts.
 
 The Post entity introduces the application's first business domain and establishes the foundation for future content management features.
 
@@ -81,64 +85,89 @@ Future entities will reuse these base models to maintain consistency across the 
 ├───────────────────────────────┤
 │ id                            │
 │ username                      │
-│ first_name                    │            1
-│ last_name                     │───────────────────────┐
-│ email                         │                       |                               
-│ password                      │                       |    
-│ is_staff                      │                       |
-│ is_superuser                  │                       |
-│ is_active                     │                       |
-│ date_joined                   │                       |
-└───────────────────────────────┘                       │
-                                                        │
-                                                        │
-                                                        ▼
-                                            ┌──────────────────────┐
-                                            │         Post         │
-                                            ├──────────────────────┤
-                                            │ id                   │
-                                            │ title                │
-                                            │ slug                 │
-                                            │ excerpt              │
-                                            │ content              │
-                                            │ status               │
-                                            │ published_at         │
-                                            │ author_id (FK)       │
-                                            │ created_by_id (FK)   │
-                                            │ updated_by_id (FK)   │
-                                            │ deleted_by_id (FK)   │
-                                            │ created_at           │
-                                            │ updated_at           │
-                                            │ is_deleted           │
-                                            │ deleted_at           │
-                                            └──────────────────────┘
-                ┌───────────────────────────────┐
-                │           Category            │
-                ├───────────────────────────────┤
-                │ id                            │
-                │ name                          │
-                │ slug                          │
-                │ is_active                     │
-                │ created_by_id                 │
-                │ updated_by_id                 │
-                │ created_at                    │
-                │ updated_at                    │
-                └───────────────────────────────┘
+│ first_name                    │
+│ last_name                     │
+│ email                         │
+│ password                      │
+│ is_staff                      │
+│ is_superuser                  │
+│ is_active                     │
+│ date_joined                   │
+└───────────────────────────────┘
+                │
+                │ 1
+                │
+                ▼
+┌───────────────────────────────┐
+│             Post              │
+├───────────────────────────────┤
+│ id                            │
+│ title                         │
+│ slug                          │
+│ excerpt                       │
+│ content                       │
+│ status                        │
+│ published_at                  │
+│ author_id (FK)                │
+│ created_by_id (FK)            │
+│ updated_by_id (FK)            │
+│ deleted_by_id (FK)            │
+│ created_at                    │
+│ updated_at                    │
+│ is_deleted                    │
+│ deleted_at                    │
+└───────────────────────────────┘
+                │
+                │ M
+                │
+                ▼
+┌───────────────────────────────┐
+│       Post_Category           │
+├───────────────────────────────┤
+│ id                            │
+│ post_id (FK)                  │
+│ category_id (FK)              │
+└───────────────────────────────┘
+                ▲
+                │
+                │ M
+                │
+┌───────────────────────────────┐
+│           Category            │
+├───────────────────────────────┤
+│ id                            │
+│ name                          │
+│ slug                          │
+│ is_active                     │
+│ created_by_id                 │
+│ updated_by_id                 │
+│ created_at                    │
+│ updated_at                    │
+└───────────────────────────────┘
 
 
-                ┌───────────────────────────────┐
-                │             Tag               │
-                ├───────────────────────────────┤
-                │ id                            │
-                │ name                          │
-                │ slug                          │
-                │ is_active                     │
-                │ created_by_id                 │
-                │ updated_by_id                 │
-                │ created_at                    │
-                │ updated_at                    │
-                └───────────────────────────────┘
-
+┌───────────────────────────────┐
+│             Tag               │
+├───────────────────────────────┤
+│ id                            │
+│ name                          │
+│ slug                          │
+│ description                   │
+│ is_active                     │
+│ created_by_id                 │
+│ updated_by_id                 │
+│ created_at                    │
+│ updated_at                    │
+└───────────────────────────────┘
+```
+```text
+Post
+├── categories (ManyToMany)
+```
+```text
+PostCategory (Auto-generated Join Table)
+├── post_id
+└── category_id
 ```
 
 ---
@@ -212,6 +241,7 @@ Current capabilities include:
 | created_by | User | ForeignKey |
 | updated_by | User | ForeignKey |
 | deleted_by | User | ForeignKey |
+| categories | Category | ManyToMany |
 
 ## Important Fields
 
@@ -255,8 +285,11 @@ Current capabilities include:
 |--------------|--------|------|
 | created_by | User | ForeignKey |
 | updated_by | User | ForeignKey |
+| posts | Post | ManyToMany (Reverse) |
 
-> A One-to-Many relationship between `Post` and `Category` is planned for a future feature.
+Feature 08 introduces a many-to-many relationship between Posts and Categories.
+
+A category may be assigned to multiple posts, and a post may belong to multiple categories.
 
 ---
 
@@ -294,21 +327,27 @@ Current capabilities include:
 
 # Current Relationships
 
-At this stage:
-
 ```text
 User
 ├── Post (One-to-Many)
 ├── Category (One-to-Many via audit fields)
 └── Tag (One-to-Many via audit fields)
+
+Post
+├── Author (ForeignKey → User)
+└── Categories (Many-to-Many)
+
+Category
+└── Posts (Reverse Many-to-Many)
 ```
 
-A single user can author multiple posts.
+Implemented relationships:
 
-Each post belongs to exactly one author.
+- User → Post
+- Post → Category
+- Category → Post (reverse)
 
-The direct relationships between Posts and Categories, and between Posts and Tags, have intentionally been deferred until the taxonomy integration features are implemented.
-
+The Post–Tag relationship remains deferred until Feature 09.
 ---
 
 # Planned Relationships
@@ -325,8 +364,8 @@ User
 ```
 ```text
 Post
-├── Category (ForeignKey)
-└── Tags (Many-to-Many)
+├── Categories (Many-to-Many) ✅ Implemented
+└── Tags (Many-to-Many) Planned
 ```
 
 These relationships are planned and will be implemented in future features.
@@ -370,6 +409,9 @@ The project follows a migration-first approach.
 * Tags application introduced through incremental migrations.
 * Unique constraints established for tag names and slugs.
 * Active status management implemented for reusable tag records.
+* Feature 08 introduced a many-to-many relationship between Posts and Categories.
+* Django automatically generated the intermediate relationship table.
+* Category assignment is enforced through backend validation and ORM relationship management.
 
 ---
 
@@ -392,6 +434,10 @@ The project follows these principles:
 * Independent taxonomy domains
 * Stable slug identifiers
 * Independent domain modules
+* Many-to-many taxonomy relationships
+* Reusable category assignment
+* Slug-based relationship management
+* Normalized relationship tables
 
 ---
 
@@ -408,6 +454,8 @@ Current:
 * Indexed unique slug for tag lookup
 * Indexed unique tag name
 * Index on `is_active` for tag filtering (if implemented)
+* Automatic indexes on the Post–Category intermediate relationship table
+* Optimized category retrieval using `prefetch_related()`
 
 Future:
 
@@ -440,6 +488,10 @@ Data integrity is maintained through:
 * Unique tag name enforcement
 * Automatic backend slug generation for tags
 * Active tag filtering through the default manager
+* Validation of category relationships before persistence
+* Prevention of duplicate category assignments
+* Active category enforcement during assignment
+* ORM-managed many-to-many integrity
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -456,6 +508,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
+* ✅ Feature 08 — Post–Category Relationship
 
 ## Current Database Version
 Current schema includes:
@@ -476,12 +529,21 @@ Current schema includes:
 - Tag audit tracking
 - Active tag management
 - Slug-based tag identification
+- Post–Category many-to-many relationship
+- Category relationship management
+- Nested category retrieval support
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
 Feature 06 introduced the Category entity as the platform's first reusable taxonomy model.
 
-Feature 07 introduces the Tag entity as the second reusable taxonomy model. Categories and Tags are currently independent business domains with unique names, stable slugs, active status management, and audit tracking. Relationships with Posts will be introduced in future features.
+Feature 07 introduces the Tag entity as the second reusable taxonomy model. Categories and Tags are currently independent business domains with unique names, stable slugs, active status management, and audit tracking. 
+
+Feature 08 introduces the Post–Category relationship as the first implemented taxonomy integration.
+
+Posts may now belong to multiple categories while categories remain independently managed and reusable.
+
+The Post–Tag relationship remains planned for Feature 09.
 
 ## Shared Abstract Models
 
@@ -499,11 +561,10 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 07 will introduce Tags as another reusable taxonomy entity.
+Feature 09 will introduce the Post–Tag many-to-many relationship.
 
 Future database enhancements may include:
 
-* Post–Category foreign key relationship
 * Post–Tag many-to-many relationship
 * Comment relationships
 * Profile relationships

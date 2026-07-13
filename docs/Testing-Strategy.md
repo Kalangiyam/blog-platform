@@ -97,7 +97,7 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 07)
+# Current Testing Status (Feature 08)
 
 ## Implemented
 
@@ -129,6 +129,14 @@ Manual testing currently validates:
 - Staff-only tag management
 - Public tag browsing
 - Active tag filtering
+- Post–Category relationship assignment
+- Category relationship updates
+- Category relationship removal
+- Nested category serialization
+- Category slug validation
+- Active category validation
+- Duplicate category assignment prevention
+- Query optimization verification
 
 Automated tests will be introduced incrementally in future features.
 
@@ -185,6 +193,15 @@ The following automated tests are planned for the Posts application:
 - Unpublish published post
 - Reject invalid publishing transitions
 - Verify publication timestamps
+- Create post with categories
+- Create post without categories
+- Update categories
+- Clear categories
+- Replace categories
+- Verify nested category responses
+- Reject invalid category slugs
+- Reject inactive categories
+- Reject duplicate category assignments
 
 ### Permission Tests
 
@@ -198,6 +215,9 @@ The following automated tests are planned for the Posts application:
 - Non-author publish denial
 - Author unpublish access
 - Non-author unpublish denial
+- Author category assignment access
+- Non-author category update denial
+- Ownership enforcement during category updates
 
 ## Categories Module
 
@@ -216,6 +236,10 @@ The following automated tests are planned for the Categories application:
 - Update serializer validation
 - Duplicate category name validation
 - Blank category name validation
+- Category slug validation
+- Duplicate category slug validation
+- Active category validation
+- Category relationship synchronization
 
 ### API Tests
 
@@ -276,6 +300,11 @@ As new features are completed, testing coverage will expand to include:
 - Slug generation
 - Ownership enforcement
 - Object-level permissions
+- Assign categories
+- Update categories
+- Remove categories
+- Nested category responses
+- Category relationship validation
 
 ### Future (Automated Tests)
 
@@ -308,6 +337,9 @@ As new features are completed, testing coverage will expand to include:
 - Automatic slug generation
 - Staff-only management
 - Active category filtering
+- Category assignment to posts
+- Category relationship validation
+- Category reuse across multiple posts
 
 ### Future (Automated Tests)
 
@@ -407,6 +439,17 @@ During Features 03 and 04, the following scenarios were manually verified using 
 - Verify `published_at` is set during publishing
 - Verify `published_at` is cleared during unpublishing
 - Audit field verification (`created_by`, `updated_by`, `deleted_by`)
+- Create post with categories
+- Create post without categories
+- Assign multiple categories
+- Replace categories
+- Remove all categories
+- Preserve categories when omitted from update requests
+- Reject invalid category slugs
+- Reject inactive category slugs
+- Reject duplicate category assignments
+- Verify nested category responses in list endpoint
+- Verify nested category responses in retrieve endpoint
 
 ### Categories
 
@@ -454,12 +497,14 @@ apps/
 │
 ├── posts/
 │   └── tests/
-│       ├── test_models.py
-│       ├── test_serializers.py
-│       ├── test_views.py
-│       ├── test_permissions.py
-│       ├── test_managers.py
-│       └── test_api.py
+|    ├── test_models.py
+|   ├── test_serializers.py
+|   ├── test_views.py
+|   ├── test_permissions.py
+|   ├── test_managers.py
+|   ├── test_api.py
+|   └── test_relationships.py
+|
 ├── categories/
 │   └── tests/
 │       ├── test_models.py
@@ -519,6 +564,7 @@ Additional tools may be introduced later if project requirements evolve.
 - ✅ Feature 05 — Publishing Workflow
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
+- ✅ Feature 08 — Post–Category Relationship
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -526,7 +572,7 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication, Posts, Categories, and Tags functionality have been comprehensively verified through manual API testing.
+Authentication, Posts, Categories, Tags, and the Post–Category relationship have been comprehensively verified through manual API testing.
 
 The project currently has validated:
 
@@ -550,12 +596,17 @@ The project currently has validated:
 * Automatic tag slug generation
 * Duplicate tag name validation
 * Active tag filtering
+- Category assignment
+- Category updates
+- Category removal
+- Nested category serialization
+- Taxonomy relationship validation
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 08 will introduce the Post ↔ Category relationship.
+Feature 09 will introduce the Post ↔ Tag relationship.
 
 The initial automated test suite will continue focusing on:
 
@@ -567,4 +618,6 @@ The initial automated test suite will continue focusing on:
 * Object-level permissions
 * Publishing workflow
 * Taxonomy management
-* Post–Category integration
+* Post–Tag integration
+* Shared taxonomy validation testing
+* Relationship synchronization testing

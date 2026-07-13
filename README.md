@@ -89,7 +89,13 @@ The platform currently supports:
 * Staff-managed tag creation and updates
 * Slug-based tag retrieval
 * Reusable tag taxonomy
-* ✅ Feature 07 — Tags
+* Assign categories to posts
+* Update post categories
+* Remove post categories
+* Slug-based category assignment
+* Nested category representation in post responses
+* Many-to-many Post ↔ Category relationship
+* Optimized category loading using `prefetch_related()`
 
 ---
 
@@ -102,6 +108,8 @@ The platform currently supports:
 * ✅ Feature 04 — Posts Domain Architecture & Database Design
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
+* ✅ Feature 07 — Tags
+* ✅ Feature 08 — Post–Category Relationship
 
 ---
 
@@ -173,6 +181,12 @@ DELETE  /api/posts/{slug}/
 POST    /api/posts/{slug}/publish/
 POST    /api/posts/{slug}/unpublish/
 ```
+Supports:
+
+- Category assignment through `category_slugs`
+- Category updates
+- Category removal
+- Nested category responses
 
 ### Categories
 
@@ -216,6 +230,7 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
+* Post ↔ Tag Relationship
 * Comments
 * Likes & Reactions
 * User Profiles
@@ -245,9 +260,9 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 07 — Tags
+**Current Milestone:** ✅ Feature 08 — Post–Category Relationship
 
-The blog platform now includes production-ready Posts, Categories, and Tags domains. Posts support a complete publishing lifecycle, while Categories and Tags provide reusable taxonomy management for organizing and classifying content.
+The blog platform now includes production-ready Posts, Categories, Tags, and Post–Category relationship management.
 
 Implemented capabilities include:
 
@@ -269,5 +284,17 @@ Implemented capabilities include:
 * Staff-managed tag administration
 * Slug-based tag URLs
 * Active tag management
+* Post ↔ Category many-to-many relationship
+* Category assignment using slugs
+* Category relationship validation
+* Nested category serialization
+* Category relationship updates
+* Optimized querysets using `select_related()` and `prefetch_related()`
 
-The next milestone is **Feature 08 — Post ↔ Category Integration**, which will connect Posts with Categories through a production-ready relationship, enabling categorized content organization and laying the foundation for advanced filtering and discovery.
+The next milestone is **Feature 09 — Post ↔ Tag Relationship**
+
+Feature 09 will extend the taxonomy architecture by introducing a many-to-many relationship between Posts and Tags.
+
+Posts will support reusable tag assignment using slug-based identifiers, nested tag responses, backend relationship validation, and optimized query loading.
+
+After Feature 09 is completed, duplicated taxonomy validation logic will be reviewed for extraction into reusable serializer mixins.

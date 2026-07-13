@@ -202,7 +202,11 @@ Current responsibilities include:
 * Slug generation
 * Draft and published post lifecycle management
 * Publish and unpublish workflows
-
+* Post–Category many-to-many relationship
+* Slug-based category assignment
+* Nested category representation in post responses
+* Category relationship validation
+* Query optimization using `prefetch_related()`
 
 The application follows the same architectural principles as the rest of the project by separating responsibilities across models, serializers, permissions, viewsets, and routing.
 
@@ -321,6 +325,11 @@ The Posts application is implemented as an independent domain module following t
 - Custom ViewSet actions for publish and unpublish operations
 - Backend-enforced status transition validation
 - Automatic publication timestamp management
+- Many-to-many relationship between Posts and Categories
+- Slug-based category assignment through `category_slugs`
+- Lightweight nested category serializer for post responses
+- Backend validation for duplicate, inactive, and invalid categories
+- Query optimization using `prefetch_related("categories")`
 
 ### Publishing Workflow
 
@@ -340,9 +349,20 @@ This approach centralizes workflow validation, prevents invalid state changes, a
 
 The backend automatically manages the `published_at` timestamp to ensure consistency between publication status and publication date.
 
+### Post–Category Relationship
+
+Feature 08 introduces a many-to-many relationship between Posts and Categories.
+
+```text
+Post
+   ↔
+Many-to-Many
+   ↔
+Category
+
 ### Request Processing
 
-Each Posts API request follows this flow:
+Post creation and update requests involving categories follow this flow:
 
 ```text
 React Frontend
@@ -360,13 +380,26 @@ JWT Authentication
 Permissions
         │
         ▼
-APIView
+PostViewSet
         │
         ▼
-Serializer
+PostCreateSerializer /
+PostUpdateSerializer
         │
         ▼
-Business Logic
+Validate post fields
+        │
+        ▼
+Validate category slugs
+        │
+        ▼
+Resolve active Category objects
+        │
+        ▼
+Create or update Post
+        │
+        ▼
+Synchronize many-to-many relationships
         │
         ▼
 Django ORM
@@ -395,7 +428,10 @@ The Categories application is implemented as an independent domain module that p
 - Active status management through a custom manager
 - Audit fields for creation and updates
 - Automatic slug generation
-- Designed for future association with Posts
+- Many-to-many association with Posts
+- Slug-based assignment through the Posts API
+- Reverse post access using `category.posts`
+- Existing relationships preserved when categories become inactive
 
 ### Request Processing
 
@@ -427,6 +463,25 @@ Django ORM
         │
         ▼
 PostgreSQL
+```
+
+### Relationship with Posts
+
+Categories remain independently managed through the Categories API.
+
+The Posts API references existing categories but does not create or modify Category records.
+
+```text
+Post API
+   │
+   ▼
+Validate category slugs
+   │
+   ▼
+Retrieve active Category objects
+   │
+   ▼
+Create or update relationship rows
 ```
 
 # Tags Architecture
@@ -507,6 +562,13 @@ The backend is responsible for enforcing all security rules.
 - Allow public read access to active tags.
 - Generate tag slugs automatically on the backend.
 - Prevent duplicate tag names through backend validation.
+- Validate all category slugs supplied through the Posts API.
+- Reject duplicate category assignments.
+- Reject non-existent categories.
+- Reject inactive categories during new relationship assignment.
+- Preserve existing post-category relationships when categories become inactive.
+- Enforce post ownership before allowing category relationship updates.
+- Never allow the Posts API to create or modify Category records implicitly.
 
 
 ---
@@ -528,6 +590,10 @@ Planned scalability features include:
 - Docker deployment
 - Reverse proxy with Nginx
 - Horizontal scaling
+- Many-to-many taxonomy relationships using normalized intermediate tables
+- Query optimization for post-category retrieval using `prefetch_related()`
+- Lightweight nested serializers to control response size
+- Future category filtering and archive endpoints
 
 ---
 
@@ -542,6 +608,7 @@ Planned scalability features include:
 - ✅ Feature 05 — Publishing Workflow
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
+- ✅ Feature 08 — Post–Category Relationship
 
 ## In Progress
 
@@ -549,13 +616,15 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 08 — Post ↔ Category Integration
+- Feature 09 — Post–Tag Relationship
 
 ---
 
 # Future Architecture Evolution
 
-Future applications will reuse the authentication infrastructure introduced in Feature 03 and the modular domain architecture established in Feature 04.
+Future applications will reuse the authentication infrastructure introduced in Feature 03, the modular domain architecture established in Feature 04, and the reusable taxonomy relationship architecture introduced in Feature 08.
+
+The Posts and Categories applications now demonstrate cross-domain integration without merging domain responsibilities.
 
 The Posts, Categories, and Tags applications serve as reference implementations for future domain modules by demonstrating:
 
@@ -567,6 +636,12 @@ The Posts, Categories, and Tags applications serve as reference implementations 
 - Audit field management
 - Backend-enforced validation
 - Separation of concerns
+- Many-to-many domain relationships
+- Slug-based relationship assignment
+- Separate read and write API representations
+- Nested serializers
+- Relationship validation
+- `select_related()` and `prefetch_related()` query optimization
 
 As development progresses, the architecture will expand with additional domain applications, including:
 
