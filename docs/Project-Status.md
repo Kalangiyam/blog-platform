@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-10
+**Last Updated:** 2026-07-13
 
-**Current Milestone:** ✅ Feature 07 — Tags
+**Current Milestone:** ✅ Feature 08 — Post–Category Relationship
 
 ---
 
@@ -458,6 +458,66 @@ Successfully verified:
 
 **Status:** Completed
 
+## ✅ Feature 08 — Post–Category Relationship
+
+### Objective
+
+Associate blog posts with one or more reusable categories using a production-ready many-to-many relationship while maintaining modular architecture and scalable API design.
+
+### Completed
+
+#### Database
+
+- Added `ManyToManyField` between Post and Category
+- Automatic intermediate join table
+- Reusable taxonomy relationship
+
+#### APIs
+
+- Create posts with categories
+- Update post categories
+- List posts with nested categories
+- Retrieve posts with nested categories
+
+#### Validation
+
+- Slug-based category assignment
+- Duplicate category slug validation
+- Active category validation
+- Invalid category validation
+
+#### Performance
+
+- Optimized category loading using `prefetch_related()`
+- Existing `select_related("author")` optimization preserved
+
+#### Architecture
+
+- Lightweight nested category serializer
+- Slug-based relationship assignment
+- Serializer-level validation
+- Separation of concerns maintained
+
+#### Manual Testing
+
+Successfully verified:
+
+- Create post without categories
+- Create post with one category
+- Create post with multiple categories
+- Update categories
+- Replace categories
+- Clear categories
+- Update without changing categories
+- Reject invalid category slugs
+- Reject inactive category slugs
+- List endpoint returns nested categories
+- Detail endpoint returns nested categories
+- Query optimization
+- Existing permissions remain unchanged
+
+**Status:** Completed
+
 ---
 
 # Current Backend Modules
@@ -466,7 +526,7 @@ Successfully verified:
 | ---------- | ----------- |
 | Core       | ✅ Completed |
 | Users      | ✅ Completed |
-| Posts      | ✅ Completed (Publishing Workflow Included)|
+| Posts      | ✅ Completed (Publishing Workflow + Category Relationship)|
 | Categories | ✅ Completed |
 | Tags       | ✅ Completed |
 | Comments   | ⏳ Planned   |
@@ -500,6 +560,13 @@ Implemented
 - DELETE `/api/posts/{slug}/`
 - POST `/api/posts/{slug}/publish/`
 - POST `/api/posts/{slug}/unpublish/`
+
+Category Support
+
+- Assign categories using `category_slugs`
+- Update assigned categories
+- Remove assigned categories
+- Nested category representation in list and detail responses
 
 ---
 
@@ -549,7 +616,23 @@ The platform now includes two reusable taxonomy tables:
 
 Both provide unique names, stable slug-based identification, active status management, and audit tracking.
 
-Relationships between Posts and Categories, and Posts and Tags, are intentionally deferred to future features.
+The platform now contains the following relationships:
+
+```
+User
+ └── Posts
+
+Post
+ ├── Author (ForeignKey)
+ └── Categories (ManyToMany)
+
+Category
+ └── Posts (Reverse ManyToMany)
+```
+
+The Post–Category relationship has been implemented using a reusable many-to-many architecture.
+
+The Post–Tag relationship remains deferred to Feature 09.
 
 ## Planned Tables
 
@@ -604,6 +687,7 @@ Completed Feature Reports:
 - ✅ Feature 05 — Publishing Workflow
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
+- ✅ Feature 08 — Post–Category Relationship
 
 ---
 
@@ -622,6 +706,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-009-Publishing-Workflow
 - ✅ ADR-010 — Categories Domain Architecture
 - ✅ ADR-011 — Tags Domain Architecture
+- ✅ ADR-012 — Post–Category Relationship Architecture
 
 ---
 
@@ -655,6 +740,12 @@ Verified:
 - Ownership enforcement
 - Object-level permissions
 - Publication timestamp management
+- Post–Category relationship
+- Category assignment
+- Category updates
+- Nested category responses
+- Category validation
+- Query optimization
 
 ### Categories
 
@@ -690,7 +781,6 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 08 — Post–Category Relationship
 - Feature 09 — Post–Tag Relationship
 - Feature 10 — Comments
 
@@ -710,7 +800,7 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 07 — Tags
+✅ Feature 08 — Post–Category Relationship
 
 Status: **Completed**
 
@@ -718,18 +808,20 @@ Status: **Completed**
 
 # Next Milestone
 
-## Feature 08 — Post–Category Relationship
+## Feature 09 — Post–Tag Relationship
 
-The next feature will associate Posts with Categories.
+The next feature will associate Posts with Tags using the same production-ready taxonomy architecture established for categories.
 
 Planned topics include:
 
-- Add a ForeignKey from Post to Category
-- Update Post serializers
-- Update Post APIs
-- Validation
+- Many-to-many relationship
+- Slug-based tag assignment
+- Serializer validation
+- Nested tag representation
+- Query optimization
 - Manual testing
 - Documentation updates
+- Refactoring shared taxonomy validation into serializer mixins
 
 # Important Architecture Decisions
 
@@ -785,23 +877,24 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 08 — Post–Category Relationship
+**Starting Point:** Feature 09 — Post–Tag Relationship
 
 Current project state:
 
-- Features 00–07 completed.
+- Features 00–08 completed.
 - Authentication, Posts, Categories, and Tags modules fully implemented.
-- Reusable taxonomy foundation established.
-- Documentation updated through Feature 07.
-- Automated testing planned for future features.
+- Post–Category relationship implemented.
+- Documentation updated through Feature 08.
+- Shared serializer mixin refactoring intentionally postponed until Feature 09 is completed.
 
 Next steps:
 
-1. Associate Posts with Categories.
+1. Associate Posts with Tags.
 2. Update Post serializers and APIs.
 3. Implement backend validation.
 4. Perform manual testing.
-5. Update documentation incrementally.
-6. Prepare the Feature 08 Completion Report.
+5. Refactor shared taxonomy validation into serializer mixins.
+6. Update documentation incrementally.
+7. Prepare the Feature 09 Completion Report.
 
 Continue following the established Architecture-First and Vertical Slice Development workflow.

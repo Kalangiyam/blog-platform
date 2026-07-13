@@ -36,6 +36,13 @@ class Post(
         help_text="The user who owns this post.",
     )
 
+    categories = models.ManyToManyField(
+        "categories.Category",
+        related_name="posts",
+        blank=True,
+        help_text="Categories used to organize this post.",
+    )
+
     excerpt = models.TextField(
         blank=True,
         help_text="Optional short summary of the blog post.",

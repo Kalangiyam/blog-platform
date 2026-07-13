@@ -4,12 +4,14 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 07, the platform provides four API modules:
+At the completion of Feature 08, the platform provides four API modules:
 
 - Authentication APIs
 - Posts APIs
 - Categories APIs
 - Tags APIs
+
+Feature 08 extends the Posts API by introducing a many-to-many relationship between Posts and Categories. Categories can now be assigned to posts using category slugs, and post responses include nested category information.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
@@ -148,6 +150,20 @@ The Posts module provides CRUD functionality for blog posts while enforcing owne
 POST /api/posts/
 ```
 
+### Example Request
+
+```json
+{
+    "title": "Introduction to Django",
+    "excerpt": "Learn the fundamentals of Django.",
+    "content": "Full article content...",
+    "category_slugs": [
+        "django",
+        "python"
+    ]
+}
+```
+
 ### List Published Posts
 
 ```http
@@ -164,6 +180,38 @@ GET /api/posts/{slug}/
 
 ```http
 PATCH /api/posts/{slug}/
+```
+
+### Example Request
+
+```json
+{
+    "title": "Updated Django Guide",
+    "category_slugs": [
+        "django",
+        "backend"
+    ]
+}
+```
+
+### Example Response
+
+```json
+{
+    "title": "Introduction to Django",
+    "slug": "introduction-to-django",
+    "status": "published",
+    "categories": [
+        {
+            "name": "Django",
+            "slug": "django"
+        },
+        {
+            "name": "Python",
+            "slug": "python"
+        }
+    ]
+}
 ```
 
 ### Delete Post (Soft Delete)
@@ -194,6 +242,12 @@ POST /api/posts/{slug}/unpublish/
 * A post can only transition from **Published → Draft**.
 * The backend automatically manages the `published_at` timestamp.
 * Posts are soft deleted and remain in the database for auditing and future restoration.
+* Posts may belong to zero or more categories.
+* Categories are assigned using `category_slugs`.
+* Duplicate category slugs are rejected.
+* Only active categories may be assigned to posts.
+* Category slugs are validated before saving.
+* Post responses include lightweight nested category objects.
 
 # Categories APIs
 
@@ -242,7 +296,9 @@ PATCH /api/categories/{slug}/
 * Categories are publicly readable.
 * Only staff users can create or update categories.
 * Active categories are returned by default.
-* Categories are designed for future association with Posts.
+* Categories can be assigned to one or more posts.
+* Categories are associated with posts using slug-based identifiers.
+* Nested category information is returned in post responses.
 
 # Tags APIs
 
@@ -407,6 +463,7 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 05 — Publishing Workflow
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
+* ✅ Feature 08 — Post–Category Relationship
 
 ## Current API State
 
@@ -434,6 +491,12 @@ The platform currently supports:
 - Staff-managed tag creation
 - Staff-managed tag updates
 - Automatic slug generation for tags
+- Assign categories to posts
+- Update assigned categories
+- Remove assigned categories
+- Slug-based category assignment
+- Nested category representation in post responses
+- Backend validation of category relationships
 
 Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
 
@@ -452,10 +515,10 @@ Future features will extend the API with publishing workflows, categories, tags,
 
 | Endpoint | Description |
 |-----------|-------------|
-| POST /api/posts/ | Create a new draft post |
+| POST /api/posts/ | Create a draft post with optional category assignment |
 | GET /api/posts/ | List all published posts |
 | GET /api/posts/{slug}/ | Retrieve a published post |
-| PATCH /api/posts/{slug}/ | Update a post owned by the authenticated user |
+| PATCH /api/posts/{slug}/ | Update a post and its assigned categories |
 | DELETE /api/posts/{slug}/ | Soft delete a post owned by the authenticated user |
 | POST /api/posts/{slug}/publish/ | Publish a draft post |
 | POST /api/posts/{slug}/unpublish/ | Move a published post back to draft |
@@ -469,6 +532,17 @@ Future features will extend the API with publishing workflows, categories, tags,
 | POST /api/categories/ | Create a new category (Staff Only) |
 | PATCH /api/categories/{slug}/ | Update a category (Staff Only) |
 
+### Relationship Support
+
+Categories are now integrated with the Posts module.
+
+Posts reference categories using the `category_slugs` field.
+
+Responses from the Posts API include lightweight nested category objects containing:
+
+- `name`
+- `slug`
+
 ## Tags Endpoints
 
 | Endpoint | Description |
@@ -480,4 +554,8 @@ Future features will extend the API with publishing workflows, categories, tags,
 
 ## Next Update
 
-Feature 08 will introduce Post ↔ Category Integration, establishing a production-ready relationship between Posts and Categories. This feature will enable categorized content organization while preparing the platform for efficient filtering, navigation, and future search capabilities.
+Feature 09 will introduce the Post ↔ Tag relationship.
+
+This feature will extend the existing taxonomy architecture by allowing posts to be associated with reusable tags using the same slug-based many-to-many design established for categories.
+
+After Feature 09, shared taxonomy validation logic will be refactored into reusable serializer mixins.
