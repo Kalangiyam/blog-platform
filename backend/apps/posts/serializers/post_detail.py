@@ -4,6 +4,7 @@ from apps.posts.models import Post
 
 from .author import AuthorSerializer
 from .post_category import PostCategorySerializer
+from .post_tag import PostTagSerializer
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -14,6 +15,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(read_only=True)
 
     categories = PostCategorySerializer(many=True, read_only=True)
+    tags = PostTagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
@@ -29,6 +31,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "categories",
+            "tags",
         )
 
         read_only_fields = fields

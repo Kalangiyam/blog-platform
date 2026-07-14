@@ -4,20 +4,22 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 08, the platform provides four API modules:
+At the completion of Feature 09, the platform provides four API modules:
 
 - Authentication APIs
 - Posts APIs
 - Categories APIs
 - Tags APIs
 
-Feature 08 extends the Posts API by introducing a many-to-many relationship between Posts and Categories. Categories can now be assigned to posts using category slugs, and post responses include nested category information.
+Feature 08 extended the Posts API by introducing a many-to-many relationship between Posts and Categories.
+
+Feature 09 extends the same taxonomy architecture by introducing a many-to-many relationship between Posts and Tags. Categories and tags can now be assigned to posts using slug-based write fields, while post responses include lightweight nested category and tag representations.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
-The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, soft deletion, and publishing workflows.
+The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, soft deletion, publishing workflows, category assignment, and tag assignment.
 
-The Categories and Tags modules provide reusable taxonomy management through slug-based endpoints with staff-controlled administration. Both domains are designed for future integration with Posts.
+The Categories and Tags modules provide reusable taxonomy management through slug-based endpoints with staff-controlled administration. Both taxonomy domains are now fully integrated with Posts.
 
 Future features will continue extending this document as new API modules are introduced.
 
@@ -35,6 +37,9 @@ The project follows these API design principles:
 * Consistent response structure
 * Appropriate HTTP status codes
 * Version-ready API design
+* Slug-based resource identification
+* Explicit read and write representations
+* Backend-enforced relationship integrity
 
 ---
 
@@ -72,6 +77,7 @@ The authentication module is fully functional and provides registration, login, 
 | POST | /api/auth/token/verify/ | Public | ✅ Implemented |
 
 ---
+
 ## Authentication Request Examples
 
 ### Register
@@ -132,7 +138,7 @@ POST `/api/auth/logout/`
 
 Implemented ✅
 
-The Posts module provides CRUD functionality for blog posts while enforcing ownership rules and soft deletion.
+The Posts module provides blog post management while enforcing authentication, ownership rules, publishing workflow validation, soft deletion, and taxonomy relationship validation.
 
 | Method | Endpoint | Authentication | Status |
 |--------|----------|----------------|--------|
@@ -144,11 +150,41 @@ The Posts module provides CRUD functionality for blog posts while enforcing owne
 | POST | /api/posts/{slug}/publish/ | JWT Access Token (Author Only) | ✅ Implemented |
 | POST | /api/posts/{slug}/unpublish/ | JWT Access Token (Author Only) | ✅ Implemented |
 
-### Create Post
+## Post Taxonomy Contract
+
+The Posts API uses separate write and read representations for taxonomy relationships.
+
+### Write Fields
+
+```text
+category_slugs
+tag_slugs
+```
+
+These fields accept lists of active taxonomy slugs.
+
+### Read Fields
+
+```text
+categories
+tags
+```
+
+These fields return lightweight nested taxonomy objects containing `name` and `slug`.
+
+This separation keeps requests simple while providing frontend-ready responses.
+
+---
+
+## Create Post
 
 ```http
 POST /api/posts/
 ```
+
+### Authentication
+
+JWT Access Token required.
 
 ### Example Request
 
@@ -158,29 +194,92 @@ POST /api/posts/
     "excerpt": "Learn the fundamentals of Django.",
     "content": "Full article content...",
     "category_slugs": [
-        "django",
+        "backend",
         "python"
+    ],
+    "tag_slugs": [
+        "django",
+        "web-development"
     ]
 }
 ```
 
-### List Published Posts
+Both taxonomy fields are optional.
+
+A post may be created with:
+
+- No categories
+- No tags
+- Categories only
+- Tags only
+- Both categories and tags
+
+### Successful Response
+
+Status:
+
+```text
+201 Created
+```
+
+The response includes the created post using the configured post response representation.
+
+---
+
+## List Published Posts
 
 ```http
 GET /api/posts/
 ```
 
-### Retrieve Single Post
+### Authentication
+
+Public.
+
+### Behavior
+
+Returns published, non-deleted posts.
+
+Post relationships are optimized using:
+
+```python
+select_related("author")
+prefetch_related("categories", "tags")
+```
+
+This prevents N+1 queries when serializing authors, categories, and tags.
+
+---
+
+## Retrieve Single Post
 
 ```http
 GET /api/posts/{slug}/
 ```
 
-### Update Post
+### Authentication
+
+Public.
+
+### Behavior
+
+Returns a published, non-deleted post identified by its slug.
+
+---
+
+## Update Post
 
 ```http
 PATCH /api/posts/{slug}/
 ```
+
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the post author may update the post under the current permission model.
 
 ### Example Request
 
@@ -188,13 +287,64 @@ PATCH /api/posts/{slug}/
 {
     "title": "Updated Django Guide",
     "category_slugs": [
+        "backend",
+        "python"
+    ],
+    "tag_slugs": [
         "django",
-        "backend"
+        "drf",
+        "api"
     ]
 }
 ```
 
-### Example Response
+### Partial Update Semantics
+
+If a taxonomy field is omitted, its existing relationships are preserved.
+
+Example:
+
+```json
+{
+    "title": "Updated title"
+}
+```
+
+Result:
+
+```text
+Existing categories and tags remain unchanged.
+```
+
+If a taxonomy field is supplied as an empty list, its relationships are cleared.
+
+Example:
+
+```json
+{
+    "tag_slugs": []
+}
+```
+
+Result:
+
+```text
+All tag relationships are removed from the post.
+```
+
+If a taxonomy field contains valid slugs, the existing relationships for that taxonomy are replaced.
+
+### Successful Response
+
+Status:
+
+```text
+200 OK
+```
+
+---
+
+## Example Post Response
 
 ```json
 {
@@ -203,51 +353,248 @@ PATCH /api/posts/{slug}/
     "status": "published",
     "categories": [
         {
-            "name": "Django",
-            "slug": "django"
+            "name": "Backend",
+            "slug": "backend"
         },
         {
             "name": "Python",
             "slug": "python"
         }
+    ],
+    "tags": [
+        {
+            "name": "Django",
+            "slug": "django"
+        },
+        {
+            "name": "Web Development",
+            "slug": "web-development"
+        }
     ]
 }
 ```
 
-### Delete Post (Soft Delete)
+---
+
+## Delete Post — Soft Delete
 
 ```http
 DELETE /api/posts/{slug}/
 ```
 
-### Publish Post
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the post author may delete the post under the current permission model.
+
+### Behavior
+
+The post remains in the database but is excluded from normal API queries.
+
+### Successful Response
+
+Status:
+
+```text
+204 No Content
+```
+
+---
+
+## Publish Post
 
 ```http
 POST /api/posts/{slug}/publish/
 ```
 
-### Unublish Post
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the post author may publish the post under the current permission model.
+
+### Business Rule
+
+Only a draft post may transition to published.
+
+---
+
+## Unpublish Post
 
 ```http
 POST /api/posts/{slug}/unpublish/
 ```
 
-### Business Rules
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the post author may unpublish the post under the current permission model.
+
+### Business Rule
+
+Only a published post may transition to draft.
+
+---
+
+## Post Business Rules
 
 * Only authenticated users can create posts.
 * Newly created posts are saved as **Draft**.
 * Only **Published** posts are publicly visible.
-* Only the post author can update, delete, publish, or unpublish a post.
+* Only the post author can update, delete, publish, or unpublish a post under the current permission model.
 * A post can only transition from **Draft → Published**.
 * A post can only transition from **Published → Draft**.
 * The backend automatically manages the `published_at` timestamp.
 * Posts are soft deleted and remain in the database for auditing and future restoration.
 * Posts may belong to zero or more categories.
+* Posts may contain zero or more tags.
 * Categories are assigned using `category_slugs`.
+* Tags are assigned using `tag_slugs`.
 * Duplicate category slugs are rejected.
+* Duplicate tag slugs are rejected.
 * Only active categories may be assigned to posts.
-* Category slugs are validated before saving.
+* Only active tags may be assigned to posts.
+* Invalid or inactive taxonomy slugs are rejected before saving.
+* Omitting a taxonomy field during update preserves existing relationships.
+* Sending an empty taxonomy list clears that relationship.
 * Post responses include lightweight nested category objects.
+* Post responses include lightweight nested tag objects.
+* Shared taxonomy validation is implemented through a reusable serializer mixin.
+* Authentication, authorization, ownership, and relationship validation are enforced on the backend.
+
+---
+
+# Taxonomy Validation Errors
+
+## Duplicate Category Slugs
+
+Example invalid request:
+
+```json
+{
+    "category_slugs": [
+        "backend",
+        "backend"
+    ]
+}
+```
+
+Expected result:
+
+```text
+400 Bad Request
+```
+
+Example error:
+
+```json
+{
+    "category_slugs": [
+        "Duplicate category slugs are not allowed."
+    ]
+}
+```
+
+---
+
+## Duplicate Tag Slugs
+
+Example invalid request:
+
+```json
+{
+    "tag_slugs": [
+        "django",
+        "django"
+    ]
+}
+```
+
+Expected result:
+
+```text
+400 Bad Request
+```
+
+Example error:
+
+```json
+{
+    "tag_slugs": [
+        "Duplicate tag slugs are not allowed."
+    ]
+}
+```
+
+---
+
+## Invalid or Inactive Category Slug
+
+Example invalid request:
+
+```json
+{
+    "category_slugs": [
+        "unknown-category"
+    ]
+}
+```
+
+Expected result:
+
+```text
+400 Bad Request
+```
+
+Example error:
+
+```json
+{
+    "category_slugs": [
+        "One or more categories do not exist or are inactive."
+    ]
+}
+```
+
+---
+
+## Invalid or Inactive Tag Slug
+
+Example invalid request:
+
+```json
+{
+    "tag_slugs": [
+        "unknown-tag"
+    ]
+}
+```
+
+Expected result:
+
+```text
+400 Bad Request
+```
+
+Example error:
+
+```json
+{
+    "tag_slugs": [
+        "One or more tags do not exist or are inactive."
+    ]
+}
+```
+
+---
 
 # Categories APIs
 
@@ -255,7 +602,7 @@ POST /api/posts/{slug}/unpublish/
 
 Implemented ✅
 
-The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable while creation and updates are restricted to staff users.
+The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable, while creation and updates are restricted to staff users.
 
 | Method | Endpoint | Authentication | Status |
 |--------|----------|----------------|--------|
@@ -264,41 +611,62 @@ The Categories module provides reusable taxonomy for organizing blog content. Ca
 | POST | /api/categories/ | JWT Access Token (Staff Only) | ✅ Implemented |
 | PATCH | /api/categories/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
 
-### List Categories
+## List Categories
 
 ```http
 GET /api/categories/
 ```
 
-### Retrieve Category
+Returns active categories by default.
+
+---
+
+## Retrieve Category
 
 ```http
 GET /api/categories/{slug}/
 ```
 
-### Create Category
+Retrieves an active category by slug.
+
+---
+
+## Create Category
 
 ```http
 POST /api/categories/
 ```
 
-### Update Category
+Restricted to staff users.
+
+---
+
+## Update Category
 
 ```http
 PATCH /api/categories/{slug}/
 ```
 
-### Business Rules
+Restricted to staff users.
+
+---
+
+## Category Business Rules
 
 * Category names must be unique.
 * Category slugs are generated automatically.
-* Slugs remain stable after creation.
+* Category slugs remain stable after creation.
 * Categories are publicly readable.
 * Only staff users can create or update categories.
 * Active categories are returned by default.
-* Categories can be assigned to one or more posts.
+* Inactive categories cannot be assigned to new or updated posts.
+* Existing relationships remain intact when a category becomes inactive.
+* Categories can be assigned to multiple posts.
+* Posts can belong to multiple categories.
 * Categories are associated with posts using slug-based identifiers.
 * Nested category information is returned in post responses.
+
+---
 
 # Tags APIs
 
@@ -306,7 +674,7 @@ PATCH /api/categories/{slug}/
 
 Implemented ✅
 
-The Tags module provides reusable taxonomy for classifying blog content. Tags are publicly readable while creation and updates are restricted to staff users.
+The Tags module provides reusable taxonomy for classifying and improving discovery of blog content. Tags are publicly readable, while creation and updates are restricted to staff users.
 
 | Method | Endpoint | Authentication | Status |
 |--------|----------|----------------|--------|
@@ -315,39 +683,60 @@ The Tags module provides reusable taxonomy for classifying blog content. Tags ar
 | POST | /api/tags/ | JWT Access Token (Staff Only) | ✅ Implemented |
 | PATCH | /api/tags/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
 
-### List Tags
+## List Tags
 
 ```http
 GET /api/tags/
 ```
 
-### Retrieve Tag
+Returns active tags by default.
+
+---
+
+## Retrieve Tag
 
 ```http
 GET /api/tags/{slug}/
 ```
 
-### Create Tag
+Retrieves an active tag by slug.
+
+---
+
+## Create Tag
 
 ```http
 POST /api/tags/
 ```
 
-### Update Tag
+Restricted to staff users.
+
+---
+
+## Update Tag
 
 ```http
 PATCH /api/tags/{slug}/
 ```
 
-### Business Rules
+Restricted to staff users.
+
+---
+
+## Tag Business Rules
 
 * Tag names must be unique.
 * Tag slugs are generated automatically.
-* Slugs remain stable after creation.
+* Tag slugs remain stable after creation.
 * Tags are publicly readable.
 * Only staff users can create or update tags.
 * Active tags are returned by default.
-* Tags are designed for future many-to-many association with Posts.
+* Inactive tags cannot be assigned to new or updated posts.
+* Existing relationships remain intact when a tag becomes inactive.
+* Tags can be assigned to multiple posts.
+* Posts can contain multiple tags.
+* Tags are associated with posts using slug-based identifiers.
+* Nested tag information is returned in post responses.
 
 ---
 
@@ -357,6 +746,8 @@ As the project grows, additional API modules will be added.
 
 ## Comments
 
+Planned operations:
+
 ```text
 GET
 POST
@@ -364,11 +755,13 @@ PATCH
 DELETE
 ```
 
+The Comments module is the next planned API domain.
+
 ---
 
 # Request Format
 
-All requests will use JSON.
+All requests use JSON unless a future endpoint explicitly supports another media type.
 
 Example:
 
@@ -383,7 +776,7 @@ Example:
 
 # Response Format
 
-Successful responses will return JSON.
+Successful responses return JSON unless the endpoint intentionally returns no response body, such as a successful delete operation.
 
 Example:
 
@@ -393,40 +786,41 @@ Example:
 }
 ```
 
-Validation and authentication responses will also follow a consistent JSON structure.
+Validation, authentication, authorization, and not-found responses follow predictable JSON structures generated by Django REST Framework and the project's serializers.
 
 ---
 
 # HTTP Status Codes
 
-The project will use standard HTTP status codes.
+The project uses standard HTTP status codes.
 
-| Status Code | Meaning               |
-| ----------- | --------------------- |
-| 200         | OK                    |
-| 201         | Created               |
-| 204         | No Content            |
-| 400         | Bad Request           |
-| 401         | Unauthorized          |
-| 403         | Forbidden             |
-| 404         | Not Found             |
-| 500         | Internal Server Error |
+| Status Code | Meaning |
+|-------------|---------|
+| 200 | OK |
+| 201 | Created |
+| 204 | No Content |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 500 | Internal Server Error |
 
 ---
 
 # Authentication Strategy
 
-The project currently uses JWT Authentication via Django REST Framework Simple JWT.
+The project currently uses JWT Authentication through Django REST Framework Simple JWT.
 
 Authentication is based on:
 
 * JWT Access Token
 * JWT Refresh Token
 * Authorization Header
+* Refresh token blacklisting
 
 Access tokens authenticate protected API requests.
 
-Refresh tokens are used only to obtain new access tokens and to support secure logout through token blacklisting.
+Refresh tokens are used to obtain new access tokens and support secure logout through token blacklisting.
 
 Example:
 
@@ -434,7 +828,50 @@ Example:
 Authorization: Bearer <access_token>
 ```
 
-The backend will validate every protected request before processing it.
+The backend validates every protected request before processing it.
+
+---
+
+# Authorization Strategy
+
+The current API enforces:
+
+* Authentication for protected operations
+* Staff-only taxonomy management
+* Post ownership for update, delete, publish, and unpublish operations
+* Backend relationship validation
+* Backend publishing workflow validation
+
+Frontend restrictions are considered user-experience controls only and are not trusted for security.
+
+The planned advanced permissions feature will extend this foundation into the final Writer, Editor, and Admin role model.
+
+---
+
+# Performance Strategy
+
+The Posts API prevents N+1 query problems by eagerly loading related data.
+
+Current optimization:
+
+```python
+Post.objects.select_related(
+    "author",
+).prefetch_related(
+    "categories",
+    "tags",
+)
+```
+
+### Why `select_related()` is used
+
+`author` is a foreign-key relationship and can be loaded through a SQL join.
+
+### Why `prefetch_related()` is used
+
+`categories` and `tags` are many-to-many relationships and require separate optimized queries.
+
+This keeps list and detail serialization efficient as the number of posts grows.
 
 ---
 
@@ -448,7 +885,7 @@ Example:
 /api/v1/
 ```
 
-Versioning will be introduced only when needed to maintain backward compatibility.
+Versioning will be introduced only when required to preserve backward compatibility during breaking API changes.
 
 ---
 
@@ -456,6 +893,7 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 
 ## Completed
 
+* ✅ Feature 00 — Project Dashboard
 * ✅ Feature 01 — Project Foundation & Architecture
 * ✅ Feature 02 — Custom User Model & User App Architecture
 * ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
@@ -464,10 +902,11 @@ Versioning will be introduced only when needed to maintain backward compatibilit
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
+* ✅ Feature 09 — Post–Tag Relationship
 
 ## Current API State
 
-Authentication, Posts, Categories, and Tags APIs have been fully implemented and manually tested.
+Authentication, Posts, Categories, and Tags APIs have been implemented and manually tested.
 
 The platform currently supports:
 
@@ -475,55 +914,62 @@ The platform currently supports:
 - JWT-based authorization
 - Post creation
 - Public listing of published posts
-- Retrieval by slug
-- Author-only updates
+- Published post retrieval by slug
+- Author-only post updates
 - Author-only soft deletion
 - Author-only publishing
 - Author-only unpublishing
 - Backend-enforced publishing workflow
-- Public category listing
-- Public category retrieval
-- Staff-managed category creation
-- Staff-managed category updates
-- Automatic slug generation for categories
-- Public tag listing
-- Public tag retrieval
-- Staff-managed tag creation
-- Staff-managed tag updates
-- Automatic slug generation for tags
-- Assign categories to posts
-- Update assigned categories
-- Remove assigned categories
-- Slug-based category assignment
+- Public category listing and retrieval
+- Staff-managed category creation and updates
+- Automatic category slug generation
+- Public tag listing and retrieval
+- Staff-managed tag creation and updates
+- Automatic tag slug generation
+- Category assignment using `category_slugs`
+- Tag assignment using `tag_slugs`
+- Updating category and tag relationships
+- Clearing category and tag relationships
+- Preserving relationships when taxonomy fields are omitted
 - Nested category representation in post responses
+- Nested tag representation in post responses
 - Backend validation of category relationships
+- Backend validation of tag relationships
+- Shared taxonomy validation through a serializer mixin
+- Optimized author, category, and tag query loading
 
-Future features will extend the API with publishing workflows, categories, tags, comments, reactions, search, and profile management.
+Future features will extend the API with comments, user profiles, search, media uploads, advanced permissions, performance improvements, and deployment support.
 
-## Authentication Endpoints
+---
+
+# Authentication Endpoints
 
 | Endpoint | Description |
 |-----------|-------------|
 | POST /api/auth/register/ | Register a new account |
-| POST /api/auth/login/ | Authenticate user and receive JWT tokens |
+| POST /api/auth/login/ | Authenticate a user and receive JWT tokens |
 | GET /api/auth/me/ | Retrieve the authenticated user's profile |
-| POST /api/auth/logout/ | Blacklist the refresh token |
+| POST /api/auth/logout/ | Blacklist the supplied refresh token |
 | POST /api/auth/token/refresh/ | Obtain a new access token |
 | POST /api/auth/token/verify/ | Verify the validity of a JWT |
 
-## Posts Endpoints
+---
+
+# Posts Endpoints
 
 | Endpoint | Description |
 |-----------|-------------|
-| POST /api/posts/ | Create a draft post with optional category assignment |
-| GET /api/posts/ | List all published posts |
+| POST /api/posts/ | Create a draft post with optional category and tag assignment |
+| GET /api/posts/ | List published posts |
 | GET /api/posts/{slug}/ | Retrieve a published post |
-| PATCH /api/posts/{slug}/ | Update a post and its assigned categories |
+| PATCH /api/posts/{slug}/ | Update a post and its assigned categories and tags |
 | DELETE /api/posts/{slug}/ | Soft delete a post owned by the authenticated user |
 | POST /api/posts/{slug}/publish/ | Publish a draft post |
 | POST /api/posts/{slug}/unpublish/ | Move a published post back to draft |
 
-## Categories Endpoints
+---
+
+# Categories Endpoints
 
 | Endpoint | Description |
 |-----------|-------------|
@@ -532,18 +978,24 @@ Future features will extend the API with publishing workflows, categories, tags,
 | POST /api/categories/ | Create a new category (Staff Only) |
 | PATCH /api/categories/{slug}/ | Update a category (Staff Only) |
 
-### Relationship Support
+## Category Relationship Support
 
-Categories are now integrated with the Posts module.
+Categories are integrated with the Posts module.
 
-Posts reference categories using the `category_slugs` field.
+Posts reference categories using:
 
-Responses from the Posts API include lightweight nested category objects containing:
+```text
+category_slugs
+```
+
+Post responses include lightweight nested category objects containing:
 
 - `name`
 - `slug`
 
-## Tags Endpoints
+---
+
+# Tags Endpoints
 
 | Endpoint | Description |
 |-----------|-------------|
@@ -552,10 +1004,35 @@ Responses from the Posts API include lightweight nested category objects contain
 | POST /api/tags/ | Create a new tag (Staff Only) |
 | PATCH /api/tags/{slug}/ | Update a tag (Staff Only) |
 
-## Next Update
+## Tag Relationship Support
 
-Feature 09 will introduce the Post ↔ Tag relationship.
+Tags are integrated with the Posts module.
 
-This feature will extend the existing taxonomy architecture by allowing posts to be associated with reusable tags using the same slug-based many-to-many design established for categories.
+Posts reference tags using:
 
-After Feature 09, shared taxonomy validation logic will be refactored into reusable serializer mixins.
+```text
+tag_slugs
+```
+
+Post responses include lightweight nested tag objects containing:
+
+- `name`
+- `slug`
+
+---
+
+# Next Update
+
+Feature 10 will introduce the Comments domain.
+
+The Comments API is expected to establish:
+
+- Comment creation
+- Comment retrieval
+- Ownership enforcement
+- Soft deletion
+- Audit tracking
+- Post-to-comment relationships
+- A foundation for future moderation and restoration workflows
+
+The exact API contract will be defined during Feature 10 architecture design.

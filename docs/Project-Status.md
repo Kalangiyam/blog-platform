@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-13
+**Last Updated:** 2026-07-14
 
-**Current Milestone:** ✅ Feature 08 — Post–Category Relationship
+**Current Milestone:** ✅ Feature 09 — Post–Tag Relationship
 
 ---
 
@@ -77,6 +77,8 @@ blog-platform/
 │   │   ├── posts/
 │   │   |   ├── models.py
 │   │   |   ├── serializers/
+│   │   |   |   ├── mixins.py
+│   │   |   |   └── ...
 │   │   |   ├── permissions.py
 │   │   |   ├── urls.py
 │   │   |   ├── views.py
@@ -520,13 +522,87 @@ Successfully verified:
 
 ---
 
+
+## ✅ Feature 09 — Post–Tag Relationship
+
+### Objective
+
+Associate blog posts with one or more reusable tags using the taxonomy architecture established for categories, while reducing duplicated serializer validation through a shared mixin.
+
+### Completed
+
+#### Database
+
+- Added `ManyToManyField` between Post and Tag
+- Created the automatic intermediate join table
+- Preserved existing posts without requiring a data migration
+- Added the reverse `Tag.posts` relationship
+
+#### APIs
+
+- Create posts with tags using `tag_slugs`
+- Update assigned post tags
+- Replace or clear post tags
+- Preserve existing tags when `tag_slugs` is omitted
+- Return nested tags in post list and detail responses
+
+#### Validation
+
+- Slug-based tag assignment
+- Duplicate tag slug validation
+- Invalid tag slug validation
+- Inactive tag validation
+- Shared category and tag validation through `TaxonomyAssignmentMixin`
+
+#### Performance
+
+- Optimized tag loading using `prefetch_related("tags")`
+- Preserved `select_related("author")`
+- Preserved category prefetching
+- Prevented N+1 queries for post taxonomy responses
+
+#### Architecture
+
+- Reused the established Post–Category relationship pattern
+- Added a lightweight nested tag serializer
+- Added a shared serializer mixin for taxonomy slug validation
+- Kept create and update persistence behavior inside their respective serializers
+- Preserved action-specific serializer responsibilities
+- Maintained existing authentication, ownership, and permission behavior
+
+#### Manual Testing
+
+Successfully verified:
+
+- Create post without tags
+- Create post with one tag
+- Create post with multiple tags
+- Update assigned tags
+- Replace tags
+- Clear tags using an empty list
+- Preserve tags when `tag_slugs` is omitted
+- Reject duplicate tag slugs
+- Reject invalid tag slugs
+- Reject inactive tag slugs
+- Update categories without changing tags
+- Update tags without changing categories
+- List endpoint returns nested tags
+- Detail endpoint returns nested tags
+- Shared taxonomy mixin preserves category validation
+- Query optimization includes categories and tags
+- Existing permissions remain unchanged
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
 | Module     | Status      |
 | ---------- | ----------- |
 | Core       | ✅ Completed |
 | Users      | ✅ Completed |
-| Posts      | ✅ Completed (Publishing Workflow + Category Relationship)|
+| Posts      | ✅ Completed (Publishing Workflow + Category and Tag Relationships) |
 | Categories | ✅ Completed |
 | Tags       | ✅ Completed |
 | Comments   | ⏳ Planned   |
@@ -561,12 +637,15 @@ Implemented
 - POST `/api/posts/{slug}/publish/`
 - POST `/api/posts/{slug}/unpublish/`
 
-Category Support
+Taxonomy Support
 
 - Assign categories using `category_slugs`
-- Update assigned categories
-- Remove assigned categories
-- Nested category representation in list and detail responses
+- Update or remove assigned categories
+- Assign tags using `tag_slugs`
+- Update or remove assigned tags
+- Preserve taxonomy relationships when write fields are omitted
+- Nested category and tag representations in list and detail responses
+- Shared category and tag validation through `TaxonomyAssignmentMixin`
 
 ---
 
@@ -607,32 +686,36 @@ Not Started
 - Category
 - Tag
 
-Feature 07 extends the database by introducing the Tag entity.
-
-The platform now includes two reusable taxonomy tables:
+The platform includes two reusable taxonomy tables:
 
 - Category
 - Tag
 
 Both provide unique names, stable slug-based identification, active status management, and audit tracking.
 
+Feature 09 extends the Post domain with a many-to-many Tag relationship.
+
 The platform now contains the following relationships:
 
-```
+```text
 User
  └── Posts
 
 Post
  ├── Author (ForeignKey)
- └── Categories (ManyToMany)
+ ├── Categories (ManyToMany)
+ └── Tags (ManyToMany)
 
 Category
  └── Posts (Reverse ManyToMany)
+
+Tag
+ └── Posts (Reverse ManyToMany)
 ```
 
-The Post–Category relationship has been implemented using a reusable many-to-many architecture.
+Django manages both taxonomy relationships through automatic intermediate join tables.
 
-The Post–Tag relationship remains deferred to Feature 09.
+The Post–Category and Post–Tag relationships now use the same slug-based assignment, active-record validation, nested response, and query-optimization strategy.
 
 ## Planned Tables
 
@@ -688,6 +771,7 @@ Completed Feature Reports:
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
+- ✅ Feature 09 — Post–Tag Relationship report pending documentation completion
 
 ---
 
@@ -707,6 +791,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-010 — Categories Domain Architecture
 - ✅ ADR-011 — Tags Domain Architecture
 - ✅ ADR-012 — Post–Category Relationship Architecture
+- ✅ ADR-013 — Post–Tag Relationship Architecture pending creation
 
 ---
 
@@ -745,7 +830,15 @@ Verified:
 - Category updates
 - Nested category responses
 - Category validation
-- Query optimization
+- Post–Tag relationship
+- Tag assignment
+- Tag updates
+- Nested tag responses
+- Tag validation
+- Shared taxonomy validation mixin
+- Omitted-field relationship preservation
+- Empty-list relationship clearing
+- Query optimization for author, categories, and tags
 
 ### Categories
 
@@ -781,7 +874,6 @@ Planned during future feature development.
 
 ## Phase 1 — Core Blog
 
-- Feature 09 — Post–Tag Relationship
 - Feature 10 — Comments
 
 ## Phase 2 — User Experience
@@ -800,28 +892,31 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 08 — Post–Category Relationship
+✅ Feature 09 — Post–Tag Relationship
 
-Status: **Completed**
+Status: **Implementation and manual testing completed**
+
+Documentation completion is in progress.
 
 ---
 
 # Next Milestone
 
-## Feature 09 — Post–Tag Relationship
+## Feature 10 — Comments
 
-The next feature will associate Posts with Tags using the same production-ready taxonomy architecture established for categories.
+The next feature will introduce the Comments domain as the platform's second user-generated business entity.
 
 Planned topics include:
 
-- Many-to-many relationship
-- Slug-based tag assignment
-- Serializer validation
-- Nested tag representation
+- Comment domain and database design
+- Post-to-comment and user-to-comment relationships
+- Soft deletion and audit tracking
+- Ownership enforcement
+- Public and protected API behavior
+- Comment moderation readiness
 - Query optimization
-- Manual testing
+- Manual and automated testing strategy
 - Documentation updates
-- Refactoring shared taxonomy validation into serializer mixins
 
 # Important Architecture Decisions
 
@@ -851,7 +946,11 @@ The project currently follows these key architectural decisions:
 - Reusable slug generation strategy
 - Dedicated Tags domain
 - Reusable taxonomy architecture
-- Shared taxonomy implementation pattern
+- Post–Category and Post–Tag many-to-many relationships
+- Slug-based taxonomy assignment
+- Nested taxonomy response serializers
+- Shared taxonomy validation through `TaxonomyAssignmentMixin`
+- Query optimization using `select_related()` and `prefetch_related()`
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -877,24 +976,25 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 09 — Post–Tag Relationship
+**Starting Point:** Feature 10 — Comments
 
 Current project state:
 
-- Features 00–08 completed.
-- Authentication, Posts, Categories, and Tags modules fully implemented.
-- Post–Category relationship implemented.
-- Documentation updated through Feature 08.
-- Shared serializer mixin refactoring intentionally postponed until Feature 09 is completed.
+- Features 00–09 are implemented and manually tested.
+- Authentication, Posts, Categories, and Tags modules are fully implemented.
+- Post–Category and Post–Tag many-to-many relationships are implemented.
+- Posts accept taxonomy assignment through `category_slugs` and `tag_slugs`.
+- Post list and detail responses return nested category and tag data.
+- Shared taxonomy slug validation is implemented through `TaxonomyAssignmentMixin`.
+- Post querysets optimize author, category, and tag retrieval.
+- Feature 09 documentation completion is in progress.
 
-Next steps:
+Remaining Feature 09 completion tasks:
 
-1. Associate Posts with Tags.
-2. Update Post serializers and APIs.
-3. Implement backend validation.
-4. Perform manual testing.
-5. Refactor shared taxonomy validation into serializer mixins.
-6. Update documentation incrementally.
-7. Prepare the Feature 09 Completion Report.
+1. Finish incremental updates to the affected core documentation.
+2. Create ADR-013 — Post–Tag Relationship Architecture.
+3. Create the Feature 09 Completion Report.
+4. Verify documentation consistency.
+5. Prepare the Feature 09 Git commit and pull-request summary.
 
-Continue following the established Architecture-First and Vertical Slice Development workflow.
+After Feature 09 documentation is complete, begin Feature 10 — Comments using the established Architecture-First and Vertical Slice Development workflow.

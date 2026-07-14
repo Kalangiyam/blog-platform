@@ -52,14 +52,14 @@ class PostViewSet(
             "publish",
             "unpublish",
         ):
-            return Post.objects.select_related("author").prefetch_related("categories")
+            return Post.objects.select_related("author").prefetch_related("categories","tags")
 
         return (
             Post.objects.filter(
                 status=PostStatus.PUBLISHED,
             )
             .select_related("author")
-            .prefetch_related("categories")
+            .prefetch_related("categories","tags")
         )
 
     def get_serializer_class(self):
