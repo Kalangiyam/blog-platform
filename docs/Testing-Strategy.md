@@ -97,7 +97,7 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 08)
+# Current Testing Status (Feature 09)
 
 ## Implemented
 
@@ -137,6 +137,14 @@ Manual testing currently validates:
 - Active category validation
 - Duplicate category assignment prevention
 - Query optimization verification
+- Post–Tag relationship assignment
+- Tag relationship updates
+- Tag relationship removal
+- Nested tag serialization
+- Tag slug validation
+- Active tag validation
+- Duplicate tag assignment prevention
+- Shared taxonomy validation verification
 
 Automated tests will be introduced incrementally in future features.
 
@@ -182,6 +190,16 @@ The following automated tests are planned for the Posts application:
 - Required field validation
 - Empty title/content validation
 
+### Shared Taxonomy Validation Tests
+
+- Duplicate category slug validation
+- Duplicate tag slug validation
+- Invalid category validation
+- Invalid tag validation
+- Inactive category validation
+- Inactive tag validation
+- Relationship synchronization behavior
+
 ### API Tests
 
 - Create post
@@ -202,6 +220,16 @@ The following automated tests are planned for the Posts application:
 - Reject invalid category slugs
 - Reject inactive categories
 - Reject duplicate category assignments
+- Create post with tags
+- Create post without tags
+- Update tags
+- Clear tags
+- Replace tags
+- Verify nested tag responses
+- Reject invalid tag slugs
+- Reject inactive tags
+- Reject duplicate tag assignments
+- Verify taxonomy mixin validation behavior
 
 ### Permission Tests
 
@@ -218,6 +246,9 @@ The following automated tests are planned for the Posts application:
 - Author category assignment access
 - Non-author category update denial
 - Ownership enforcement during category updates
+- Author tag assignment access
+- Non-author tag update denial
+- Ownership enforcement during tag updates
 
 ## Categories Module
 
@@ -305,6 +336,12 @@ As new features are completed, testing coverage will expand to include:
 - Remove categories
 - Nested category responses
 - Category relationship validation
+- Assign tags
+- Update tags
+- Remove tags
+- Nested tag responses
+- Tag relationship validation
+- Shared taxonomy validation
 
 ### Future (Automated Tests)
 
@@ -386,6 +423,15 @@ The following automated tests are planned for the Tags application:
 - Staff update access
 - Non-staff update denial
 
+### Relationship Tests
+
+- Assign tags to posts
+- Replace tags on posts
+- Clear tags from posts
+- Verify reverse post relationships
+- Reject inactive tags
+- Reject duplicate tag assignments
+
 ---
 
 ## Permissions
@@ -450,6 +496,20 @@ During Features 03 and 04, the following scenarios were manually verified using 
 - Reject duplicate category assignments
 - Verify nested category responses in list endpoint
 - Verify nested category responses in retrieve endpoint
+- Create post with tags
+- Create post without tags
+- Assign multiple tags
+- Replace tags
+- Remove all tags
+- Preserve tags when omitted from update requests
+- Reject invalid tag slugs
+- Reject inactive tag slugs
+- Reject duplicate tag assignments
+- Verify nested tag responses in list endpoint
+- Verify nested tag responses in retrieve endpoint
+- Verify category updates preserve tags
+- Verify tag updates preserve categories
+- Verify shared taxonomy validation mixin behavior
 
 ### Categories
 
@@ -565,6 +625,7 @@ Additional tools may be introduced later if project requirements evolve.
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
+- ✅ Feature 09 — Post–Tag Relationship
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -572,7 +633,7 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication, Posts, Categories, Tags, and the Post–Category relationship have been comprehensively verified through manual API testing.
+Authentication, Posts, Categories, Tags, the Post–Category relationship, and the Post–Tag relationship have been comprehensively verified through manual API testing.
 
 The project currently has validated:
 
@@ -601,12 +662,18 @@ The project currently has validated:
 - Category removal
 - Nested category serialization
 - Taxonomy relationship validation
+- Tag assignment
+- Tag updates
+- Tag removal
+- Nested tag serialization
+- Shared taxonomy validation
+- Post–Tag relationship synchronization
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 09 will introduce the Post ↔ Tag relationship.
+Feature 10 will introduce the Comments domain.
 
 The initial automated test suite will continue focusing on:
 
@@ -618,6 +685,8 @@ The initial automated test suite will continue focusing on:
 * Object-level permissions
 * Publishing workflow
 * Taxonomy management
+* Post–Category integration
 * Post–Tag integration
 * Shared taxonomy validation testing
 * Relationship synchronization testing
+* Comment ownership testing

@@ -16,9 +16,11 @@ Feature 07 extends the same authorization model to the Tags domain. Tag listing 
 
 Feature 08 extends the authorization model by introducing the Post–Category relationship. Authenticated post authors may assign active categories to their own posts, while category lifecycle management remains restricted to staff users.
 
+Feature 09 extends the same taxonomy authorization model to the Post–Tag relationship. Authenticated post authors may assign active tags to their own posts, while tag lifecycle management remains restricted to staff users.
+
 ---
 
-# Current Status (Feature 08)
+# Current Status (Feature 09)
 
 ## Completed
 
@@ -239,11 +241,17 @@ The authentication system will follow these security practices:
 * Staff-only authorization for tag management
 * Public read access for active tags
 * Validate category assignments on the backend
+* Validate tag assignments on the backend
 * Reject inactive categories during relationship assignment
+* Reject inactive tags during relationship assignment
 * Reject invalid category slugs during relationship assignment
+* Reject invalid tag slugs during relationship assignment
 * Reject duplicate category assignments
+* Reject duplicate tag assignments
 * Enforce post ownership before category relationship updates
+* Enforce post ownership before tag relationship updates
 * Separate category administration from category assignment responsibilities
+* Separate tag administration from tag assignment responsibilities
 
 ---
 
@@ -272,6 +280,13 @@ Current authorization capabilities include:
 * Category administration remains restricted to staff users.
 * Posts may reference categories, but Posts APIs cannot create or modify Category records.
 * Existing object-level permissions continue protecting post ownership during category updates.
+* Authenticated post authors may assign active tags to their own posts.
+* Only active tags may be assigned through the Posts API.
+* Tag assignments are validated through serializers before persistence.
+* Tag administration remains restricted to staff users.
+* Posts may reference tags, but Posts APIs cannot create or modify Tag records.
+* Existing object-level permissions continue protecting post ownership during tag updates.
+* Shared taxonomy validation is implemented through reusable serializer mixins.
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
 
@@ -289,6 +304,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
+* ✅ Feature 09 — Post–Tag Relationship
 
 ## Current Authentication State
 
@@ -317,6 +333,12 @@ The application now supports:
 - Active category enforcement
 - Ownership-protected category updates
 - Separation between category management and category assignment
+- Author-controlled tag assignment
+- Backend validation of tag relationships
+- Active tag enforcement
+- Ownership-protected tag updates
+- Separation between tag management and tag assignment
+- Shared taxonomy validation through serializer mixins
 
 # Authentication API Flow
 
@@ -353,8 +375,8 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 09 will introduce the Post ↔ Tag relationship.
+Feature 10 will introduce the Comments domain.
 
-The existing authentication and authorization infrastructure will continue securing protected APIs while extending ownership validation and reusable taxonomy relationships between Posts and Tags.
+The existing authentication and authorization infrastructure will continue securing protected APIs while extending ownership validation to user-generated comments.
 
-The authorization model established for category assignment will be reused for tag assignment, ensuring consistent backend validation and ownership enforcement across taxonomy relationships.
+The authorization model established for posts, categories, and tags will provide the foundation for future comment ownership enforcement, moderation workflows, and advanced permission systems.

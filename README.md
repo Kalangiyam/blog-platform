@@ -96,6 +96,14 @@ The platform currently supports:
 * Nested category representation in post responses
 * Many-to-many Post ↔ Category relationship
 * Optimized category loading using `prefetch_related()`
+* Assign tags to posts
+* Update post tags
+* Remove post tags
+* Slug-based tag assignment
+* Nested tag representation in post responses
+* Many-to-many Post ↔ Tag relationship
+* Shared taxonomy validation through serializer mixins
+* Optimized tag loading using `prefetch_related()`
 
 ---
 
@@ -110,6 +118,7 @@ The platform currently supports:
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
+* ✅ Feature 09 — Post–Tag Relationship
 
 ---
 
@@ -183,10 +192,17 @@ POST    /api/posts/{slug}/unpublish/
 ```
 Supports:
 
+Supports:
+
 - Category assignment through `category_slugs`
 - Category updates
 - Category removal
 - Nested category responses
+- Tag assignment through `tag_slugs`
+- Tag updates
+- Tag removal
+- Nested tag responses
+- Shared taxonomy validation
 
 ### Categories
 
@@ -230,7 +246,6 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* Post ↔ Tag Relationship
 * Comments
 * Likes & Reactions
 * User Profiles
@@ -260,9 +275,9 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 08 — Post–Category Relationship
+**Current Milestone:** ✅ Feature 09 — Post–Tag Relationship
 
-The blog platform now includes production-ready Posts, Categories, Tags, and Post–Category relationship management.
+The blog platform now includes production-ready Posts, Categories, Tags, Post–Category relationships, and Post–Tag relationships.
 
 Implemented capabilities include:
 
@@ -289,12 +304,18 @@ Implemented capabilities include:
 * Category relationship validation
 * Nested category serialization
 * Category relationship updates
+* Post ↔ Tag many-to-many relationship
+* Tag assignment using slugs
+* Tag relationship validation
+* Nested tag serialization
+* Tag relationship updates
+* Shared taxonomy validation mixin
 * Optimized querysets using `select_related()` and `prefetch_related()`
 
-The next milestone is **Feature 09 — Post ↔ Tag Relationship**
+The next milestone is **Feature 10 — Comments**
 
-Feature 09 will extend the taxonomy architecture by introducing a many-to-many relationship between Posts and Tags.
+Feature 10 will introduce the Comments domain.
 
-Posts will support reusable tag assignment using slug-based identifiers, nested tag responses, backend relationship validation, and optimized query loading.
+Comments will become the platform's second business entity after Posts and will follow the same production architecture principles, including audit fields, soft deletion, ownership enforcement, and object-level permissions.
 
-After Feature 09 is completed, duplicated taxonomy validation logic will be reviewed for extraction into reusable serializer mixins.
+The feature will establish the foundation for future moderation workflows, comment restoration, and advanced authorization capabilities.

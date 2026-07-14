@@ -46,9 +46,9 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 08)
+# Current Database Schema (Feature 09)
 
-At the completion of Feature 07, the database contains four primary business entities:
+At the completion of Feature 09, the database contains four primary business entities:
 
 - User
 - Post
@@ -62,6 +62,8 @@ Feature 06 introduced the `Category` entity as the platform's first reusable tax
 Feature 07 introduced the Tag entity as the platform's second reusable taxonomy domain.
 
 Feature 08 introduces the first taxonomy relationship by associating Posts and Categories through a many-to-many relationship.
+
+Feature 09 extends the taxonomy architecture by associating Posts and Tags through a second many-to-many relationship.
 
 Categories remain independently manageable while now supporting reusable assignment across multiple posts.
 
@@ -163,11 +165,17 @@ Future entities will reuse these base models to maintain consistency across the 
 ```text
 Post
 ├── categories (ManyToMany)
+├── tags (ManyToMany)
 ```
 ```text
 PostCategory (Auto-generated Join Table)
 ├── post_id
 └── category_id
+```
+```text
+PostTag (Auto-generated Join Table)
+├── post_id
+└── tag_id
 ```
 
 ---
@@ -242,6 +250,7 @@ Current capabilities include:
 | updated_by | User | ForeignKey |
 | deleted_by | User | ForeignKey |
 | categories | Category | ManyToMany |
+| tags | Tag | ManyToMany |
 
 ## Important Fields
 
@@ -320,8 +329,11 @@ Current capabilities include:
 |--------------|--------|------|
 | created_by | User | ForeignKey |
 | updated_by | User | ForeignKey |
+| posts | Post | ManyToMany (Reverse) |
 
-> A many-to-many relationship between `Post` and `Tag` is planned for a future feature.
+Feature 09 introduces a many-to-many relationship between Posts and Tags.
+
+A tag may be assigned to multiple posts, and a post may contain multiple tags.
 
 ---
 
@@ -335,9 +347,13 @@ User
 
 Post
 ├── Author (ForeignKey → User)
-└── Categories (Many-to-Many)
+├── Categories (Many-to-Many)
+└── Tags (Many-to-Many)
 
 Category
+└── Posts (Reverse Many-to-Many)
+
+Tag
 └── Posts (Reverse Many-to-Many)
 ```
 
@@ -346,8 +362,12 @@ Implemented relationships:
 - User → Post
 - Post → Category
 - Category → Post (reverse)
+- Post → Tag
+- Tag → Post (reverse)
 
-The Post–Tag relationship remains deferred until Feature 09.
+The platform now contains two reusable taxonomy relationships:
+- Post ↔ Category
+- Post ↔ Tag
 ---
 
 # Planned Relationships
@@ -365,7 +385,7 @@ User
 ```text
 Post
 ├── Categories (Many-to-Many) ✅ Implemented
-└── Tags (Many-to-Many) Planned
+└── Tags (Many-to-Many) ✅ Implemented
 ```
 
 These relationships are planned and will be implemented in future features.
@@ -412,6 +432,10 @@ The project follows a migration-first approach.
 * Feature 08 introduced a many-to-many relationship between Posts and Categories.
 * Django automatically generated the intermediate relationship table.
 * Category assignment is enforced through backend validation and ORM relationship management.
+* Feature 09 introduced a many-to-many relationship between Posts and Tags.
+* Django automatically generated the second taxonomy relationship table.
+* Tag assignment is enforced through backend validation and ORM relationship management.
+* Shared taxonomy validation is implemented through serializer mixins.
 
 ---
 
@@ -438,6 +462,9 @@ The project follows these principles:
 * Reusable category assignment
 * Slug-based relationship management
 * Normalized relationship tables
+* Reusable tag assignment
+* Shared taxonomy validation
+* Consistent taxonomy relationship architecture
 
 ---
 
@@ -456,6 +483,7 @@ Current:
 * Index on `is_active` for tag filtering (if implemented)
 * Automatic indexes on the Post–Category intermediate relationship table
 * Optimized category retrieval using `prefetch_related()`
+* Optimized tag retrieval using `prefetch_related()`
 
 Future:
 
@@ -489,9 +517,13 @@ Data integrity is maintained through:
 * Automatic backend slug generation for tags
 * Active tag filtering through the default manager
 * Validation of category relationships before persistence
+* Validation of tag relationships before persistence
 * Prevention of duplicate category assignments
+* Prevention of duplicate tag assignments
 * Active category enforcement during assignment
+* Active tag enforcement during assignment
 * ORM-managed many-to-many integrity
+* Shared taxonomy validation through serializer mixins
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -509,6 +541,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 06 — Categories
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
+* ✅ Feature 09 — Post–Tag Relationship
 
 ## Current Database Version
 Current schema includes:
@@ -532,6 +565,10 @@ Current schema includes:
 - Post–Category many-to-many relationship
 - Category relationship management
 - Nested category retrieval support
+- Post–Tag many-to-many relationship
+- Tag relationship management
+- Nested tag retrieval support
+- Shared taxonomy validation mixin support
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
@@ -543,7 +580,11 @@ Feature 08 introduces the Post–Category relationship as the first implemented 
 
 Posts may now belong to multiple categories while categories remain independently managed and reusable.
 
-The Post–Tag relationship remains planned for Feature 09.
+Feature 09 introduces the Post–Tag relationship as the second implemented taxonomy integration.
+
+Posts may now contain multiple tags while tags remain independently managed and reusable.
+
+Both taxonomy relationships follow the same slug-based assignment architecture and many-to-many database design.
 
 ## Shared Abstract Models
 
@@ -561,11 +602,10 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 09 will introduce the Post–Tag many-to-many relationship.
+Feature 10 will introduce the Comment entity and its relationship to Posts and Users.
 
 Future database enhancements may include:
 
-* Post–Tag many-to-many relationship
 * Comment relationships
 * Profile relationships
 * Bookmarks

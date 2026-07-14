@@ -203,6 +203,11 @@ Current responsibilities include:
 * Draft and published post lifecycle management
 * Publish and unpublish workflows
 * Post–Category many-to-many relationship
+* Post–Tag many-to-many relationship
+* Slug-based tag assignment
+* Nested tag representation in post responses
+* Tag relationship validation
+* Shared taxonomy validation through serializer mixins
 * Slug-based category assignment
 * Nested category representation in post responses
 * Category relationship validation
@@ -326,10 +331,14 @@ The Posts application is implemented as an independent domain module following t
 - Backend-enforced status transition validation
 - Automatic publication timestamp management
 - Many-to-many relationship between Posts and Categories
+- Many-to-many relationship between Posts and Tags
 - Slug-based category assignment through `category_slugs`
 - Lightweight nested category serializer for post responses
+- Lightweight nested tag serializer for post responses
 - Backend validation for duplicate, inactive, and invalid categories
-- Query optimization using `prefetch_related("categories")`
+- Backend validation for duplicate, inactive, and invalid tags
+- Shared taxonomy validation through reusable serializer mixins
+- Query optimization using `prefetch_related("categories", "tags")`
 
 ### Publishing Workflow
 
@@ -359,7 +368,7 @@ Post
 Many-to-Many
    ↔
 Category
-
+```
 ### Request Processing
 
 Post creation and update requests involving categories follow this flow:
@@ -410,6 +419,73 @@ PostgreSQL
 
 This separation of concerns keeps validation, authorization, business logic, and persistence independent and maintainable.
 
+---
+
+### Post–Tag Relationship
+
+Feature 09 introduces a many-to-many relationship between Posts and Tags.
+
+```text
+Post
+   ↔
+Many-to-Many
+   ↔
+Tag
+```
+
+Tags provide flexible classification and content discovery.
+
+Posts reference tags using the `tag_slugs` write field and return lightweight nested tag representations through the read API.
+
+The relationship architecture intentionally mirrors the Post–Category implementation to maintain consistency across taxonomy domains.
+
+### Request Processing
+
+Post creation and update requests involving tags follow this flow:
+
+```text
+React Frontend
+        │
+        ▼
+HTTP Request
+        │
+        ▼
+Django URL Router
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Permissions
+        │
+        ▼
+PostViewSet
+        │
+        ▼
+PostCreateSerializer /
+PostUpdateSerializer
+        │
+        ▼
+Validate post fields
+        │
+        ▼
+Validate tag slugs
+        │
+        ▼
+Resolve active Tag objects
+        │
+        ▼
+Create or update Post
+        │
+        ▼
+Synchronize many-to-many relationships
+        │
+        ▼
+Django ORM
+        │
+        ▼
+PostgreSQL
+```
 ---
 
 # Categories Architecture
@@ -500,7 +576,10 @@ The Tags application is implemented as an independent taxonomy domain that provi
 - Active status management through a custom manager
 - Audit fields for creation and updates
 - Automatic slug generation
-- Designed for future many-to-many association with Posts
+- Many-to-many association with Posts
+- Slug-based assignment through the Posts API
+- Reverse post access using `tag.posts`
+- Existing relationships preserved when tags become inactive
 
 ### Request Processing
 
@@ -533,7 +612,24 @@ Django ORM
         ▼
 PostgreSQL
 ```
+### Relationship with Posts
 
+Tags remain independently managed through the Tags API.
+
+The Posts API references existing tags but does not create or modify Tag records.
+
+```text
+Post API
+   │
+   ▼
+Validate tag slugs
+   │
+   ▼
+Retrieve active Tag objects
+   │
+   ▼
+Create or update relationship rows
+```
 ---
 
 # Security Architecture
@@ -563,12 +659,18 @@ The backend is responsible for enforcing all security rules.
 - Generate tag slugs automatically on the backend.
 - Prevent duplicate tag names through backend validation.
 - Validate all category slugs supplied through the Posts API.
+- Validate all tag slugs supplied through the Posts API.
 - Reject duplicate category assignments.
+- Reject duplicate tag assignments.
 - Reject non-existent categories.
+- Reject non-existent tags.
 - Reject inactive categories during new relationship assignment.
+- Reject inactive tags during new relationship assignment.
 - Preserve existing post-category relationships when categories become inactive.
+- Preserve existing post-tag relationships when tags become inactive.
 - Enforce post ownership before allowing category relationship updates.
 - Never allow the Posts API to create or modify Category records implicitly.
+- Never allow the Posts API to create or modify Tag records implicitly.
 
 
 ---
@@ -591,9 +693,10 @@ Planned scalability features include:
 - Reverse proxy with Nginx
 - Horizontal scaling
 - Many-to-many taxonomy relationships using normalized intermediate tables
-- Query optimization for post-category retrieval using `prefetch_related()`
+- Query optimization for post-category and post-tag retrieval using `prefetch_related()`
 - Lightweight nested serializers to control response size
 - Future category filtering and archive endpoints
+- Shared taxonomy validation logic through serializer mixins
 
 ---
 
@@ -609,6 +712,7 @@ Planned scalability features include:
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
+- ✅ Feature 09 — Post–Tag Relationship
 
 ## In Progress
 
@@ -616,13 +720,13 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 09 — Post–Tag Relationship
+- Feature 10 — Comments
 
 ---
 
 # Future Architecture Evolution
 
-Future applications will reuse the authentication infrastructure introduced in Feature 03, the modular domain architecture established in Feature 04, and the reusable taxonomy relationship architecture introduced in Feature 08.
+Future applications will reuse the authentication infrastructure introduced in Feature 03, the modular domain architecture established in Feature 04, and the reusable taxonomy relationship architecture established through Features 08 and 09.
 
 The Posts and Categories applications now demonstrate cross-domain integration without merging domain responsibilities.
 
@@ -642,6 +746,7 @@ The Posts, Categories, and Tags applications serve as reference implementations 
 - Nested serializers
 - Relationship validation
 - `select_related()` and `prefetch_related()` query optimization
+- Shared serializer mixins
 
 As development progresses, the architecture will expand with additional domain applications, including:
 
