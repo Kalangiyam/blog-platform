@@ -3,9 +3,10 @@ from rest_framework import serializers
 from apps.posts.models import Post
 from apps.categories.models import Category
 from apps.tags.models import Tag
+from apps.posts.serializers.post_txonomy_mixin import TaxonomyAssignmentMixin
 
 
-class PostUpdateSerializer(serializers.ModelSerializer):
+class PostUpdateSerializer(TaxonomyAssignmentMixin,serializers.ModelSerializer):
     """
     Serializer for updating blog posts.
     """
@@ -41,58 +42,28 @@ class PostUpdateSerializer(serializers.ModelSerializer):
         Validate category slugs and return Category objects.
         """
 
-        if not value:
-            return []
-
-        # Reject duplicate slugs
-        if len(value) != len(set(value)):
-            raise serializers.ValidationError(
-                "Duplicate category slugs are not allowed."
-            )
-
-        categories = list(
-            Category.objects.filter(
-                slug__in=value,
-                is_active=True,
-            )
+        return self.validate_taxonomy_slugs(
+            value,
+            model=Category,
+            duplicate_error="Duplicate category slugs are not allowed.",
+            invalid_error=(
+                "One or more categories do not exist or are inactive."
+            ),
         )
 
-        # Ensure every slug exists and is active
-        if len(categories) != len(value):
-            raise serializers.ValidationError(
-                "One or more categories do not exist or are inactive."
-            )
-
-        return categories
-    
     def validate_tag_slugs(self, value):
         """
         Validate tag slugs and return Tag objects.
         """
 
-        if not value:
-            return []
-
-        # Reject duplicate slugs
-        if len(value) != len(set(value)):
-            raise serializers.ValidationError(
-                "Duplicate tag slugs are not allowed."
-            )
-
-        tags = list(
-            Tag.objects.filter(
-                slug__in=value,
-                is_active=True,
-            )
+        return self.validate_taxonomy_slugs(
+            value,
+            model=Tag,
+            duplicate_error="Duplicate tag slugs are not allowed.",
+            invalid_error=(
+                "One or more tags do not exist or are inactive."
+            ),
         )
-
-        # Ensure every slug exists and is active
-        if len(tags) != len(value):
-            raise serializers.ValidationError(
-                "One or more tag do not exist or are inactive."
-            )
-
-        return tags
 
     def update(self, instance, validated_data):
         """
