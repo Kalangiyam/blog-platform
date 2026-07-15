@@ -2,7 +2,7 @@
 
 A production-grade **API-first Blog Platform** built with **Django REST Framework** and **React**.
 
-The project is designed to demonstrate real-world software engineering practices including scalable architecture, secure authentication, clean code, documentation, testing, and maintainability.
+The project demonstrates real-world software engineering practices, including scalable architecture, secure authentication, clean code, testing, documentation, and maintainability.
 
 ---
 
@@ -104,6 +104,19 @@ The platform currently supports:
 * Many-to-many Post ↔ Tag relationship
 * Shared taxonomy validation through serializer mixins
 * Optimized tag loading using `prefetch_related()`
+* Public Comment listing on published Posts
+* Authenticated Comment creation
+* Author-owned Comment updates
+* Author-owned Comment soft deletion
+* Post–Comment one-to-many relationship
+* User–Comment one-to-many relationship
+* Backend-controlled Comment author assignment
+* Backend-controlled parent Post assignment
+* Published-Post validation
+* Comment ownership enforcement through `IsCommentAuthor`
+* Comment audit tracking
+* Comment soft-delete lifecycle
+* Optimized Comment loading using `select_related()`
 
 ---
 
@@ -119,6 +132,7 @@ The platform currently supports:
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
+* ✅ Feature 10 — Comments
 
 ---
 
@@ -133,7 +147,8 @@ blog-platform/
 │   │   ├── users/
 │   │   ├── posts/
 │   │   ├── categories/
-│   │   └── tags/
+│   │   ├── tags/
+│   │   └── comments/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -190,7 +205,6 @@ DELETE  /api/posts/{slug}/
 POST    /api/posts/{slug}/publish/
 POST    /api/posts/{slug}/unpublish/
 ```
-Supports:
 
 Supports:
 
@@ -226,6 +240,29 @@ Additional APIs will be introduced as future features are completed.
 
 ---
 
+### Comments
+
+```text
+GET     /api/posts/{post_slug}/comments/
+POST    /api/posts/{post_slug}/comments/
+PATCH   /api/comments/{id}/
+DELETE  /api/comments/{id}/
+```
+
+Supports:
+
+* Public Comment listing
+* Authenticated Comment creation
+* Author-only Comment updates
+* Author-only Comment soft deletion
+* Published-Post validation
+* Backend-controlled Comment author and Post assignment
+* Object-level ownership enforcement
+* Soft-deleted Comment exclusion
+
+
+---
+
 # Documentation
 
 Project documentation is maintained under the `docs/` directory.
@@ -246,15 +283,13 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* Comments
-* Likes & Reactions
 * User Profiles
 * Search
 * Media Uploads
 * Permissions & Authorization
+* Performance Optimization
 * Deployment
 * CI/CD
-* Performance Optimization
 
 ---
 
@@ -275,9 +310,9 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 09 — Post–Tag Relationship
+**Current Milestone:** ✅ Feature 10 — Comments
 
-The blog platform now includes production-ready Posts, Categories, Tags, Post–Category relationships, and Post–Tag relationships.
+The blog platform now includes production-ready authentication, Posts, Categories, Tags, taxonomy relationships, and Comments.
 
 Implemented capabilities include:
 
@@ -311,11 +346,33 @@ Implemented capabilities include:
 * Tag relationship updates
 * Shared taxonomy validation mixin
 * Optimized querysets using `select_related()` and `prefetch_related()`
+* Independent Comments domain
+* Public Comment listing
+* Authenticated Comment creation
+* Comment author ownership
+* Author-only Comment updates
+* Author-only Comment soft deletion
+* Post–Comment one-to-many relationship
+* User–Comment one-to-many relationship
+* Published-Post validation
+* Backend-controlled author and Post assignment
+* Comment audit tracking
+* Comment soft deletion
+* Comment query optimization with `select_related()`
 
-The next milestone is **Feature 10 — Comments**
+The next milestone is **Feature 11 — User Profiles**.
 
-Feature 10 will introduce the Comments domain.
+Feature 11 will introduce a one-to-one Profile extension for the custom User model.
 
-Comments will become the platform's second business entity after Posts and will follow the same production architecture principles, including audit fields, soft deletion, ownership enforcement, and object-level permissions.
+The feature is expected to define:
 
-The feature will establish the foundation for future moderation workflows, comment restoration, and advanced authorization capabilities.
+* Profile ownership
+* Public and private profile fields
+* Authenticated profile updates
+* Safe public profile representations
+* Future profile-image compatibility
+* Query optimization
+* Validation and permission rules
+
+The implementation will follow the same architecture-first, security-focused, and incremental development workflow used throughout Features 00–10.
+

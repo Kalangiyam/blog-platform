@@ -46,14 +46,16 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 09)
+# Current Database Schema (Feature 10)
 
-At the completion of Feature 09, the database contains four primary business entities:
+At the completion of Feature 10, the database contains five primary entities:
 
-- User
-- Post
-- Category
-- Tag
+* User
+* Post
+* Category
+* Tag
+* Comment
+
 
 Feature 05 introduced the publishing workflow by utilizing the existing `status` and `published_at` fields of the `Post` model without requiring schema changes.
 
@@ -64,6 +66,16 @@ Feature 07 introduced the Tag entity as the platform's second reusable taxonomy 
 Feature 08 introduces the first taxonomy relationship by associating Posts and Categories through a many-to-many relationship.
 
 Feature 09 extends the taxonomy architecture by associating Posts and Tags through a second many-to-many relationship.
+
+Feature 10 introduces the Comment entity as the platform's second user-generated business entity after Posts.
+
+Comments establish:
+
+- A one-to-many relationship from Post to Comment
+- A one-to-many relationship from User to Comment
+- Author ownership
+- Audit tracking
+- Soft deletion
 
 Categories remain independently manageable while now supporting reusable assignment across multiple posts.
 
@@ -161,7 +173,43 @@ Future entities will reuse these base models to maintain consistency across the 
 │ created_at                    │
 │ updated_at                    │
 └───────────────────────────────┘
+
+```text
+┌───────────────────────────────┐
+│            Comment            │
+├───────────────────────────────┤
+│ id                            │
+│ post_id (FK)                  │
+│ author_id (FK)                │
+│ content                       │
+│ created_by_id (FK)            │
+│ updated_by_id (FK)            │
+│ deleted_by_id (FK)            │
+│ created_at                    │
+│ updated_at                    │
+│ is_deleted                    │
+│ deleted_at                    │
+└───────────────────────────────┘
 ```
+
+Relationship summary:
+
+```text
+User
+ ├── Posts
+ └── Comments
+
+Post
+ ├── Categories
+ ├── Tags
+ └── Comments
+
+Comment
+ ├── Post
+ └── Author
+```
+
+
 ```text
 Post
 ├── categories (ManyToMany)
@@ -337,37 +385,126 @@ A tag may be assigned to multiple posts, and a post may contain multiple tags.
 
 ---
 
+# Comment Entity
+
+## Model
+
+```text
+Comment
+```
+
+## Responsibilities
+
+The Comment model represents user-generated discussion attached to published Posts.
+
+Current capabilities include:
+
+* Comment creation
+* Comment ownership
+* Post association
+* Audit tracking
+* Soft deletion
+* Author-owned updates
+* Author-owned deletion
+* Public retrieval through published Posts
+
+## Relationships
+
+| Relationship | Target | Type       | Deletion Behavior           |
+| ------------ | ------ | ---------- | --------------------------- |
+| post         | Post   | ForeignKey | CASCADE                     |
+| author       | User   | ForeignKey | PROTECT                     |
+| created_by   | User   | ForeignKey | Shared audit behavior       |
+| updated_by   | User   | ForeignKey | Shared audit behavior       |
+| deleted_by   | User   | ForeignKey | Shared soft-delete behavior |
+
+## Important Fields
+
+* `post`
+* `author`
+* `content`
+* `created_at`
+* `updated_at`
+* `created_by`
+* `updated_by`
+* `is_deleted`
+* `deleted_at`
+* `deleted_by`
+
+## Lifecycle
+
+Comments are business entities and inherit:
+
+```text
+TimeStampedModel
+AuditModel
+SoftDeleteModel
+```
+
+Normal queries exclude soft-deleted Comments, while unrestricted administrative queries may access them through the shared all-records manager.
+
+## Ordering
+
+Comments use deterministic chronological ordering:
+
+```python
+ordering = ("created_at", "id")
+```
+
+This supports readable flat discussions and stable result ordering.
+
+## Content Constraint
+
+Comment content is limited to 2,000 characters at the model and serializer layers.
+
+Whitespace-only Comment content is rejected by API validation.
+
+---
+
 # Current Relationships
 
 ```text
 User
-├── Post (One-to-Many)
-├── Category (One-to-Many via audit fields)
-└── Tag (One-to-Many via audit fields)
+├── Posts (One-to-Many)
+├── Comments (One-to-Many)
+├── Category audit relationships
+└── Tag audit relationships
 
 Post
 ├── Author (ForeignKey → User)
 ├── Categories (Many-to-Many)
-└── Tags (Many-to-Many)
+├── Tags (Many-to-Many)
+└── Comments (One-to-Many)
 
 Category
 └── Posts (Reverse Many-to-Many)
 
 Tag
 └── Posts (Reverse Many-to-Many)
+
+Comment
+├── Post (ForeignKey → Post)
+└── Author (ForeignKey → User)
 ```
 
 Implemented relationships:
 
-- User → Post
-- Post → Category
-- Category → Post (reverse)
-- Post → Tag
-- Tag → Post (reverse)
+* User → Post
+* User → Comment
+* Post → Category
+* Category → Post
+* Post → Tag
+* Tag → Post
+* Post → Comment
+* Comment → Post
+* Comment → User
 
-The platform now contains two reusable taxonomy relationships:
-- Post ↔ Category
-- Post ↔ Tag
+The platform now contains:
+
+* Two reusable taxonomy relationships
+* Two user-generated business entities
+* One Post-to-Comment parent-child relationship
+
 ---
 
 # Planned Relationships
@@ -376,8 +513,8 @@ As additional features are implemented, the User model will become the central e
 
 ```text
 User
-├── Posts (One-to-Many) (Implemented)
-├── Comments (One-to-Many)
+├── Posts (One-to-Many) ✅ Implemented
+├── Comments (One-to-Many) ✅ Implemented
 ├── Profile (One-to-One)
 ├── Bookmarks (Many-to-Many)
 └── Likes (Many-to-Many)
@@ -385,7 +522,8 @@ User
 ```text
 Post
 ├── Categories (Many-to-Many) ✅ Implemented
-└── Tags (Many-to-Many) ✅ Implemented
+├── Tags (Many-to-Many) ✅ Implemented
+└── Comments (One-to-Many) ✅ Implemented
 ```
 
 These relationships are planned and will be implemented in future features.
@@ -400,8 +538,8 @@ The following database tables are planned:
 * Profiles
 * ✅ Posts 
 * ✅ Categories
-* ✅Tags
-* Comments
+* ✅ Tags
+* ✅ Comments
 * Bookmarks
 * Likes
 
@@ -436,6 +574,12 @@ The project follows a migration-first approach.
 * Django automatically generated the second taxonomy relationship table.
 * Tag assignment is enforced through backend validation and ORM relationship management.
 * Shared taxonomy validation is implemented through serializer mixins.
+* Feature 10 introduced the `Comment` table through `comments.0001_initial`.
+* Foreign-key relationships were created from Comment to Post and User.
+* Post physical deletion uses `CASCADE`.
+* User physical deletion is prevented through `PROTECT` while authored Comments exist.
+* Comment timestamp, audit, and soft-delete fields were inherited from shared abstract models.
+* No data migration was required because the Comment table was newly introduced.
 
 ---
 
@@ -465,6 +609,13 @@ The project follows these principles:
 * Reusable tag assignment
 * Shared taxonomy validation
 * Consistent taxonomy relationship architecture
+* One-to-many parent-child relationships
+* Explicit Comment ownership
+* Required Post and author relationships
+* Protected User relationship for user-generated content preservation
+* Soft-delete lifecycle for Comments
+* Backend-enforced published-Post validation
+* Deterministic Comment ordering
 
 ---
 
@@ -484,6 +635,10 @@ Current:
 * Automatic indexes on the Post–Category intermediate relationship table
 * Optimized category retrieval using `prefetch_related()`
 * Optimized tag retrieval using `prefetch_related()`
+* Automatic foreign-key index on `Comment.post_id`
+* Automatic foreign-key index on `Comment.author_id`
+* Optimized Comment author loading using `select_related("author")`
+* Optimized individual Comment loading using `select_related("author", "post")`
 
 Future:
 
@@ -524,6 +679,19 @@ Data integrity is maintained through:
 * Active tag enforcement during assignment
 * ORM-managed many-to-many integrity
 * Shared taxonomy validation through serializer mixins
+* Required Comment-to-Post relationship
+* Required Comment-to-User relationship
+* `CASCADE` enforcement for physical Post deletion
+* `PROTECT` enforcement for physical User deletion
+* Backend-controlled Comment author assignment
+* Backend-controlled parent Post assignment
+* Prevention of Comment author reassignment
+* Prevention of Comment Post reassignment
+* Published and non-deleted Post validation before Comment creation
+* Comment ownership enforcement for updates and deletion
+* Soft-deleted Comment exclusion through the default manager
+* Comment content length validation
+* Whitespace-only Comment rejection
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -542,6 +710,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
+* ✅ Feature 10 — Comments
 
 ## Current Database Version
 Current schema includes:
@@ -569,6 +738,14 @@ Current schema includes:
 - Tag relationship management
 - Nested tag retrieval support
 - Shared taxonomy validation mixin support
+- Comment model
+- User–Comment one-to-many relationship
+- Post–Comment one-to-many relationship
+- Comment ownership
+- Comment audit tracking
+- Comment soft deletion
+- Comment content length limit
+- Comment chronological ordering
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
@@ -586,6 +763,12 @@ Posts may now contain multiple tags while tags remain independently managed and 
 
 Both taxonomy relationships follow the same slug-based assignment architecture and many-to-many database design.
 
+Feature 10 introduces the Comment entity as the second user-generated business entity.
+
+Each Comment belongs to exactly one Post and one User.
+
+Comments use the shared soft-delete lifecycle and audit architecture, preserving records while excluding deleted Comments from normal application queries.
+
 ## Shared Abstract Models
 
 The project uses reusable abstract base models to avoid duplicated code.
@@ -602,11 +785,20 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 10 will introduce the Comment entity and its relationship to Posts and Users.
+Feature 11 will introduce the User Profile entity.
 
-Future database enhancements may include:
+Expected database decisions include:
 
-* Comment relationships
-* Profile relationships
+* One-to-one relationship between User and Profile
+* Profile ownership
+* Optional profile fields
+* Public and private profile data
+* Future profile-image compatibility
+
+Future database enhancements may also include:
+
 * Bookmarks
 * Likes
+* Comment replies
+* Comment moderation records
+* Search indexes

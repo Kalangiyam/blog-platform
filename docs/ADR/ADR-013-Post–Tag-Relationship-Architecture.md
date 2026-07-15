@@ -1,7 +1,6 @@
 # ADR-013 — Post–Tag Relationship Architecture
 
 ## Status
-q
 * **Status:** Accepted
 * **Date:** 2026-07-14
 * **Feature:** Feature 09 — Post–Tag Relationship

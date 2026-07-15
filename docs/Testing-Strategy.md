@@ -2,7 +2,7 @@
 
 # Testing Overview
 
-Testing is a core part of the Blog Platform. Every major feature will include automated tests to verify functionality, prevent regressions, and ensure long-term maintainability.
+Testing is a core part of the Blog Platform. Every major feature includes a defined automated testing strategy and undergoes manual verification until the automated test suite is implemented. This approach helps verify functionality, prevent regressions, and ensure long-term maintainability.
 
 Testing will be introduced incrementally alongside feature development rather than postponed until the end of the project.
 
@@ -97,13 +97,13 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 09)
+# Current Testing Status (Feature 10)
 
 ## Implemented
 
 An automated test suite has not yet been created.
 
-However, the Authentication, Posts, Categories, and Tags modules have been comprehensively verified through manual API testing during development.
+However, the Authentication, Posts, Categories, Tags, and Comments modules have been comprehensively verified through manual API testing during development.
 
 Manual testing currently validates:
 
@@ -145,6 +145,21 @@ Manual testing currently validates:
 - Active tag validation
 - Duplicate tag assignment prevention
 - Shared taxonomy validation verification
+- Public Comment listing
+- Authenticated Comment creation
+- Anonymous Comment creation denial
+- Published-Post validation
+- Invalid and unpublished Post handling
+- Comment content validation
+- Comment ownership enforcement
+- Author-only Comment updates
+- Author-only Comment soft deletion
+- Non-author update and delete denial
+- Backend-controlled author assignment
+- Backend-controlled Post assignment
+- Soft-deleted Comment exclusion
+- Comment response field validation
+- Comment query optimization verification
 
 Automated tests will be introduced incrementally in future features.
 
@@ -355,10 +370,37 @@ As new features are completed, testing coverage will expand to include:
 
 ## Comments
 
-- Create comment
-- Edit own comment
-- Delete own comment
-- Permission enforcement
+### Completed — Manual Verification
+
+* Public Comment listing
+* Authenticated Comment creation
+* Anonymous creation denial
+* Published-Post validation
+* Invalid and hidden Post handling
+* Missing content validation
+* Blank content validation
+* Whitespace-only content validation
+* Maximum-length validation
+* Backend-controlled author assignment
+* Backend-controlled Post assignment
+* Author-owned Comment updates
+* Non-author update denial
+* Author-owned Comment soft deletion
+* Non-author delete denial
+* Soft-deleted Comment exclusion
+* Public response field validation
+* Comment query optimization
+
+### Future — Automated Tests
+
+* Model behavior
+* Serializer validation
+* API integration
+* Object-level permissions
+* Ownership enforcement
+* Soft-delete lifecycle
+* Foreign-key deletion behavior
+* Security regression tests
 
 ---
 
@@ -431,6 +473,79 @@ The following automated tests are planned for the Tags application:
 - Verify reverse post relationships
 - Reject inactive tags
 - Reject duplicate tag assignments
+
+---
+
+## Comments Module
+
+The following automated tests are planned for the Comments application.
+
+### Model Tests
+
+* Create a Comment with a valid Post and author
+* Verify the Post relationship
+* Verify the author relationship
+* Verify chronological ordering
+* Verify the 2,000-character content limit
+* Verify soft deletion
+* Verify the unrestricted manager can access deleted Comments
+* Verify the default manager excludes deleted Comments
+* Verify physical User deletion is protected
+* Verify physical Post deletion cascades to Comments
+
+### Serializer Tests
+
+* Validate Comment creation content
+* Reject missing content
+* Reject blank content
+* Reject whitespace-only content
+* Reject content exceeding 2,000 characters
+* Verify leading and trailing whitespace normalization
+* Prevent author assignment through request data
+* Prevent Post assignment through request data
+* Prevent author reassignment during updates
+* Prevent Post reassignment during updates
+* Verify nested public author representation
+* Verify email and audit fields are not exposed
+
+### API Tests
+
+* List Comments for a published Post
+* Return an empty list when a Post has no Comments
+* Create a Comment on a published Post
+* Reject Comment creation without authentication
+* Reject Comment creation on an invalid Post
+* Reject Comment creation on a draft Post
+* Reject Comment creation on an unpublished Post
+* Reject Comment creation on a soft-deleted Post
+* Update an owned Comment
+* Soft delete an owned Comment
+* Verify `PUT` is not allowed
+* Verify soft-deleted Comments disappear from the list
+* Verify soft-deleted Comments cannot be updated
+* Verify soft-deleted Comments cannot be deleted again
+* Verify existing Comments remain stored when a Post is unpublished
+
+### Permission and Ownership Tests
+
+* Anonymous users can list Comments
+* Anonymous users cannot create Comments
+* Authenticated users can create Comments
+* Comment authors can update their own Comments
+* Non-authors cannot update another user's Comment
+* Comment authors can delete their own Comments
+* Non-authors cannot delete another user's Comment
+* Post authors cannot modify another user's Comment
+* `IsCommentAuthor` correctly enforces object-level ownership
+
+### Security Tests
+
+* Client-supplied author values are ignored or rejected
+* Client-supplied Post values are ignored or rejected
+* Hidden Posts return `404 Not Found`
+* Public Comment responses do not expose email addresses
+* Public Comment responses do not expose audit fields
+* Comment content is treated as untrusted plain text
 
 ---
 
@@ -537,6 +652,34 @@ During Features 03 and 04, the following scenarios were manually verified using 
 - Verify audit fields (`created_by`, `updated_by`)
 - Verify inactive tags are excluded by the default manager
 
+### Comments
+
+* List Comments on a published Post
+* Verify anonymous Comment listing
+* Create a Comment as an authenticated user
+* Prevent anonymous Comment creation
+* Verify automatic author assignment
+* Verify automatic parent Post assignment
+* Prevent Comment creation on an invalid Post
+* Prevent Comment creation on a draft or unpublished Post
+* Prevent Comment creation on a soft-deleted Post
+* Reject missing Comment content
+* Reject blank Comment content
+* Reject whitespace-only Comment content
+* Reject Comment content exceeding 2,000 characters
+* Update an owned Comment
+* Prevent updating another user's Comment
+* Prevent Comment author reassignment
+* Prevent Comment Post reassignment
+* Soft delete an owned Comment
+* Prevent deleting another user's Comment
+* Verify deleted Comments remain in the database
+* Verify deleted Comments are excluded from normal API responses
+* Verify deleted Comments cannot be updated or deleted again
+* Verify public responses exclude email and audit fields
+* Verify author loading uses `select_related("author")`
+* Verify individual Comment operations load `author` and `post` efficiently
+
 ---
 
 # Test Organization
@@ -556,8 +699,8 @@ apps/
 │       └── test_serializers.py
 │
 ├── posts/
-│   └── tests/
-|    ├── test_models.py
+│   ├── tests/
+|   ├── test_models.py
 |   ├── test_serializers.py
 |   ├── test_views.py
 |   ├── test_permissions.py
@@ -573,14 +716,22 @@ apps/
 │       ├── test_permissions.py
 │       ├── test_views.py
 │       └── test_api.py
-└── tags/
-    └── tests/
-        ├── test_models.py
-        ├── test_managers.py
-        ├── test_serializers.py
-        ├── test_permissions.py
-        ├── test_views.py
-        └── test_api.py
+├── tags/
+|   └── tests/
+|       ├── test_models.py
+|       ├── test_managers.py
+|       ├── test_serializers.py
+|       ├── test_permissions.py
+|       ├── test_views.py
+|       └── test_api.py
+|
+├── comments/
+│   └── tests/
+│       ├── test_models.py
+│       ├── test_serializers.py
+│       ├── test_permissions.py
+│       ├── test_views.py
+│       └── test_api.py
 ```
 
 This structure keeps tests close to the code they verify.
@@ -626,6 +777,7 @@ Additional tools may be introduced later if project requirements evolve.
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
 - ✅ Feature 09 — Post–Tag Relationship
+- ✅ Feature 10 — Comments
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -633,7 +785,7 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication, Posts, Categories, Tags, the Post–Category relationship, and the Post–Tag relationship have been comprehensively verified through manual API testing.
+Authentication, Posts, Categories, Tags, Comments, and all implemented cross-domain relationships have been comprehensively verified through manual API testing.
 
 The project currently has validated:
 
@@ -668,25 +820,42 @@ The project currently has validated:
 - Nested tag serialization
 - Shared taxonomy validation
 - Post–Tag relationship synchronization
+- Public Comment listing
+- Authenticated Comment creation
+- Comment content validation
+- Published-Post validation
+- Comment ownership enforcement
+- Author-only Comment updates
+- Author-only Comment soft deletion
+- Soft-deleted Comment exclusion
+- Backend-controlled Comment relationships
+- Comment response security
+- Comment query optimization
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 10 will introduce the Comments domain.
+Feature 11 will introduce User Profiles.
 
-The initial automated test suite will continue focusing on:
+The next testing scope is expected to include:
+
+* User-to-Profile one-to-one relationships
+* Automatic or controlled Profile creation
+* Profile ownership
+* Authenticated Profile updates
+* Public and private Profile fields
+* Protection of sensitive User information
+* Profile serializer validation
+
+A broader automated testing phase remains planned for:
 
 * Authentication APIs
 * Posts APIs
 * Categories APIs
 * Tags APIs
-* Serializer validation
+* Comments APIs
 * Object-level permissions
-* Publishing workflow
-* Taxonomy management
-* Post–Category integration
-* Post–Tag integration
-* Shared taxonomy validation testing
-* Relationship synchronization testing
-* Comment ownership testing
+* Soft-delete lifecycle behavior
+* Taxonomy relationship synchronization
+* Cross-domain integration
