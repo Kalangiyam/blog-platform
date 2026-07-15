@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-15
 
-**Current Milestone:** ✅ Feature 09 — Post–Tag Relationship
+**Current Milestone:** ✅ Feature 10 — Comments
 
 ---
 
@@ -101,6 +101,16 @@ blog-platform/
 │   │   |    ├── urls.py
 │   │   |    ├── views.py
 │   │   |    └── ...
+│   │   ├── comments/
+│   │   |    ├── admin.py
+│   │   |    ├── apps.py
+│   │   |    ├── models.py
+│   │   |    ├── permissions.py
+│   │   |    ├── serializers.py
+│   │   |    ├── urls.py
+│   │   |    ├── views.py
+│   │   |    ├── migrations/
+│   │   |    └── tests/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -318,41 +328,41 @@ Complete the post lifecycle by implementing a backend-enforced publishing workfl
 
 #### Workflow
 
-* Publish draft posts
-* Unpublish published posts
-* Backend status transition validation
-* Automatic publication timestamp management
+- Publish draft posts
+- Unpublish published posts
+- Backend status transition validation
+- Automatic publication timestamp management
 
 #### APIs
 
-* Publish Post API
-* Unpublish Post API
+- Publish Post API
+- Unpublish Post API
 
 #### Security
 
-* JWT-protected publishing endpoints
-* Author-only publishing
-* Author-only unpublishing
-* Backend workflow validation
+- JWT-protected publishing endpoints
+- Author-only publishing
+- Author-only unpublishing
+- Backend workflow validation
 
 #### Architecture
 
-* Dedicated workflow serializers
-* Custom ViewSet actions
-* Separation of CRUD operations from workflow actions
+- Dedicated workflow serializers
+- Custom ViewSet actions
+- Separation of CRUD operations from workflow actions
 
 #### Manual Testing
 
 Successfully verified:
 
-* Publish draft post
-* Prevent publishing an already published post
-* Unpublish published post
-* Prevent unpublishing a draft post
-* Author-only publishing permissions
-* Authentication requirements
-* Invalid slug handling
-* Publication timestamp management
+- Publish draft post
+- Prevent publishing an already published post
+- Unpublish published post
+- Prevent unpublishing a draft post
+- Author-only publishing permissions
+- Authentication requirements
+- Invalid slug handling
+- Publication timestamp management
 
 **Status:** Completed
 
@@ -522,7 +532,6 @@ Successfully verified:
 
 ---
 
-
 ## ✅ Feature 09 — Post–Tag Relationship
 
 ### Objective
@@ -596,17 +605,90 @@ Successfully verified:
 
 ---
 
+## ✅ Feature 10 — Comments
+
+### Objective
+
+Introduce the Comments domain as the platform’s second user-generated business entity, enabling public discussions on published Posts while enforcing authentication, ownership, audit tracking, and soft deletion.
+
+### Completed
+
+#### Domain Model
+
+- Comments application
+- Comment model
+- Post–Comment one-to-many relationship
+- User–Comment one-to-many relationship
+- Comment ownership through `author`
+- Audit tracking
+- Soft deletion
+- Chronological ordering
+- 2,000-character content limit
+
+#### APIs
+
+- Public Comment listing
+- Authenticated Comment creation
+- Author-owned Comment updates
+- Author-owned Comment soft deletion
+
+#### Security
+
+- JWT-protected create, update, and delete operations
+- Object-level ownership enforcement through `IsCommentAuthor`
+- Backend-controlled author assignment
+- Backend-controlled parent Post assignment
+- Published and non-deleted Post validation
+- Invalid or hidden Posts return `404 Not Found`
+- Soft-deleted Comments excluded from normal querysets
+- Public responses exclude email and audit fields
+
+#### Architecture
+
+- Independent Comments domain
+- Action-specific serializers
+- Two-ViewSet architecture
+- Hybrid Post-scoped and top-level routing
+- Shared audit and soft-delete base models
+- Query optimization using `select_related()`
+- Flat Comment structure with threaded replies deferred
+
+#### Manual Testing
+
+Successfully verified:
+
+- Public Comment listing
+- Authenticated Comment creation
+- Anonymous creation denial
+- Published-Post validation
+- Invalid and unpublished Post handling
+- Missing content validation
+- Blank and whitespace-only content validation
+- Maximum-length validation
+- Backend author assignment
+- Backend Post assignment
+- Author-owned updates
+- Non-author update denial
+- Author-owned soft deletion
+- Non-author deletion denial
+- Soft-deleted Comment exclusion
+- Public response field safety
+- Query optimization
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
-| Module     | Status      |
-| ---------- | ----------- |
-| Core       | ✅ Completed |
-| Users      | ✅ Completed |
+| Module     | Status                                                              |
+| ---------- | ------------------------------------------------------------------- |
+| Core       | ✅ Completed                                                        |
+| Users      | ✅ Completed                                                        |
 | Posts      | ✅ Completed (Publishing Workflow + Category and Tag Relationships) |
-| Categories | ✅ Completed |
-| Tags       | ✅ Completed |
-| Comments   | ⏳ Planned   |
-
+| Categories | ✅ Completed                                                        |
+| Tags       | ✅ Completed                                                        |
+| Comments   | ✅ Completed                                                          |
 
 ---
 
@@ -673,7 +755,23 @@ Implemented
 
 ## Comments APIs
 
-Not Started
+Implemented
+
+* GET `/api/posts/{post_slug}/comments/`
+* POST `/api/posts/{post_slug}/comments/`
+* PATCH `/api/comments/{id}/`
+* DELETE `/api/comments/{id}/`
+
+Current behavior:
+
+* Public Comment listing
+* Authenticated Comment creation
+* Comment author ownership enforcement
+* Author-only updates
+* Author-only soft deletion
+* Published-Post validation
+* Backend-controlled Comment relationships
+* Soft-deleted Comment exclusion
 
 ---
 
@@ -685,6 +783,7 @@ Not Started
 - Post
 - Category
 - Tag
+- Comment
 
 The platform includes two reusable taxonomy tables:
 
@@ -699,27 +798,44 @@ The platform now contains the following relationships:
 
 ```text
 User
- └── Posts
+ ├── Posts
+ └── Comments
 
 Post
  ├── Author (ForeignKey)
  ├── Categories (ManyToMany)
- └── Tags (ManyToMany)
+ ├── Tags (ManyToMany)
+ └── Comments (One-to-Many)
 
 Category
  └── Posts (Reverse ManyToMany)
 
 Tag
  └── Posts (Reverse ManyToMany)
+
+Comment
+ ├── Post (ForeignKey)
+ └── Author (ForeignKey)
 ```
 
 Django manages both taxonomy relationships through automatic intermediate join tables.
 
 The Post–Category and Post–Tag relationships now use the same slug-based assignment, active-record validation, nested response, and query-optimization strategy.
 
+Comments use direct foreign-key relationships rather than an intermediate table.
+
+Feature 10 introduces:
+
+* Comment ownership
+* Comment audit tracking
+* Comment soft deletion
+* Post physical deletion through `CASCADE`
+* User physical deletion protection through `PROTECT`
+
+
 ## Planned Tables
 
-- Comment
+
 
 ---
 
@@ -772,6 +888,7 @@ Completed Feature Reports:
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
 - ✅ Feature 09 — Post–Tag Relationship report pending documentation completion
+- ✅ Feature 10 — Comments
 
 ---
 
@@ -792,6 +909,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-011 — Tags Domain Architecture
 - ✅ ADR-012 — Post–Category Relationship Architecture
 - ✅ ADR-013 — Post–Tag Relationship Architecture pending creation
+- ✅ ADR-014 — Comments Domain Architecture
 
 ---
 
@@ -799,7 +917,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication, Posts, Categories, and Tags modules.
+Completed for the Authentication, Posts, Categories, Tags, and Comments modules.
 
 Verified:
 
@@ -862,6 +980,27 @@ Verified:
 - Staff permissions
 - Active tag filtering
 
+### Comments
+
+- Public listing
+- Authenticated creation
+- Anonymous creation denial
+- Published-Post validation
+- Invalid and hidden Post handling
+- Content validation
+- Ownership enforcement
+- Author-only updates
+- Non-author update denial
+- Author-only soft deletion
+- Non-author deletion denial
+- Backend-controlled author assignment
+- Backend-controlled Post assignment
+- Soft-deleted Comment exclusion
+- Public response field safety
+- Query optimization
+
+---
+
 ## Automated Testing
 
 Not yet implemented.
@@ -871,10 +1010,6 @@ Planned during future feature development.
 ---
 
 # Pending Features
-
-## Phase 1 — Core Blog
-
-- Feature 10 — Comments
 
 ## Phase 2 — User Experience
 
@@ -892,31 +1027,32 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 09 — Post–Tag Relationship
+✅ Feature 10 — Comments
 
-Status: **Implementation and manual testing completed**
+Status: **Implementation, migration, admin integration, API integration, manual testing, ADR, and Feature Completion Report completed**
 
-Documentation completion is in progress.
+Documentation completed.
 
 ---
 
 # Next Milestone
 
-## Feature 10 — Comments
+## Feature 11 — User Profiles
 
-The next feature will introduce the Comments domain as the platform's second user-generated business entity.
+The next feature will introduce User Profiles as a one-to-one extension of the custom User model.
 
 Planned topics include:
 
-- Comment domain and database design
-- Post-to-comment and user-to-comment relationships
-- Soft deletion and audit tracking
-- Ownership enforcement
-- Public and protected API behavior
-- Comment moderation readiness
-- Query optimization
-- Manual and automated testing strategy
-- Documentation updates
+* Profile business purpose
+* User-to-Profile one-to-one relationship
+* Profile ownership
+* Public and private profile fields
+* Authenticated profile updates
+* Safe public profile representation
+* Future profile-image compatibility
+* Query optimization
+* Manual and automated testing strategy
+* Documentation updates
 
 # Important Architecture Decisions
 
@@ -951,6 +1087,20 @@ The project currently follows these key architectural decisions:
 - Nested taxonomy response serializers
 - Shared taxonomy validation through `TaxonomyAssignmentMixin`
 - Query optimization using `select_related()` and `prefetch_related()`
+- Independent Comments domain
+- Post–Comment one-to-many relationship
+- User–Comment one-to-many relationship
+- Explicit Comment ownership
+- `CASCADE` for physical Post deletion
+- `PROTECT` for physical User deletion
+- Hybrid Comment routing
+- `PostCommentViewSet` for list and create
+- `CommentViewSet` for update and delete
+- Object-level Comment permission through `IsCommentAuthor`
+- Backend-controlled Comment author and Post assignment
+- Published-Post validation
+- Flat Comments with threaded replies deferred
+- Comment query optimization using `select_related()`
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -968,7 +1118,7 @@ Every feature follows the same engineering workflow:
 6. Manual Testing
 7. Documentation Updates
 8. Feature Completion Report
-9. Architecture Decision Record (ADR) *(when applicable)*
+9. Architecture Decision Record (ADR) _(when applicable)_
 10. Project Status Update
 11. Git Commit
 
@@ -976,25 +1126,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 10 — Comments
-
-Current project state:
-
-- Features 00–09 are implemented and manually tested.
-- Authentication, Posts, Categories, and Tags modules are fully implemented.
-- Post–Category and Post–Tag many-to-many relationships are implemented.
-- Posts accept taxonomy assignment through `category_slugs` and `tag_slugs`.
-- Post list and detail responses return nested category and tag data.
-- Shared taxonomy slug validation is implemented through `TaxonomyAssignmentMixin`.
-- Post querysets optimize author, category, and tag retrieval.
-- Feature 09 documentation completion is in progress.
-
-Remaining Feature 09 completion tasks:
-
-1. Finish incremental updates to the affected core documentation.
-2. Create ADR-013 — Post–Tag Relationship Architecture.
-3. Create the Feature 09 Completion Report.
-4. Verify documentation consistency.
-5. Prepare the Feature 09 Git commit and pull-request summary.
-
-After Feature 09 documentation is complete, begin Feature 10 — Comments using the established Architecture-First and Vertical Slice Development workflow.
+**Starting Point:** Feature 11 — User Profiles

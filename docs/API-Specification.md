@@ -4,16 +4,19 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 09, the platform provides four API modules:
+At the completion of Feature 10, the platform provides five API modules:
 
 - Authentication APIs
 - Posts APIs
 - Categories APIs
 - Tags APIs
+- Comments APIs
 
 Feature 08 extended the Posts API by introducing a many-to-many relationship between Posts and Categories.
 
 Feature 09 extends the same taxonomy architecture by introducing a many-to-many relationship between Posts and Tags. Categories and tags can now be assigned to posts using slug-based write fields, while post responses include lightweight nested category and tag representations.
+
+Feature 10 introduces the Comments domain, allowing authenticated users to create, update, and soft delete comments on published posts while allowing public users to read comment discussions.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
@@ -740,22 +743,283 @@ Restricted to staff users.
 
 ---
 
+# Comments APIs
+
+## Current Status
+
+Implemented ✅
+
+The Comments module enables public discussions on published posts while enforcing authenticated creation, ownership-based updates and deletion, audit tracking, and soft deletion.
+
+| Method | Endpoint                         | Authentication                         | Status        |
+| ------ | -------------------------------- | -------------------------------------- | ------------- |
+| GET    | /api/posts/{post_slug}/comments/ | Public                                 | ✅ Implemented |
+| POST   | /api/posts/{post_slug}/comments/ | JWT Access Token                       | ✅ Implemented |
+| PATCH  | /api/comments/{id}/              | JWT Access Token (Comment Author Only) | ✅ Implemented |
+| DELETE | /api/comments/{id}/              | JWT Access Token (Comment Author Only) | ✅ Implemented |
+
+---
+
+## List Comments
+
+```http
+GET /api/posts/{post_slug}/comments/
+```
+
+### Authentication
+
+Public.
+
+### Behavior
+
+Returns non-deleted comments belonging to a published, non-deleted post.
+
+Comments are returned in chronological order.
+
+Related author information is loaded using:
+
+```python
+select_related("author")
+```
+
+### Successful Response
+
+Status:
+
+```text
+200 OK
+```
+
+Example:
+
+```json
+[
+    {
+        "id": 1,
+        "content": "This article was very helpful.",
+        "author": {
+            "id": 2,
+            "username": "john"
+        },
+        "created_at": "2026-07-15T10:00:00+05:30",
+        "updated_at": "2026-07-15T10:00:00+05:30"
+    }
+]
+```
+
+A post with no comments returns an empty list:
+
+```json
+[]
+```
+
+---
+
+## Create Comment
+
+```http
+POST /api/posts/{post_slug}/comments/
+```
+
+### Authentication
+
+JWT Access Token required.
+
+### Example Request
+
+```json
+{
+    "content": "This article was very helpful."
+}
+```
+
+The backend automatically assigns:
+
+* The post from the URL slug
+* The author from `request.user`
+* `created_by`
+* `updated_by`
+
+Clients cannot control ownership or audit fields.
+
+### Successful Response
+
+Status:
+
+```text
+201 Created
+```
+
+Example:
+
+```json
+{
+    "id": 1,
+    "content": "This article was very helpful.",
+    "author": {
+        "id": 2,
+        "username": "john"
+    },
+    "created_at": "2026-07-15T10:00:00+05:30",
+    "updated_at": "2026-07-15T10:00:00+05:30"
+}
+```
+
+---
+
+## Update Comment
+
+```http
+PATCH /api/comments/{id}/
+```
+
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the Comment author may update the Comment.
+
+### Example Request
+
+```json
+{
+    "content": "Updated comment content."
+}
+```
+
+Only `content` is writable.
+
+The Comment author and parent Post cannot be reassigned.
+
+### Successful Response
+
+Status:
+
+```text
+200 OK
+```
+
+---
+
+## Delete Comment
+
+```http
+DELETE /api/comments/{id}/
+```
+
+### Authentication
+
+JWT Access Token required.
+
+### Permission
+
+Only the Comment author may delete the Comment.
+
+### Behavior
+
+The Comment is soft deleted.
+
+The database record remains available for auditing and future restoration, but it is excluded from normal API queries.
+
+### Successful Response
+
+Status:
+
+```text
+204 No Content
+```
+
+---
+
+## Comment Validation Errors
+
+### Missing Content
+
+```json
+{}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+### Blank or Whitespace-Only Content
+
+```json
+{
+    "content": "   "
+}
+```
+
+Expected:
+
+```text
+400 Bad Request
+```
+
+### Content Exceeding Maximum Length
+
+Comment content is limited to 2,000 characters.
+
+Content exceeding this limit returns:
+
+```text
+400 Bad Request
+```
+
+### Invalid or Non-Public Post
+
+The following Post states return:
+
+```text
+404 Not Found
+```
+
+* Invalid slug
+* Draft Post
+* Unpublished Post
+* Soft-deleted Post
+
+Using `404` prevents disclosure of unpublished content.
+
+---
+
+## Comment Business Rules
+
+* Comments belong to exactly one Post.
+* Comments belong to exactly one author.
+* Comments may only be created on published, non-deleted Posts.
+* Public users may list Comments on published Posts.
+* Only authenticated users may create Comments.
+* Only the Comment author may update a Comment.
+* Only the Comment author may soft delete a Comment.
+* Post ownership does not grant ownership of another user's Comment.
+* Comment authors are assigned by the backend.
+* Parent Posts are resolved from the URL.
+* Comments cannot be reassigned to another author or Post.
+* Soft-deleted Comments are excluded from normal queries.
+* Comment responses expose `id` and `username` for the author.
+* Email addresses and audit fields are not exposed publicly.
+* Final Editor moderation is deferred to the advanced permissions feature.
+
+---
+
 # Future API Modules
 
 As the project grows, additional API modules will be added.
 
-## Comments
+Planned modules include:
 
-Planned operations:
-
-```text
-GET
-POST
-PATCH
-DELETE
-```
-
-The Comments module is the next planned API domain.
+- User Profiles
+- Search
+- Media Uploads
+- Advanced Permissions and Authorization
+- Performance Optimization
+- Deployment and CI/CD
 
 ---
 
@@ -841,6 +1105,10 @@ The current API enforces:
 * Post ownership for update, delete, publish, and unpublish operations
 * Backend relationship validation
 * Backend publishing workflow validation
+* Comment ownership for update and soft-delete operations
+* Object-level Comment authorization through `IsCommentAuthor`
+* Published-Post validation for Comment listing and creation
+* Backend-controlled Comment author and Post assignment
 
 Frontend restrictions are considered user-experience controls only and are not trusted for security.
 
@@ -849,6 +1117,8 @@ The planned advanced permissions feature will extend this foundation into the fi
 ---
 
 # Performance Strategy
+
+## Post Query Optimization
 
 The Posts API prevents N+1 query problems by eagerly loading related data.
 
@@ -872,6 +1142,30 @@ Post.objects.select_related(
 `categories` and `tags` are many-to-many relationships and require separate optimized queries.
 
 This keeps list and detail serialization efficient as the number of posts grows.
+
+---
+
+## Comment Query Optimization
+
+The Comments API prevents N+1 queries by eagerly loading related User and Post records where required.
+
+For Comment listing:
+
+```python
+Comment.objects.filter(
+    post=post,
+).select_related(
+    "author",
+)
+```
+For Comment update and deletion:
+```python
+Comment.objects.select_related(
+    "author",
+    "post",
+)
+```
+`select_related()` is appropriate because `author` and `post` are foreign-key relationships.
 
 ---
 
@@ -903,10 +1197,11 @@ Versioning will be introduced only when required to preserve backward compatibil
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
+* ✅ Feature 10 — Comments
 
 ## Current API State
 
-Authentication, Posts, Categories, and Tags APIs have been implemented and manually tested.
+Authentication, Posts, Categories, Tags, and Comments APIs have been implemented and manually tested.
 
 The platform currently supports:
 
@@ -937,8 +1232,17 @@ The platform currently supports:
 - Backend validation of tag relationships
 - Shared taxonomy validation through a serializer mixin
 - Optimized author, category, and tag query loading
+- Public Comment listing for published Posts
+- Authenticated Comment creation
+- Comment author ownership enforcement
+- Author-only Comment updates
+- Author-only Comment soft deletion
+- Published-Post validation for Comments
+- Backend-controlled Comment author and Post assignment
+- Comment audit tracking
+- Comment query optimization using `select_related`
 
-Future features will extend the API with comments, user profiles, search, media uploads, advanced permissions, performance improvements, and deployment support.
+Future features will extend the API with user profiles, search, media uploads, advanced permissions, performance improvements, and deployment support.
 
 ---
 
@@ -1021,18 +1325,26 @@ Post responses include lightweight nested tag objects containing:
 
 ---
 
+# Comments Endpoints
+
+| Endpoint | Description |
+|-----------|-------------|
+| GET /api/posts/{post_slug}/comments/ | List visible Comments for a published Post |
+| POST /api/posts/{post_slug}/comments/ | Create a Comment on a published Post |
+| PATCH /api/comments/{id}/ | Update a Comment owned by the authenticated user |
+| DELETE /api/comments/{id}/ | Soft delete a Comment owned by the authenticated user |
+
+---
+
 # Next Update
 
-Feature 10 will introduce the Comments domain.
+Feature 11 will introduce User Profiles.
 
-The Comments API is expected to establish:
+The next API design phase is expected to define:
 
-- Comment creation
-- Comment retrieval
-- Ownership enforcement
-- Soft deletion
-- Audit tracking
-- Post-to-comment relationships
-- A foundation for future moderation and restoration workflows
-
-The exact API contract will be defined during Feature 10 architecture design.
+- Public and private profile representations
+- Profile ownership
+- Profile update permissions
+- User-to-profile relationships
+- Safe public user information
+- Profile extensibility for future media uploads

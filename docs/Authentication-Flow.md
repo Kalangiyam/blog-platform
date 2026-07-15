@@ -18,9 +18,11 @@ Feature 08 extends the authorization model by introducing the Post–Category re
 
 Feature 09 extends the same taxonomy authorization model to the Post–Tag relationship. Authenticated post authors may assign active tags to their own posts, while tag lifecycle management remains restricted to staff users.
 
+Feature 10 extends the authorization architecture through the Comments domain. Public users may list comments attached to published posts, while authenticated users may create comments. Comment updates and soft deletion are restricted to the Comment author through backend-enforced object-level permissions.
+
 ---
 
-# Current Status (Feature 09)
+# Current Status (Feature 10)
 
 ## Completed
 
@@ -252,6 +254,17 @@ The authentication system will follow these security practices:
 * Enforce post ownership before tag relationship updates
 * Separate category administration from category assignment responsibilities
 * Separate tag administration from tag assignment responsibilities
+* Require authentication for Comment creation, updates, and deletion.
+* Allow public Comment listing only through published, non-deleted Posts.
+* Assign Comment authors from `request.user`.
+* Resolve the parent Post from the URL instead of request data.
+* Enforce Comment ownership through `IsCommentAuthor`.
+* Prevent users from updating or deleting Comments owned by another user.
+* Prevent Post authors from automatically modifying Comments written by other users.
+* Prevent Comment author and Post reassignment.
+* Return `404 Not Found` for invalid, draft, unpublished, or soft-deleted parent Posts.
+* Exclude soft-deleted Comments from normal API querysets.
+* Avoid exposing User email addresses and Comment audit fields in public responses.
 
 ---
 
@@ -287,6 +300,18 @@ Current authorization capabilities include:
 * Posts may reference tags, but Posts APIs cannot create or modify Tag records.
 * Existing object-level permissions continue protecting post ownership during tag updates.
 * Shared taxonomy validation is implemented through reusable serializer mixins.
+* Public users may list Comments attached to published, non-deleted Posts.
+* Only authenticated users may create Comments.
+* Comment authors are assigned by the backend through `request.user`.
+* Parent Posts are resolved by the backend through the URL slug.
+* Only the Comment author may update a Comment.
+* Only the Comment author may soft delete a Comment.
+* Comment ownership is enforced through the `IsCommentAuthor` object-level permission class.
+* Post ownership does not grant permission over another user's Comment.
+* Invalid, draft, unpublished, and soft-deleted Posts are hidden behind `404 Not Found`.
+* Soft-deleted Comments are excluded from normal API querysets.
+* Final Editor moderation permissions remain deferred to the advanced authorization feature.
+
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
 
@@ -305,6 +330,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 07 — Tags
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
+* ✅ Feature 10 — Comments
 
 ## Current Authentication State
 
@@ -316,7 +342,8 @@ The application now supports:
 - User login
 - JWT authentication
 - Protected endpoints
-- Refresh token rotation
+- JWT access-token refresh
+- Refresh-token blacklisting
 - Token blacklisting
 - Ownership-based authorization for Posts APIs
 - Object-level permission enforcement
@@ -339,6 +366,70 @@ The application now supports:
 - Ownership-protected tag updates
 - Separation between tag management and tag assignment
 - Shared taxonomy validation through serializer mixins
+- Public Comment listing on published Posts
+- Authenticated Comment creation
+- Backend-controlled Comment author assignment
+- Backend-controlled parent Post assignment
+- Comment author ownership enforcement
+- Author-only Comment updates
+- Author-only Comment soft deletion
+- Published-Post validation for Comment access
+- Object-level Comment permission enforcement through `IsCommentAuthor`
+
+---
+
+# Comment Authorization Flow
+
+## Create Comment
+
+```text
+Authenticated User
+        │
+        ▼
+POST /api/posts/{post_slug}/comments/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Resolve published, non-deleted Post
+        │
+        ▼
+Validate Comment content
+        │
+        ▼
+Assign request.user as author
+        │
+        ▼
+Create Comment
+```
+
+## Update or Delete Comment
+
+```text
+Authenticated User
+        │
+        ▼
+PATCH or DELETE /api/comments/{id}/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Resolve non-deleted Comment
+        │
+        ▼
+IsCommentAuthor
+        │
+        ├── Non-owner → 403 Forbidden
+        │
+        ▼
+Update or soft delete Comment
+```
+
+Authentication establishes the user's identity, while `IsCommentAuthor` determines whether that user may modify the specific Comment.
+
+---
 
 # Authentication API Flow
 
@@ -375,8 +466,6 @@ Refresh Token Blacklisted
 
 ## Next Feature
 
-Feature 10 will introduce the Comments domain.
+Feature 11 will introduce User Profiles.
 
-The existing authentication and authorization infrastructure will continue securing protected APIs while extending ownership validation to user-generated comments.
-
-The authorization model established for posts, categories, and tags will provide the foundation for future comment ownership enforcement, moderation workflows, and advanced permission systems.
+The existing authentication and authorization infrastructure will support profile ownership, authenticated profile updates, safe public profile representations, and future role-based authorization.

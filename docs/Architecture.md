@@ -165,7 +165,8 @@ backend/
 │   ├── users/
 │   ├── posts/
 │   ├── categories/
-│   └── tags/
+│   ├── tags/
+│   └── comments/
 │
 ├── config/
 │
@@ -214,6 +215,27 @@ Current responsibilities include:
 * Query optimization using `prefetch_related()`
 
 The application follows the same architectural principles as the rest of the project by separating responsibilities across models, serializers, permissions, viewsets, and routing.
+
+### comments/
+
+Responsible for user discussions attached to published Posts.
+
+Current responsibilities include:
+
+* Public Comment listing
+* Authenticated Comment creation
+* Author-owned Comment updates
+* Author-owned Comment soft deletion
+* Post–Comment one-to-many relationship
+* User–Comment one-to-many relationship
+* Published-Post validation
+* Comment ownership enforcement
+* Audit tracking
+* Soft-delete lifecycle management
+* Query optimization using `select_related()`
+
+The Comments domain remains independent from Posts. The Posts application owns publication and Post lifecycle rules, while the Comments application owns Comment storage, validation, permissions, and API behavior.
+
 
 ---
 
@@ -632,6 +654,219 @@ Create or update relationship rows
 ```
 ---
 
+# Comments Architecture
+
+The Comments application is implemented as an independent business domain for discussions attached to published Posts.
+
+Comments are classified as business entities and therefore use audit tracking and soft deletion.
+
+## Current Design
+
+* Dedicated `Comment` model
+* Required ForeignKey relationship to Post
+* Required ForeignKey relationship to User through `author`
+* `CASCADE` behavior for physical Post deletion
+* `PROTECT` behavior for physical User deletion
+* Shared timestamp, audit, and soft-delete abstract models
+* Flat Comment structure without threaded replies
+* Action-specific serializers
+* Object-level ownership permission through `IsCommentAuthor`
+* `GenericViewSet` with explicit DRF mixins
+* Hybrid nested and top-level API routing
+* Backend-controlled Post and author assignment
+* Published-Post validation
+* Query optimization through `select_related()`
+
+## Domain Relationships
+
+```text
+Post
+ └── Comments
+     One-to-Many
+```
+
+```text
+User
+ └── Comments
+     One-to-Many
+```
+
+Each Comment belongs to exactly one Post and one author.
+
+The Comment author owns the Comment. Post ownership does not grant permission to modify another user's Comment.
+
+## API Routing
+
+Comment collections are scoped to a Post:
+
+```text
+GET  /api/posts/{post_slug}/comments/
+POST /api/posts/{post_slug}/comments/
+```
+
+Individual Comment operations use top-level resource routes:
+
+```text
+PATCH  /api/comments/{id}/
+DELETE /api/comments/{id}/
+```
+
+This hybrid routing design keeps Comment creation and listing connected to the parent Post while avoiding unnecessary nesting for individual-resource operations.
+
+## View Architecture
+
+### `PostCommentViewSet`
+
+Responsibilities:
+
+* List Comments for a published Post
+* Create Comments on a published Post
+* Resolve the Post from `post_slug`
+* Assign the authenticated User as author
+* Populate creation audit fields
+
+### `CommentViewSet`
+
+Responsibilities:
+
+* Partially update a Comment
+* Soft delete a Comment
+* Enforce authentication
+* Enforce object-level ownership
+* Populate update and deletion audit fields
+
+## Serializer Architecture
+
+The Comments domain uses action-specific serializers:
+
+* `CommentAuthorSerializer`
+* `CommentCreateSerializer`
+* `CommentListSerializer`
+* `CommentUpdateSerializer`
+
+Create and update serializers expose only the `content` field.
+
+The backend controls:
+
+* `post`
+* `author`
+* `created_by`
+* `updated_by`
+* Soft-delete fields
+
+The list representation returns safe public author information without exposing email addresses or audit fields.
+
+## Comment Creation Flow
+
+```text
+React Frontend
+        │
+        ▼
+POST /api/posts/{post_slug}/comments/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Resolve published, non-deleted Post
+        │
+        ▼
+CommentCreateSerializer
+        │
+        ▼
+Validate Comment content
+        │
+        ▼
+Assign Post and request.user
+        │
+        ▼
+Populate audit fields
+        │
+        ▼
+Create Comment
+        │
+        ▼
+PostgreSQL
+        │
+        ▼
+CommentListSerializer
+        │
+        ▼
+201 Created
+```
+
+## Comment Listing Flow
+
+```text
+React Frontend
+        │
+        ▼
+GET /api/posts/{post_slug}/comments/
+        │
+        ▼
+Resolve published, non-deleted Post
+        │
+        ▼
+Load non-deleted Comments
+        │
+        ▼
+select_related("author")
+        │
+        ▼
+CommentListSerializer
+        │
+        ▼
+200 OK
+```
+
+## Comment Update and Delete Flow
+
+```text
+Authenticated User
+        │
+        ▼
+PATCH or DELETE /api/comments/{id}/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Resolve non-deleted Comment
+        │
+        ▼
+IsCommentAuthor
+        │
+        ├── Non-owner → 403 Forbidden
+        │
+        ▼
+Update content or perform soft deletion
+        │
+        ▼
+Update audit fields
+        │
+        ▼
+Database
+```
+
+## Lifecycle Behavior
+
+A Comment follows this lifecycle:
+
+```text
+Created
+   │
+   ├── Updated
+   │
+   ▼
+Soft Deleted
+```
+
+Soft-deleted Comments remain in the database but are excluded from normal API queries.
+
+Threaded replies, restoration endpoints, reporting, and Editor moderation are intentionally deferred to future features.
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -671,6 +906,19 @@ The backend is responsible for enforcing all security rules.
 - Enforce post ownership before allowing category relationship updates.
 - Never allow the Posts API to create or modify Category records implicitly.
 - Never allow the Posts API to create or modify Tag records implicitly.
+- Require authentication for Comment creation, updates, and deletion.
+- Allow public Comment listing only through published, non-deleted Posts.
+- Enforce Comment ownership through `IsCommentAuthor`.
+- Prevent Post authors from modifying Comments owned by other users.
+- Assign Comment authors from `request.user`.
+- Assign the parent Post from the URL instead of request data.
+- Prevent Comment author and Post reassignment.
+- Return `404 Not Found` for invalid, draft, unpublished, or soft-deleted parent Posts.
+- Exclude soft-deleted Comments from normal API querysets.
+- Expose only safe public author fields in Comment responses.
+- Avoid exposing User email addresses and Comment audit fields.
+- Treat Comment content as untrusted plain text.
+- Avoid rendering Comment content with `dangerouslySetInnerHTML` unless sanitization is introduced.
 
 
 ---
@@ -697,6 +945,12 @@ Planned scalability features include:
 - Lightweight nested serializers to control response size
 - Future category filtering and archive endpoints
 - Shared taxonomy validation logic through serializer mixins
+- Independent Comments business domain
+- Query optimization for Comment authors and Posts using `select_related()`
+- Separate Comment collection endpoint to avoid embedding unbounded Comments in Post responses
+- Future Comment pagination
+- Future Comment throttling and spam protection
+- Flat Comment architecture that can be extended later through a dedicated threaded-replies feature
 
 ---
 
@@ -713,6 +967,7 @@ Planned scalability features include:
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
 - ✅ Feature 09 — Post–Tag Relationship
+- ✅ Feature 10 — Comments
 
 ## In Progress
 
@@ -720,37 +975,46 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 10 — Comments
+- Feature 11 — User Profiles
 
 ---
 
 # Future Architecture Evolution
 
-Future applications will reuse the authentication infrastructure introduced in Feature 03, the modular domain architecture established in Feature 04, and the reusable taxonomy relationship architecture established through Features 08 and 09.
+Future applications will reuse:
 
-The Posts and Categories applications now demonstrate cross-domain integration without merging domain responsibilities.
+* The authentication infrastructure introduced in Feature 03
+* The modular business-domain architecture established in Feature 04
+* The reusable taxonomy architecture established through Features 06–09
+* The ownership and soft-delete architecture extended through Feature 10
 
-The Posts, Categories, and Tags applications serve as reference implementations for future domain modules by demonstrating:
+The Posts, Categories, Tags, and Comments applications now demonstrate cross-domain integration without merging domain responsibilities.
 
-- ViewSet-based API design
-- GenericViewSet with explicit mixins
-- Action-specific serializers
-- Action-based permissions
-- Slug-based routing
-- Audit field management
-- Backend-enforced validation
-- Separation of concerns
-- Many-to-many domain relationships
-- Slug-based relationship assignment
-- Separate read and write API representations
-- Nested serializers
-- Relationship validation
-- `select_related()` and `prefetch_related()` query optimization
-- Shared serializer mixins
+These modules serve as reference implementations for future domains by demonstrating:
 
-As development progresses, the architecture will expand with additional domain applications, including:
+* `GenericViewSet` with explicit mixins
+* Action-specific serializers
+* Action-based permissions
+* Slug-based parent-resource routing
+* Primary-key-based child-resource routing
+* Audit field management
+* Soft-delete lifecycle management
+* Active-status lifecycle management
+* Backend-enforced validation
+* Object-level ownership checks
+* Separate read and write representations
+* Nested lightweight serializers
+* `select_related()` and `prefetch_related()` query optimization
+* Shared serializer mixins
+* Secure parent-child domain relationships
 
-- Comments
-- Profiles
+As development progresses, the architecture will expand with:
 
-Each application will remain independent while communicating through shared project architecture and REST APIs, preserving modularity and maintainability.
+* User Profiles
+* Search
+* Media Uploads
+* Final Writer, Editor, and Admin authorization
+* Performance optimization
+* Deployment and CI/CD
+
+Each application will remain independently responsible for its own models, serializers, permissions, views, and routes while integrating through explicit database relationships and REST APIs.
