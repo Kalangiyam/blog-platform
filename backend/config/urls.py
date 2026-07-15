@@ -30,4 +30,8 @@ urlpatterns = [
         "api/tags/",
         include("apps.tags.urls"),
     ),
+    path(
+        "api/",
+        include("apps.comments.urls"),
+    ),
 ]
