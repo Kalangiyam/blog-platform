@@ -1,7 +1,14 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from apps.core.models import TimeStampedModel
+
+def validate_past_date(value):
+    """Prevent future dates."""
+    if value and value > timezone.localdate():
+        raise ValidationError('Date of birth cannot be in the future.')
 
 
 class Profile(TimeStampedModel):
@@ -35,6 +42,7 @@ class Profile(TimeStampedModel):
     date_of_birth = models.DateField(
         null=True,
         blank=True,
+        validators=[validate_past_date]
     )
 
     class Meta:
