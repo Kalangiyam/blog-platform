@@ -34,4 +34,5 @@ urlpatterns = [
         "api/",
         include("apps.comments.urls"),
     ),
+    path("api/", include("apps.profiles.urls")),
 ]
