@@ -46,11 +46,12 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 10)
+# Current Database Schema (Feature 11)
 
-At the completion of Feature 10, the database contains five primary entities:
+At the completion of Feature 11, the database contains six primary entities:
 
 * User
+* Profile
 * Post
 * Category
 * Tag
@@ -86,6 +87,17 @@ Shared abstract base models provide reusable functionality for:
 - Timestamp tracking
 - Audit fields
 - Soft deletion
+- Active-status management
+
+Feature 11 introduces the Profile entity as a one-to-one extension of the custom User model.
+Profiles establish:
+- A one-to-one relationship from User to Profile
+- Dedicated storage for user-facing profile information 
+- Automatic Profile creation for newly created Users
+- A data migration that backfills Profiles for existing Users
+- Timestamp tracking through `TimeStampedModel`
+
+The Profile entity inherits only from `TimeStampedModel` because its lifecycle is directly tied to the owning User and it does not require independent audit, soft-delete, or active-status behavior.
 
 Future entities will reuse these base models to maintain consistency across the project.
 
@@ -190,6 +202,8 @@ Future entities will reuse these base models to maintain consistency across the 
 │ is_deleted                    │
 │ deleted_at                    │
 └───────────────────────────────┘
+
+┌───────────────────────────────┐ │ Profile │ ├───────────────────────────────┤ │ id │ │ user_id (FK, UNIQUE) │ │ bio │ │ website │ │ location │ │ date_of_birth │ │ created_at │ │ updated_at │ └───────────────────────────────┘
 ```
 
 Relationship summary:
@@ -198,6 +212,9 @@ Relationship summary:
 User
  ├── Posts
  └── Comments
+
+Profile
+ └── User
 
 Post
  ├── Categories
@@ -265,6 +282,97 @@ Inherited from `AbstractUser`:
 * date_joined
 
 No custom database fields have been added yet. This feature establishes the architectural foundation for future enhancements.
+
+---
+
+# Profile Entity
+
+## Model
+
+```text
+Profile
+```
+
+## Responsibilities
+
+The Profile model stores user-facing profile information separately from authentication and authorization data.
+
+Current capabilities include:
+
+* User biography
+* Personal website
+* Location
+* Date of birth
+* Automatic Profile creation for new Users
+* Existing User Profile backfill
+* Public and private Profile representations
+* Timestamp tracking
+
+## Relationships
+
+| Relationship | Target | Type          | Deletion Behavior |
+| ------------ | ------ | ------------- | ----------------- |
+| user         | User   | OneToOneField | CASCADE           |
+
+## Important Fields
+
+* `user`
+* `bio`
+* `website`
+* `location`
+* `date_of_birth`
+* `created_at`
+* `updated_at`
+
+## Lifecycle
+
+The Profile lifecycle is directly tied to the User lifecycle.
+
+```text
+User Created
+     │
+     ▼
+Profile Created
+```
+
+```text
+User Physically Deleted
+     │
+     ▼
+Profile Physically Deleted
+```
+
+The Profile model inherits only from:
+
+```text
+TimeStampedModel
+```
+
+Profiles do not use soft deletion because they have no independent lifecycle outside the owning User.
+
+## One-to-One Constraint
+
+The `OneToOneField` creates a database-level uniqueness constraint on `user_id`.
+
+This guarantees:
+
+```text
+One User → One Profile
+One Profile → One User
+```
+
+## Optional Fields
+
+The following fields are optional:
+
+* `bio`
+* `website`
+* `location`
+* `date_of_birth`
+
+Text-based optional fields store empty strings when omitted.
+
+A missing `date_of_birth` is stored as `NULL`.
 
 ---
 
@@ -465,10 +573,14 @@ Whitespace-only Comment content is rejected by API validation.
 
 ```text
 User
+├── Profile (One-to-One)
 ├── Posts (One-to-Many)
 ├── Comments (One-to-Many)
 ├── Category audit relationships
 └── Tag audit relationships
+
+Profile
+└── User (One-to-One)
 
 Post
 ├── Author (ForeignKey → User)
@@ -489,6 +601,8 @@ Comment
 
 Implemented relationships:
 
+* User → Profile
+* Profile → User
 * User → Post
 * User → Comment
 * Post → Category
@@ -501,6 +615,7 @@ Implemented relationships:
 
 The platform now contains:
 
+* One one-to-one User-extension relationship
 * Two reusable taxonomy relationships
 * Two user-generated business entities
 * One Post-to-Comment parent-child relationship
@@ -513,12 +628,13 @@ As additional features are implemented, the User model will become the central e
 
 ```text
 User
+├── Profile (One-to-One) ✅ Implemented
 ├── Posts (One-to-Many) ✅ Implemented
 ├── Comments (One-to-Many) ✅ Implemented
-├── Profile (One-to-One)
 ├── Bookmarks (Many-to-Many)
 └── Likes (Many-to-Many)
 ```
+
 ```text
 Post
 ├── Categories (Many-to-Many) ✅ Implemented
@@ -526,7 +642,7 @@ Post
 └── Comments (One-to-Many) ✅ Implemented
 ```
 
-These relationships are planned and will be implemented in future features.
+Implemented relationships are marked above. Remaining relationships will be introduced only when their corresponding features are developed.
 
 ---
 
@@ -535,7 +651,7 @@ These relationships are planned and will be implemented in future features.
 The following database tables are planned:
 
 * ✅ Users
-* Profiles
+* ✅ Profiles
 * ✅ Posts 
 * ✅ Categories
 * ✅ Tags
@@ -580,6 +696,15 @@ The project follows a migration-first approach.
 * User physical deletion is prevented through `PROTECT` while authored Comments exist.
 * Comment timestamp, audit, and soft-delete fields were inherited from shared abstract models.
 * No data migration was required because the Comment table was newly introduced.
+* Feature 11 introduced the `Profile` table through `profiles.0001_initial`.
+* The Profile table includes a unique one-to-one relationship with the custom User model.
+* Profile physical deletion uses `CASCADE` when the owning User is physically deleted.
+* A `post_save` signal automatically creates Profiles for newly created Users.
+* A dedicated data migration backfilled missing Profiles for existing Users.
+* The backfill migration avoided duplicate Profile creation.
+* Historical migration models were resolved using `apps.get_model()`.
+* Existing User and authentication tables did not require schema modification.
+
 
 ---
 
@@ -616,6 +741,12 @@ The project follows these principles:
 * Soft-delete lifecycle for Comments
 * Backend-enforced published-Post validation
 * Deterministic Comment ordering
+* One-to-one User-extension relationships
+* Separation between authentication and Profile data
+* Automatic Profile provisioning
+* Data migrations for existing records
+* Database-enforced one-Profile-per-User constraint
+* Profile lifecycle tied to User lifecycle
 
 ---
 
@@ -639,6 +770,9 @@ Current:
 * Automatic foreign-key index on `Comment.author_id`
 * Optimized Comment author loading using `select_related("author")`
 * Optimized individual Comment loading using `select_related("author", "post")`
+* Unique index on `Profile.user_id` created by `OneToOneField`
+* Optimized Profile and User retrieval using `select_related("user")`
+
 
 Future:
 
@@ -692,6 +826,16 @@ Data integrity is maintained through:
 * Soft-deleted Comment exclusion through the default manager
 * Comment content length validation
 * Whitespace-only Comment rejection
+* Required Profile-to-User relationship
+* Database uniqueness enforcement for one Profile per User
+* Automatic Profile creation for new Users
+* Existing User Profile backfill through a data migration
+* Prevention of duplicate Profiles
+* `CASCADE` enforcement for physical User deletion
+* Backend-controlled Profile ownership
+* Prevention of Profile owner reassignment through the API
+* Future date-of-birth validation
+* Public/private Profile data separation
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -711,6 +855,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
+* ✅ Feature 11 — User Profiles
 
 ## Current Database Version
 Current schema includes:
@@ -746,6 +891,14 @@ Current schema includes:
 - Comment soft deletion
 - Comment content length limit
 - Comment chronological ordering
+* Profile model
+* User–Profile one-to-one relationship
+* Profile timestamp tracking
+* Automatic Profile creation for new Users
+* Existing User Profile backfill migration
+* Profile ownership
+* Public and private Profile data support
+* Profile query optimization using `select_related()`
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
@@ -769,6 +922,14 @@ Each Comment belongs to exactly one Post and one User.
 
 Comments use the shared soft-delete lifecycle and audit architecture, preserving records while excluding deleted Comments from normal application queries.
 
+Feature 11 introduces the Profile entity as the platform's first one-to-one User-extension domain.
+
+Each Profile belongs to exactly one User, and each User owns exactly one Profile.
+
+New Profiles are created automatically through a Django `post_save` signal, while a dedicated data migration creates missing Profiles for Users that existed before the feature was introduced.
+
+Profile information remains separated from authentication data, allowing the Profile domain to evolve without modifying the custom User model.
+
 ## Shared Abstract Models
 
 The project uses reusable abstract base models to avoid duplicated code.
@@ -785,20 +946,22 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 11 will introduce the User Profile entity.
+Feature 12 will introduce Search.
 
-Expected database decisions include:
+The initial Search feature may not require a new database table. Expected database considerations include:
 
-* One-to-one relationship between User and Profile
-* Profile ownership
-* Optional profile fields
-* Public and private profile data
-* Future profile-image compatibility
+* PostgreSQL text-search capabilities
+* Searchable Post fields
+* Query performance
+* Appropriate indexes
+* Future full-text search indexes
+* Search ranking and filtering strategy
 
 Future database enhancements may also include:
 
+* Media and avatar storage metadata
 * Bookmarks
 * Likes
 * Comment replies
 * Comment moderation records
-* Search indexes
+* Advanced search indexes

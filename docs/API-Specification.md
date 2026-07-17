@@ -4,13 +4,14 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 10, the platform provides five API modules:
+At the completion of Feature 11, the platform provides six API modules:
 
 - Authentication APIs
 - Posts APIs
 - Categories APIs
 - Tags APIs
 - Comments APIs
+- Profiles APIs
 
 Feature 08 extended the Posts API by introducing a many-to-many relationship between Posts and Categories.
 
@@ -32,17 +33,17 @@ Future features will continue extending this document as new API modules are int
 
 The project follows these API design principles:
 
-* RESTful API design
-* JSON request and response format
-* Stateless communication
-* Backend validation
-* Backend authorization
-* Consistent response structure
-* Appropriate HTTP status codes
-* Version-ready API design
-* Slug-based resource identification
-* Explicit read and write representations
-* Backend-enforced relationship integrity
+- RESTful API design
+- JSON request and response format
+- Stateless communication
+- Backend validation
+- Backend authorization
+- Consistent response structure
+- Appropriate HTTP status codes
+- Version-ready API design
+- Slug-based resource identification
+- Explicit read and write representations
+- Backend-enforced relationship integrity
 
 ---
 
@@ -70,14 +71,14 @@ Implemented ✅
 
 The authentication module is fully functional and provides registration, login, logout, current-user retrieval, token refresh, and token verification APIs.
 
-| Method | Endpoint | Authentication | Status |
-|--------|----------|----------------|--------|
-| POST | /api/auth/register/ | Public | ✅ Implemented |
-| POST | /api/auth/login/ | Public | ✅ Implemented |
-| GET | /api/auth/me/ | JWT Access Token | ✅ Implemented |
-| POST | /api/auth/logout/ | JWT Access Token | ✅ Implemented |
-| POST | /api/auth/token/refresh/ | Refresh Token | ✅ Implemented |
-| POST | /api/auth/token/verify/ | Public | ✅ Implemented |
+| Method | Endpoint                 | Authentication   | Status         |
+| ------ | ------------------------ | ---------------- | -------------- |
+| POST   | /api/auth/register/      | Public           | ✅ Implemented |
+| POST   | /api/auth/login/         | Public           | ✅ Implemented |
+| GET    | /api/auth/me/            | JWT Access Token | ✅ Implemented |
+| POST   | /api/auth/logout/        | JWT Access Token | ✅ Implemented |
+| POST   | /api/auth/token/refresh/ | Refresh Token    | ✅ Implemented |
+| POST   | /api/auth/token/verify/  | Public           | ✅ Implemented |
 
 ---
 
@@ -89,10 +90,10 @@ POST `/api/auth/register/`
 
 ```json
 {
-    "username": "john",
-    "email": "john@example.com",
-    "password": "StrongPassword@123",
-    "password_confirm": "StrongPassword@123"
+  "username": "john",
+  "email": "john@example.com",
+  "password": "StrongPassword@123",
+  "password_confirm": "StrongPassword@123"
 }
 ```
 
@@ -104,8 +105,8 @@ POST `/api/auth/login/`
 
 ```json
 {
-    "email": "john@example.com",
-    "password": "StrongPassword@123"
+  "email": "john@example.com",
+  "password": "StrongPassword@123"
 }
 ```
 
@@ -129,7 +130,7 @@ POST `/api/auth/logout/`
 
 ```json
 {
-    "refresh": "<refresh_token>"
+  "refresh": "<refresh_token>"
 }
 ```
 
@@ -143,15 +144,15 @@ Implemented ✅
 
 The Posts module provides blog post management while enforcing authentication, ownership rules, publishing workflow validation, soft deletion, and taxonomy relationship validation.
 
-| Method | Endpoint | Authentication | Status |
-|--------|----------|----------------|--------|
-| POST | /api/posts/ | JWT Access Token | ✅ Implemented |
-| GET | /api/posts/ | Public | ✅ Implemented |
-| GET | /api/posts/{slug}/ | Public | ✅ Implemented |
-| PATCH | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
-| DELETE | /api/posts/{slug}/ | JWT Access Token (Author Only) | ✅ Implemented |
-| POST | /api/posts/{slug}/publish/ | JWT Access Token (Author Only) | ✅ Implemented |
-| POST | /api/posts/{slug}/unpublish/ | JWT Access Token (Author Only) | ✅ Implemented |
+| Method | Endpoint                     | Authentication                 | Status         |
+| ------ | ---------------------------- | ------------------------------ | -------------- |
+| POST   | /api/posts/                  | JWT Access Token               | ✅ Implemented |
+| GET    | /api/posts/                  | Public                         | ✅ Implemented |
+| GET    | /api/posts/{slug}/           | Public                         | ✅ Implemented |
+| PATCH  | /api/posts/{slug}/           | JWT Access Token (Author Only) | ✅ Implemented |
+| DELETE | /api/posts/{slug}/           | JWT Access Token (Author Only) | ✅ Implemented |
+| POST   | /api/posts/{slug}/publish/   | JWT Access Token (Author Only) | ✅ Implemented |
+| POST   | /api/posts/{slug}/unpublish/ | JWT Access Token (Author Only) | ✅ Implemented |
 
 ## Post Taxonomy Contract
 
@@ -193,17 +194,11 @@ JWT Access Token required.
 
 ```json
 {
-    "title": "Introduction to Django",
-    "excerpt": "Learn the fundamentals of Django.",
-    "content": "Full article content...",
-    "category_slugs": [
-        "backend",
-        "python"
-    ],
-    "tag_slugs": [
-        "django",
-        "web-development"
-    ]
+  "title": "Introduction to Django",
+  "excerpt": "Learn the fundamentals of Django.",
+  "content": "Full article content...",
+  "category_slugs": ["backend", "python"],
+  "tag_slugs": ["django", "web-development"]
 }
 ```
 
@@ -288,16 +283,9 @@ Only the post author may update the post under the current permission model.
 
 ```json
 {
-    "title": "Updated Django Guide",
-    "category_slugs": [
-        "backend",
-        "python"
-    ],
-    "tag_slugs": [
-        "django",
-        "drf",
-        "api"
-    ]
+  "title": "Updated Django Guide",
+  "category_slugs": ["backend", "python"],
+  "tag_slugs": ["django", "drf", "api"]
 }
 ```
 
@@ -309,7 +297,7 @@ Example:
 
 ```json
 {
-    "title": "Updated title"
+  "title": "Updated title"
 }
 ```
 
@@ -325,7 +313,7 @@ Example:
 
 ```json
 {
-    "tag_slugs": []
+  "tag_slugs": []
 }
 ```
 
@@ -351,29 +339,29 @@ Status:
 
 ```json
 {
-    "title": "Introduction to Django",
-    "slug": "introduction-to-django",
-    "status": "published",
-    "categories": [
-        {
-            "name": "Backend",
-            "slug": "backend"
-        },
-        {
-            "name": "Python",
-            "slug": "python"
-        }
-    ],
-    "tags": [
-        {
-            "name": "Django",
-            "slug": "django"
-        },
-        {
-            "name": "Web Development",
-            "slug": "web-development"
-        }
-    ]
+  "title": "Introduction to Django",
+  "slug": "introduction-to-django",
+  "status": "published",
+  "categories": [
+    {
+      "name": "Backend",
+      "slug": "backend"
+    },
+    {
+      "name": "Python",
+      "slug": "python"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Django",
+      "slug": "django"
+    },
+    {
+      "name": "Web Development",
+      "slug": "web-development"
+    }
+  ]
 }
 ```
 
@@ -449,29 +437,29 @@ Only a published post may transition to draft.
 
 ## Post Business Rules
 
-* Only authenticated users can create posts.
-* Newly created posts are saved as **Draft**.
-* Only **Published** posts are publicly visible.
-* Only the post author can update, delete, publish, or unpublish a post under the current permission model.
-* A post can only transition from **Draft → Published**.
-* A post can only transition from **Published → Draft**.
-* The backend automatically manages the `published_at` timestamp.
-* Posts are soft deleted and remain in the database for auditing and future restoration.
-* Posts may belong to zero or more categories.
-* Posts may contain zero or more tags.
-* Categories are assigned using `category_slugs`.
-* Tags are assigned using `tag_slugs`.
-* Duplicate category slugs are rejected.
-* Duplicate tag slugs are rejected.
-* Only active categories may be assigned to posts.
-* Only active tags may be assigned to posts.
-* Invalid or inactive taxonomy slugs are rejected before saving.
-* Omitting a taxonomy field during update preserves existing relationships.
-* Sending an empty taxonomy list clears that relationship.
-* Post responses include lightweight nested category objects.
-* Post responses include lightweight nested tag objects.
-* Shared taxonomy validation is implemented through a reusable serializer mixin.
-* Authentication, authorization, ownership, and relationship validation are enforced on the backend.
+- Only authenticated users can create posts.
+- Newly created posts are saved as **Draft**.
+- Only **Published** posts are publicly visible.
+- Only the post author can update, delete, publish, or unpublish a post under the current permission model.
+- A post can only transition from **Draft → Published**.
+- A post can only transition from **Published → Draft**.
+- The backend automatically manages the `published_at` timestamp.
+- Posts are soft deleted and remain in the database for auditing and future restoration.
+- Posts may belong to zero or more categories.
+- Posts may contain zero or more tags.
+- Categories are assigned using `category_slugs`.
+- Tags are assigned using `tag_slugs`.
+- Duplicate category slugs are rejected.
+- Duplicate tag slugs are rejected.
+- Only active categories may be assigned to posts.
+- Only active tags may be assigned to posts.
+- Invalid or inactive taxonomy slugs are rejected before saving.
+- Omitting a taxonomy field during update preserves existing relationships.
+- Sending an empty taxonomy list clears that relationship.
+- Post responses include lightweight nested category objects.
+- Post responses include lightweight nested tag objects.
+- Shared taxonomy validation is implemented through a reusable serializer mixin.
+- Authentication, authorization, ownership, and relationship validation are enforced on the backend.
 
 ---
 
@@ -483,10 +471,7 @@ Example invalid request:
 
 ```json
 {
-    "category_slugs": [
-        "backend",
-        "backend"
-    ]
+  "category_slugs": ["backend", "backend"]
 }
 ```
 
@@ -500,9 +485,7 @@ Example error:
 
 ```json
 {
-    "category_slugs": [
-        "Duplicate category slugs are not allowed."
-    ]
+  "category_slugs": ["Duplicate category slugs are not allowed."]
 }
 ```
 
@@ -514,10 +497,7 @@ Example invalid request:
 
 ```json
 {
-    "tag_slugs": [
-        "django",
-        "django"
-    ]
+  "tag_slugs": ["django", "django"]
 }
 ```
 
@@ -531,9 +511,7 @@ Example error:
 
 ```json
 {
-    "tag_slugs": [
-        "Duplicate tag slugs are not allowed."
-    ]
+  "tag_slugs": ["Duplicate tag slugs are not allowed."]
 }
 ```
 
@@ -545,9 +523,7 @@ Example invalid request:
 
 ```json
 {
-    "category_slugs": [
-        "unknown-category"
-    ]
+  "category_slugs": ["unknown-category"]
 }
 ```
 
@@ -561,9 +537,7 @@ Example error:
 
 ```json
 {
-    "category_slugs": [
-        "One or more categories do not exist or are inactive."
-    ]
+  "category_slugs": ["One or more categories do not exist or are inactive."]
 }
 ```
 
@@ -575,9 +549,7 @@ Example invalid request:
 
 ```json
 {
-    "tag_slugs": [
-        "unknown-tag"
-    ]
+  "tag_slugs": ["unknown-tag"]
 }
 ```
 
@@ -591,9 +563,7 @@ Example error:
 
 ```json
 {
-    "tag_slugs": [
-        "One or more tags do not exist or are inactive."
-    ]
+  "tag_slugs": ["One or more tags do not exist or are inactive."]
 }
 ```
 
@@ -607,12 +577,12 @@ Implemented ✅
 
 The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable, while creation and updates are restricted to staff users.
 
-| Method | Endpoint | Authentication | Status |
-|--------|----------|----------------|--------|
-| GET | /api/categories/ | Public | ✅ Implemented |
-| GET | /api/categories/{slug}/ | Public | ✅ Implemented |
-| POST | /api/categories/ | JWT Access Token (Staff Only) | ✅ Implemented |
-| PATCH | /api/categories/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| Method | Endpoint                | Authentication                | Status         |
+| ------ | ----------------------- | ----------------------------- | -------------- |
+| GET    | /api/categories/        | Public                        | ✅ Implemented |
+| GET    | /api/categories/{slug}/ | Public                        | ✅ Implemented |
+| POST   | /api/categories/        | JWT Access Token (Staff Only) | ✅ Implemented |
+| PATCH  | /api/categories/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
 
 ## List Categories
 
@@ -656,18 +626,18 @@ Restricted to staff users.
 
 ## Category Business Rules
 
-* Category names must be unique.
-* Category slugs are generated automatically.
-* Category slugs remain stable after creation.
-* Categories are publicly readable.
-* Only staff users can create or update categories.
-* Active categories are returned by default.
-* Inactive categories cannot be assigned to new or updated posts.
-* Existing relationships remain intact when a category becomes inactive.
-* Categories can be assigned to multiple posts.
-* Posts can belong to multiple categories.
-* Categories are associated with posts using slug-based identifiers.
-* Nested category information is returned in post responses.
+- Category names must be unique.
+- Category slugs are generated automatically.
+- Category slugs remain stable after creation.
+- Categories are publicly readable.
+- Only staff users can create or update categories.
+- Active categories are returned by default.
+- Inactive categories cannot be assigned to new or updated posts.
+- Existing relationships remain intact when a category becomes inactive.
+- Categories can be assigned to multiple posts.
+- Posts can belong to multiple categories.
+- Categories are associated with posts using slug-based identifiers.
+- Nested category information is returned in post responses.
 
 ---
 
@@ -679,12 +649,12 @@ Implemented ✅
 
 The Tags module provides reusable taxonomy for classifying and improving discovery of blog content. Tags are publicly readable, while creation and updates are restricted to staff users.
 
-| Method | Endpoint | Authentication | Status |
-|--------|----------|----------------|--------|
-| GET | /api/tags/ | Public | ✅ Implemented |
-| GET | /api/tags/{slug}/ | Public | ✅ Implemented |
-| POST | /api/tags/ | JWT Access Token (Staff Only) | ✅ Implemented |
-| PATCH | /api/tags/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| Method | Endpoint          | Authentication                | Status         |
+| ------ | ----------------- | ----------------------------- | -------------- |
+| GET    | /api/tags/        | Public                        | ✅ Implemented |
+| GET    | /api/tags/{slug}/ | Public                        | ✅ Implemented |
+| POST   | /api/tags/        | JWT Access Token (Staff Only) | ✅ Implemented |
+| PATCH  | /api/tags/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
 
 ## List Tags
 
@@ -728,18 +698,18 @@ Restricted to staff users.
 
 ## Tag Business Rules
 
-* Tag names must be unique.
-* Tag slugs are generated automatically.
-* Tag slugs remain stable after creation.
-* Tags are publicly readable.
-* Only staff users can create or update tags.
-* Active tags are returned by default.
-* Inactive tags cannot be assigned to new or updated posts.
-* Existing relationships remain intact when a tag becomes inactive.
-* Tags can be assigned to multiple posts.
-* Posts can contain multiple tags.
-* Tags are associated with posts using slug-based identifiers.
-* Nested tag information is returned in post responses.
+- Tag names must be unique.
+- Tag slugs are generated automatically.
+- Tag slugs remain stable after creation.
+- Tags are publicly readable.
+- Only staff users can create or update tags.
+- Active tags are returned by default.
+- Inactive tags cannot be assigned to new or updated posts.
+- Existing relationships remain intact when a tag becomes inactive.
+- Tags can be assigned to multiple posts.
+- Posts can contain multiple tags.
+- Tags are associated with posts using slug-based identifiers.
+- Nested tag information is returned in post responses.
 
 ---
 
@@ -751,8 +721,8 @@ Implemented ✅
 
 The Comments module enables public discussions on published posts while enforcing authenticated creation, ownership-based updates and deletion, audit tracking, and soft deletion.
 
-| Method | Endpoint                         | Authentication                         | Status        |
-| ------ | -------------------------------- | -------------------------------------- | ------------- |
+| Method | Endpoint                         | Authentication                         | Status         |
+| ------ | -------------------------------- | -------------------------------------- | -------------- |
 | GET    | /api/posts/{post_slug}/comments/ | Public                                 | ✅ Implemented |
 | POST   | /api/posts/{post_slug}/comments/ | JWT Access Token                       | ✅ Implemented |
 | PATCH  | /api/comments/{id}/              | JWT Access Token (Comment Author Only) | ✅ Implemented |
@@ -794,16 +764,16 @@ Example:
 
 ```json
 [
-    {
-        "id": 1,
-        "content": "This article was very helpful.",
-        "author": {
-            "id": 2,
-            "username": "john"
-        },
-        "created_at": "2026-07-15T10:00:00+05:30",
-        "updated_at": "2026-07-15T10:00:00+05:30"
-    }
+  {
+    "id": 1,
+    "content": "This article was very helpful.",
+    "author": {
+      "id": 2,
+      "username": "john"
+    },
+    "created_at": "2026-07-15T10:00:00+05:30",
+    "updated_at": "2026-07-15T10:00:00+05:30"
+  }
 ]
 ```
 
@@ -829,16 +799,16 @@ JWT Access Token required.
 
 ```json
 {
-    "content": "This article was very helpful."
+  "content": "This article was very helpful."
 }
 ```
 
 The backend automatically assigns:
 
-* The post from the URL slug
-* The author from `request.user`
-* `created_by`
-* `updated_by`
+- The post from the URL slug
+- The author from `request.user`
+- `created_by`
+- `updated_by`
 
 Clients cannot control ownership or audit fields.
 
@@ -854,14 +824,14 @@ Example:
 
 ```json
 {
-    "id": 1,
-    "content": "This article was very helpful.",
-    "author": {
-        "id": 2,
-        "username": "john"
-    },
-    "created_at": "2026-07-15T10:00:00+05:30",
-    "updated_at": "2026-07-15T10:00:00+05:30"
+  "id": 1,
+  "content": "This article was very helpful.",
+  "author": {
+    "id": 2,
+    "username": "john"
+  },
+  "created_at": "2026-07-15T10:00:00+05:30",
+  "updated_at": "2026-07-15T10:00:00+05:30"
 }
 ```
 
@@ -885,7 +855,7 @@ Only the Comment author may update the Comment.
 
 ```json
 {
-    "content": "Updated comment content."
+  "content": "Updated comment content."
 }
 ```
 
@@ -951,7 +921,7 @@ Expected:
 
 ```json
 {
-    "content": "   "
+  "content": "   "
 }
 ```
 
@@ -979,10 +949,10 @@ The following Post states return:
 404 Not Found
 ```
 
-* Invalid slug
-* Draft Post
-* Unpublished Post
-* Soft-deleted Post
+- Invalid slug
+- Draft Post
+- Unpublished Post
+- Soft-deleted Post
 
 Using `404` prevents disclosure of unpublished content.
 
@@ -990,21 +960,305 @@ Using `404` prevents disclosure of unpublished content.
 
 ## Comment Business Rules
 
-* Comments belong to exactly one Post.
-* Comments belong to exactly one author.
-* Comments may only be created on published, non-deleted Posts.
-* Public users may list Comments on published Posts.
-* Only authenticated users may create Comments.
-* Only the Comment author may update a Comment.
-* Only the Comment author may soft delete a Comment.
-* Post ownership does not grant ownership of another user's Comment.
-* Comment authors are assigned by the backend.
-* Parent Posts are resolved from the URL.
-* Comments cannot be reassigned to another author or Post.
-* Soft-deleted Comments are excluded from normal queries.
-* Comment responses expose `id` and `username` for the author.
-* Email addresses and audit fields are not exposed publicly.
-* Final Editor moderation is deferred to the advanced permissions feature.
+- Comments belong to exactly one Post.
+- Comments belong to exactly one author.
+- Comments may only be created on published, non-deleted Posts.
+- Public users may list Comments on published Posts.
+- Only authenticated users may create Comments.
+- Only the Comment author may update a Comment.
+- Only the Comment author may soft delete a Comment.
+- Post ownership does not grant ownership of another user's Comment.
+- Comment authors are assigned by the backend.
+- Parent Posts are resolved from the URL.
+- Comments cannot be reassigned to another author or Post.
+- Soft-deleted Comments are excluded from normal queries.
+- Comment responses expose `id` and `username` for the author.
+- Email addresses and audit fields are not exposed publicly.
+- Final Editor moderation is deferred to the advanced permissions feature.
+
+---
+
+# Profiles APIs
+
+## Current Status
+
+Implemented ✅
+
+The Profiles module provides authenticated profile management and public author profile access while enforcing ownership boundaries, privacy controls, validation rules, and query optimization.
+
+| Method | Endpoint                       | Authentication   | Status        |
+| ------ | ------------------------------ | ---------------- | ------------- |
+| GET    | /api/profile/                  | JWT Access Token | ✅ Implemented |
+| PATCH  | /api/profile/                  | JWT Access Token | ✅ Implemented |
+| GET    | /api/users/{username}/profile/ | Public           | ✅ Implemented |
+
+---
+
+## Retrieve Current Profile
+
+```http
+GET /api/profile/
+```
+
+### Authentication
+
+JWT Access Token required.
+
+### Behavior
+
+Returns the authenticated user's Profile information.
+
+The Profile is automatically determined from the authenticated User.
+
+Clients do not provide:
+
+* Profile ID
+* User ID
+* Username
+
+for Profile retrieval.
+
+### Successful Response
+
+```json
+{
+    "username": "john",
+    "email": "john@example.com",
+    "bio": "Backend Developer",
+    "website": "https://example.com",
+    "location": "Chennai",
+    "date_of_birth": "2000-01-01"
+}
+```
+
+### Response Fields
+
+| Field         | Description        |
+| ------------- | ------------------ |
+| username      | User username      |
+| email         | User email address |
+| bio           | User biography     |
+| website       | Personal website   |
+| location      | User location      |
+| date_of_birth | User date of birth |
+
+### Status Codes
+
+| Status | Meaning                 |
+| ------ | ----------------------- |
+| 200    | Success                 |
+| 401    | Authentication required |
+
+---
+
+## Update Current Profile
+
+```http
+PATCH /api/profile/
+```
+
+### Authentication
+
+JWT Access Token required.
+
+### Behavior
+
+Updates the authenticated user's Profile.
+
+Profile ownership is enforced through:
+
+```python
+request.user
+```
+
+The client cannot update another user's Profile.
+
+### Example Request
+
+```json
+{
+    "bio": "Backend Developer",
+    "location": "Chennai"
+}
+```
+
+### Successful Response
+
+```json
+{
+    "username": "john",
+    "email": "john@example.com",
+    "bio": "Backend Developer",
+    "website": "https://example.com",
+    "location": "Chennai",
+    "date_of_birth": "2000-01-01"
+}
+```
+
+### Validation Rules
+
+#### Website Validation
+
+The website field must contain a valid URL.
+
+Example:
+
+```json
+{
+    "website": "https://example.com"
+}
+```
+
+#### Date of Birth Validation
+
+Date of birth cannot be in the future.
+
+Invalid example:
+
+```json
+{
+    "date_of_birth": "2030-01-01"
+}
+```
+
+### Protected Fields
+
+The following fields cannot be updated through the API:
+
+* user
+* username
+* email
+* created_at
+* updated_at
+
+### Status Codes
+
+| Status | Meaning                 |
+| ------ | ----------------------- |
+| 200    | Updated Successfully    |
+| 400    | Validation Error        |
+| 401    | Authentication Required |
+
+---
+
+## Retrieve Public Profile
+
+```http
+GET /api/users/{username}/profile/
+```
+
+### Authentication
+
+Not required.
+
+### Behavior
+
+Returns safe public Profile information for the specified User.
+
+Profiles are retrieved using:
+
+```text
+username
+```
+
+rather than internal database identifiers.
+
+### Example Response
+
+```json
+{
+    "username": "john",
+    "bio": "Backend Developer",
+    "website": "https://example.com",
+    "location": "Chennai"
+}
+```
+
+### Public Profile Fields
+
+| Field         | Exposed |
+| ------------- | ------- |
+| username      | ✅       |
+| bio           | ✅       |
+| website       | ✅       |
+| location      | ✅       |
+| email         | ❌       |
+| date_of_birth | ❌       |
+| created_at    | ❌       |
+| updated_at    | ❌       |
+
+### Status Codes
+
+| Status | Meaning        |
+| ------ | -------------- |
+| 200    | Success        |
+| 404    | User Not Found |
+
+---
+
+## Profile Business Rules
+
+* Every User owns exactly one Profile.
+* Every Profile belongs to exactly one User.
+* Profiles are automatically created when Users are created.
+* Existing Users receive Profiles through a backfill migration.
+* Profile ownership is enforced through `request.user`.
+* Public profile access does not require authentication.
+* Profile updates require authentication.
+* Public profile responses exclude private information.
+* Profile APIs use separate serializers for public, private, and update operations.
+* Date of birth cannot be set to a future date.
+* Profile queries use `select_related("user")` for optimization.
+
+---
+
+## Security Considerations
+
+### Ownership Enforcement
+
+Profile updates always operate on:
+
+```python
+request.user.profile
+```
+
+This prevents users from selecting another Profile through request data.
+
+### IDOR Prevention
+
+The update endpoint:
+
+```http
+PATCH /api/profile/
+```
+
+does not expose Profile IDs or User IDs.
+
+This eliminates common Insecure Direct Object Reference (IDOR) attack vectors.
+
+### Privacy Controls
+
+Public Profile responses intentionally exclude:
+
+* email
+* date_of_birth
+* internal identifiers
+* audit metadata
+
+Only safe public information is exposed.
+
+---
+
+## Query Optimization
+
+Profile APIs use:
+
+```python
+Profile.objects.select_related("user")
+```
+
+This ensures Profile and User information are loaded efficiently in a single database query and prevents N+1 query issues.
+
 
 ---
 
@@ -1014,7 +1268,6 @@ As the project grows, additional API modules will be added.
 
 Planned modules include:
 
-- User Profiles
 - Search
 - Media Uploads
 - Advanced Permissions and Authorization
@@ -1031,8 +1284,8 @@ Example:
 
 ```json
 {
-    "username": "john_doe",
-    "password": "your_password"
+  "username": "john_doe",
+  "password": "your_password"
 }
 ```
 
@@ -1046,7 +1299,7 @@ Example:
 
 ```json
 {
-    "message": "Success"
+  "message": "Success"
 }
 ```
 
@@ -1058,16 +1311,16 @@ Validation, authentication, authorization, and not-found responses follow predic
 
 The project uses standard HTTP status codes.
 
-| Status Code | Meaning |
-|-------------|---------|
-| 200 | OK |
-| 201 | Created |
-| 204 | No Content |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 500 | Internal Server Error |
+| Status Code | Meaning               |
+| ----------- | --------------------- |
+| 200         | OK                    |
+| 201         | Created               |
+| 204         | No Content            |
+| 400         | Bad Request           |
+| 401         | Unauthorized          |
+| 403         | Forbidden             |
+| 404         | Not Found             |
+| 500         | Internal Server Error |
 
 ---
 
@@ -1077,10 +1330,10 @@ The project currently uses JWT Authentication through Django REST Framework Simp
 
 Authentication is based on:
 
-* JWT Access Token
-* JWT Refresh Token
-* Authorization Header
-* Refresh token blacklisting
+- JWT Access Token
+- JWT Refresh Token
+- Authorization Header
+- Refresh token blacklisting
 
 Access tokens authenticate protected API requests.
 
@@ -1100,15 +1353,18 @@ The backend validates every protected request before processing it.
 
 The current API enforces:
 
-* Authentication for protected operations
-* Staff-only taxonomy management
-* Post ownership for update, delete, publish, and unpublish operations
-* Backend relationship validation
-* Backend publishing workflow validation
-* Comment ownership for update and soft-delete operations
-* Object-level Comment authorization through `IsCommentAuthor`
-* Published-Post validation for Comment listing and creation
-* Backend-controlled Comment author and Post assignment
+- Authentication for protected operations
+- Staff-only taxonomy management
+- Post ownership for update, delete, publish, and unpublish operations
+- Backend relationship validation
+- Backend publishing workflow validation
+- Comment ownership for update and soft-delete operations
+- Object-level Comment authorization through `IsCommentAuthor`
+- Published-Post validation for Comment listing and creation
+- Backend-controlled Comment author and Post assignment
+- Profile ownership enforcement through authenticated User context
+- Public/private Profile representation separation
+- Backend-controlled Profile ownership
 
 Frontend restrictions are considered user-experience controls only and are not trusted for security.
 
@@ -1158,13 +1414,16 @@ Comment.objects.filter(
     "author",
 )
 ```
+
 For Comment update and deletion:
+
 ```python
 Comment.objects.select_related(
     "author",
     "post",
 )
 ```
+
 `select_related()` is appropriate because `author` and `post` are foreign-key relationships.
 
 ---
@@ -1177,7 +1436,7 @@ Example:
 
 ```text
 /api/v1/
-```
+````
 
 Versioning will be introduced only when required to preserve backward compatibility during breaking API changes.
 
@@ -1187,17 +1446,18 @@ Versioning will be introduced only when required to preserve backward compatibil
 
 ## Completed
 
-* ✅ Feature 00 — Project Dashboard
-* ✅ Feature 01 — Project Foundation & Architecture
-* ✅ Feature 02 — Custom User Model & User App Architecture
-* ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
-* ✅ Feature 04 — Posts Domain Architecture & Database Design
-* ✅ Feature 05 — Publishing Workflow
-* ✅ Feature 06 — Categories
-* ✅ Feature 07 — Tags
-* ✅ Feature 08 — Post–Category Relationship
-* ✅ Feature 09 — Post–Tag Relationship
-* ✅ Feature 10 — Comments
+- ✅ Feature 00 — Project Dashboard
+- ✅ Feature 01 — Project Foundation & Architecture
+- ✅ Feature 02 — Custom User Model & User App Architecture
+- ✅ Feature 03 — JWT Authentication Foundation & User Authentication APIs
+- ✅ Feature 04 — Posts Domain Architecture & Database Design
+- ✅ Feature 05 — Publishing Workflow
+- ✅ Feature 06 — Categories
+- ✅ Feature 07 — Tags
+- ✅ Feature 08 — Post–Category Relationship
+- ✅ Feature 09 — Post–Tag Relationship
+- ✅ Feature 10 — Comments
+- ✅ Feature 11 — User Profiles
 
 ## Current API State
 
@@ -1241,6 +1501,15 @@ The platform currently supports:
 - Backend-controlled Comment author and Post assignment
 - Comment audit tracking
 - Comment query optimization using `select_related`
+- Authenticated Profile retrieval
+- Authenticated Profile updates
+- Public User Profile viewing
+- Automatic Profile creation
+- Existing User Profile backfill
+- Public/private Profile serialization
+- Profile ownership enforcement
+- Date-of-birth validation
+- Profile query optimization using `select_related`
 
 Future features will extend the API with user profiles, search, media uploads, advanced permissions, performance improvements, and deployment support.
 
@@ -1248,39 +1517,39 @@ Future features will extend the API with user profiles, search, media uploads, a
 
 # Authentication Endpoints
 
-| Endpoint | Description |
-|-----------|-------------|
-| POST /api/auth/register/ | Register a new account |
-| POST /api/auth/login/ | Authenticate a user and receive JWT tokens |
-| GET /api/auth/me/ | Retrieve the authenticated user's profile |
-| POST /api/auth/logout/ | Blacklist the supplied refresh token |
-| POST /api/auth/token/refresh/ | Obtain a new access token |
-| POST /api/auth/token/verify/ | Verify the validity of a JWT |
+| Endpoint                      | Description                                |
+| ----------------------------- | ------------------------------------------ |
+| POST /api/auth/register/      | Register a new account                     |
+| POST /api/auth/login/         | Authenticate a user and receive JWT tokens |
+| GET /api/auth/me/             | Retrieve the authenticated user's account information |
+| POST /api/auth/logout/        | Blacklist the supplied refresh token       |
+| POST /api/auth/token/refresh/ | Obtain a new access token                  |
+| POST /api/auth/token/verify/  | Verify the validity of a JWT               |
 
 ---
 
 # Posts Endpoints
 
-| Endpoint | Description |
-|-----------|-------------|
-| POST /api/posts/ | Create a draft post with optional category and tag assignment |
-| GET /api/posts/ | List published posts |
-| GET /api/posts/{slug}/ | Retrieve a published post |
-| PATCH /api/posts/{slug}/ | Update a post and its assigned categories and tags |
-| DELETE /api/posts/{slug}/ | Soft delete a post owned by the authenticated user |
-| POST /api/posts/{slug}/publish/ | Publish a draft post |
-| POST /api/posts/{slug}/unpublish/ | Move a published post back to draft |
+| Endpoint                          | Description                                                   |
+| --------------------------------- | ------------------------------------------------------------- |
+| POST /api/posts/                  | Create a draft post with optional category and tag assignment |
+| GET /api/posts/                   | List published posts                                          |
+| GET /api/posts/{slug}/            | Retrieve a published post                                     |
+| PATCH /api/posts/{slug}/          | Update a post and its assigned categories and tags            |
+| DELETE /api/posts/{slug}/         | Soft delete a post owned by the authenticated user            |
+| POST /api/posts/{slug}/publish/   | Publish a draft post                                          |
+| POST /api/posts/{slug}/unpublish/ | Move a published post back to draft                           |
 
 ---
 
 # Categories Endpoints
 
-| Endpoint | Description |
-|-----------|-------------|
-| GET /api/categories/ | List active categories |
-| GET /api/categories/{slug}/ | Retrieve a category by slug |
-| POST /api/categories/ | Create a new category (Staff Only) |
-| PATCH /api/categories/{slug}/ | Update a category (Staff Only) |
+| Endpoint                      | Description                        |
+| ----------------------------- | ---------------------------------- |
+| GET /api/categories/          | List active categories             |
+| GET /api/categories/{slug}/   | Retrieve a category by slug        |
+| POST /api/categories/         | Create a new category (Staff Only) |
+| PATCH /api/categories/{slug}/ | Update a category (Staff Only)     |
 
 ## Category Relationship Support
 
@@ -1301,12 +1570,12 @@ Post responses include lightweight nested category objects containing:
 
 # Tags Endpoints
 
-| Endpoint | Description |
-|-----------|-------------|
-| GET /api/tags/ | List active tags |
-| GET /api/tags/{slug}/ | Retrieve a tag by slug |
-| POST /api/tags/ | Create a new tag (Staff Only) |
-| PATCH /api/tags/{slug}/ | Update a tag (Staff Only) |
+| Endpoint                | Description                   |
+| ----------------------- | ----------------------------- |
+| GET /api/tags/          | List active tags              |
+| GET /api/tags/{slug}/   | Retrieve a tag by slug        |
+| POST /api/tags/         | Create a new tag (Staff Only) |
+| PATCH /api/tags/{slug}/ | Update a tag (Staff Only)     |
 
 ## Tag Relationship Support
 
@@ -1327,24 +1596,34 @@ Post responses include lightweight nested tag objects containing:
 
 # Comments Endpoints
 
+| Endpoint                              | Description                                           |
+| ------------------------------------- | ----------------------------------------------------- |
+| GET /api/posts/{post_slug}/comments/  | List visible Comments for a published Post            |
+| POST /api/posts/{post_slug}/comments/ | Create a Comment on a published Post                  |
+| PATCH /api/comments/{id}/             | Update a Comment owned by the authenticated user      |
+| DELETE /api/comments/{id}/            | Soft delete a Comment owned by the authenticated user |
+
+---
+
+# Profiles Endpoints
+
 | Endpoint | Description |
 |-----------|-------------|
-| GET /api/posts/{post_slug}/comments/ | List visible Comments for a published Post |
-| POST /api/posts/{post_slug}/comments/ | Create a Comment on a published Post |
-| PATCH /api/comments/{id}/ | Update a Comment owned by the authenticated user |
-| DELETE /api/comments/{id}/ | Soft delete a Comment owned by the authenticated user |
+| GET /api/profile/ | Retrieve the authenticated user's Profile |
+| PATCH /api/profile/ | Update the authenticated user's Profile |
+| GET /api/users/{username}/profile/ | Retrieve a public Profile by username |
 
 ---
 
 # Next Update
 
-Feature 11 will introduce User Profiles.
+Feature 12 will introduce Search.
 
 The next API design phase is expected to define:
 
-- Public and private profile representations
-- Profile ownership
-- Profile update permissions
-- User-to-profile relationships
-- Safe public user information
-- Profile extensibility for future media uploads
+- Search across Posts
+- Search result filtering
+- Search query validation
+- Search performance considerations
+- Search API contracts
+- Query optimization strategies

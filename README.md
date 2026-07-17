@@ -117,6 +117,16 @@ The platform currently supports:
 * Comment audit tracking
 * Comment soft-delete lifecycle
 * Optimized Comment loading using `select_related()`
+* Authenticated Profile retrieval
+* Authenticated Profile updates
+* Public User Profile viewing
+* One-to-One User ↔ Profile relationship
+* Automatic Profile creation through Django signals
+* Existing User Profile backfill migration
+* Public and private Profile representations
+* Profile ownership enforcement through authenticated User context
+* Future date-of-birth validation
+* Optimized Profile loading using `select_related()`
 
 ---
 
@@ -133,6 +143,7 @@ The platform currently supports:
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
+* ✅ Feature 11 — User Profiles
 
 ---
 
@@ -148,7 +159,8 @@ blog-platform/
 │   │   ├── posts/
 │   │   ├── categories/
 │   │   ├── tags/
-│   │   └── comments/
+│   │   ├── comments/
+│   │   └── profiles/
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -260,6 +272,27 @@ Supports:
 * Object-level ownership enforcement
 * Soft-deleted Comment exclusion
 
+---
+
+### Profiles
+
+```text
+GET     /api/profile/
+PATCH   /api/profile/
+
+GET     /api/users/{username}/profile/
+```
+
+Supports:
+
+* Authenticated Profile retrieval
+* Authenticated Profile updates
+* Public Profile viewing
+* Profile ownership enforcement
+* Public/private Profile serialization
+* Automatic Profile creation
+* Date-of-birth validation
+* Query optimization using select_related()
 
 ---
 
@@ -283,7 +316,6 @@ Documentation is updated incrementally as each feature is completed.
 
 Upcoming features include:
 
-* User Profiles
 * Search
 * Media Uploads
 * Permissions & Authorization
@@ -310,7 +342,7 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 10 — Comments
+**Current Milestone:** ✅ Feature 11 — User Profiles
 
 The blog platform now includes production-ready authentication, Posts, Categories, Tags, taxonomy relationships, and Comments.
 
@@ -360,19 +392,21 @@ Implemented capabilities include:
 * Comment soft deletion
 * Comment query optimization with `select_related()`
 
-The next milestone is **Feature 11 — User Profiles**.
+The blog platform now includes a dedicated User Profiles domain built around a one-to-one relationship with the custom User model.
 
-Feature 11 will introduce a one-to-one Profile extension for the custom User model.
+Implemented Profile capabilities include:
 
-The feature is expected to define:
+* Automatic Profile creation for new Users
+* Existing User Profile backfill migration
+* Authenticated Profile retrieval
+* Authenticated Profile updates
+* Public User Profile viewing
+* Public/private Profile serialization
+* Profile ownership enforcement
+* Date-of-birth validation
+* Query optimization using `select_related()`
+* Django Admin integration for Profile management
 
-* Profile ownership
-* Public and private profile fields
-* Authenticated profile updates
-* Safe public profile representations
-* Future profile-image compatibility
-* Query optimization
-* Validation and permission rules
+The next milestone is **Feature 12 — Search**.
 
-The implementation will follow the same architecture-first, security-focused, and incremental development workflow used throughout Features 00–10.
-
+Feature 12 will introduce search capabilities across the platform, enabling users to discover content efficiently while maintaining performance, scalability, and clean API design.

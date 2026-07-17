@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.categories.apps.CategoriesConfig',
     'apps.tags.apps.TagsConfig',
     'apps.comments.apps.CommentsConfig',
+    "apps.profiles.apps.ProfilesConfig",
 ]
 
 MIDDLEWARE = [
