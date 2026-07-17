@@ -97,13 +97,13 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 10)
+# Current Testing Status (Feature 11)
 
 ## Implemented
 
 An automated test suite has not yet been created.
 
-However, the Authentication, Posts, Categories, Tags, and Comments modules have been comprehensively verified through manual API testing during development.
+However, the Authentication, Posts, Categories, Tags, Comments, and Profiles modules have been comprehensively verified through manual API testing during development.
 
 Manual testing currently validates:
 
@@ -160,6 +160,26 @@ Manual testing currently validates:
 - Soft-deleted Comment exclusion
 - Comment response field validation
 - Comment query optimization verification
+- Authenticated Profile retrieval
+- Anonymous private Profile access denial
+- Authenticated Profile partial updates
+- Anonymous Profile update denial
+- Public Profile retrieval
+- Unknown public Profile handling
+- Public/private Profile response separation
+- Email privacy enforcement
+- Date-of-birth privacy enforcement
+- Website URL validation
+- Future date-of-birth rejection
+- Optional Profile field clearing
+- Backend-controlled Profile ownership
+- Prevention of Profile ownership reassignment
+- Profile IDOR prevention
+- Automatic Profile creation for new Users
+- Existing User Profile backfill verification
+- Duplicate Profile prevention
+- User deletion cascading to Profile
+- Profile query optimization using `select_related("user")`
 
 Automated tests will be introduced incrementally in future features.
 
@@ -304,6 +324,95 @@ The following automated tests are planned for the Categories application:
 - Non-staff create denial
 - Staff update access
 - Non-staff update denial
+
+---
+
+## Profiles Module
+
+The following automated tests are planned for the Profiles application.
+
+### Model Tests
+
+* Create a Profile for a valid User
+* Verify the one-to-one User relationship
+* Prevent multiple Profiles for the same User
+* Verify optional text fields default to empty strings
+* Verify `date_of_birth` may be `NULL`
+* Verify timestamp fields are populated
+* Verify physical User deletion cascades to Profile
+* Verify Profile string representation
+
+### Signal Tests
+
+* Create a Profile automatically when a new User is created
+* Verify updating a User does not create another Profile
+* Verify exactly one Profile exists per User
+* Verify Profile creation through the registration flow
+* Document that `bulk_create()` does not trigger `post_save` signals
+
+### Data Migration Tests
+
+* Create Profiles for Users without Profiles
+* Preserve existing Profile records
+* Prevent duplicate Profile creation
+* Verify every existing User receives one Profile
+* Verify the backfill operation is safe when some Profiles already exist
+
+### Serializer Tests
+
+* Verify private Profile representation
+* Verify public Profile representation
+* Verify Profile update fields
+* Reject invalid website URLs
+* Reject future dates of birth
+* Accept valid past dates of birth
+* Allow optional fields to be cleared
+* Prevent User ownership assignment through request data
+* Prevent username updates through the Profile serializer
+* Prevent email updates through the Profile serializer
+* Verify public responses exclude email
+* Verify public responses exclude date of birth
+* Verify internal identifiers and timestamps are not exposed publicly
+
+### API Tests
+
+* Retrieve the authenticated User's Profile
+* Reject private Profile retrieval without authentication
+* Partially update the authenticated User's Profile
+* Reject Profile updates without authentication
+* Return the complete private representation after update
+* Retrieve a public Profile by username
+* Return `404 Not Found` for an unknown username
+* Verify the public Profile endpoint is read-only
+* Verify `POST`, `PUT`, and `DELETE` are not allowed on `/api/profile/`
+* Verify Profile updates persist correctly
+* Verify omitted fields remain unchanged during `PATCH`
+* Verify optional fields can be cleared
+* Verify query optimization with `select_related("user")`
+
+### Permission and Ownership Tests
+
+* Authenticated Users can retrieve their own Profile
+* Authenticated Users can update their own Profile
+* Users cannot select another Profile through a URL identifier
+* Users cannot select another Profile through request data
+* Profile ownership cannot be reassigned
+* Public users can retrieve safe public Profile information
+* Public users cannot update Profiles
+* Anonymous users cannot access private Profile information
+
+### Security Tests
+
+* Private Profile endpoints require JWT authentication
+* Public Profile responses do not expose email addresses
+* Public Profile responses do not expose date of birth
+* Public Profile responses do not expose internal identifiers
+* Profile update payloads cannot modify the owner
+* Profile update payloads cannot modify username or email
+* Future dates of birth are rejected
+* Invalid website URLs are rejected
+* Profile bio and location are treated as untrusted plain text
+* Profile endpoint design prevents IDOR attacks
 
 ---
 
@@ -549,6 +658,46 @@ The following automated tests are planned for the Comments application.
 
 ---
 
+## Profiles
+
+### Completed — Manual Verification
+
+- Authenticated Profile retrieval
+- Anonymous private Profile access denial
+- Authenticated Profile partial updates
+- Anonymous Profile update denial
+- Public Profile retrieval
+- Unknown username handling
+- Public/private response separation
+- Email privacy enforcement
+- Date-of-birth privacy enforcement
+- Website URL validation
+- Future date-of-birth validation
+- Optional Profile field clearing
+- Backend-controlled ownership
+- Prevention of ownership reassignment
+- IDOR prevention
+- Automatic Profile creation
+- Existing User Profile backfill
+- Duplicate Profile prevention
+- User deletion cascade behavior
+- Profile query optimization
+
+### Future — Automated Tests
+
+- Profile model behavior
+- Signal behavior
+- Data migration behavior
+- Serializer validation
+- Private Profile API integration
+- Public Profile API integration
+- Ownership enforcement
+- Privacy regression tests
+- One-to-one relationship constraints
+- Query-count assertions
+
+---
+
 ## Permissions
 
 - Anonymous access
@@ -732,6 +881,14 @@ apps/
 │       ├── test_permissions.py
 │       ├── test_views.py
 │       └── test_api.py
+├── profiles/
+│   └── tests/
+│       ├── test_models.py
+│       ├── test_signals.py
+│       ├── test_migrations.py
+│       ├── test_serializers.py
+│       ├── test_views.py
+│       └── test_api.py
 ```
 
 This structure keeps tests close to the code they verify.
@@ -778,6 +935,7 @@ Additional tools may be introduced later if project requirements evolve.
 - ✅ Feature 08 — Post–Category Relationship
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
+- ✅ Feature 11 — User Profiles
 
 All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
 
@@ -785,7 +943,7 @@ All ownership and permissions will rely on the authenticated user (`request.user
 
 Automated testing has not yet been implemented.
 
-Authentication, Posts, Categories, Tags, Comments, and all implemented cross-domain relationships have been comprehensively verified through manual API testing.
+Authentication, Posts, Categories, Tags, Comments, Profiles, and all implemented cross-domain relationships have been comprehensively verified through manual API testing.
 
 The project currently has validated:
 
@@ -831,22 +989,40 @@ The project currently has validated:
 - Backend-controlled Comment relationships
 - Comment response security
 - Comment query optimization
+- Authenticated Profile retrieval
+- Authenticated Profile updates
+- Public Profile retrieval
+- Profile ownership enforcement
+- Public/private Profile response separation
+- Profile privacy validation
+- Website URL validation
+- Future date-of-birth rejection
+- Automatic Profile creation
+- Existing User Profile backfill
+- Duplicate Profile prevention
+- User–Profile cascade deletion
+- Profile query optimization
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
 ## Next Testing Milestone
 
-Feature 11 will introduce User Profiles.
+Feature 12 will introduce Search.
 
 The next testing scope is expected to include:
 
-* User-to-Profile one-to-one relationships
-* Automatic or controlled Profile creation
-* Profile ownership
-* Authenticated Profile updates
-* Public and private Profile fields
-* Protection of sensitive User information
-* Profile serializer validation
+* Search query validation
+* Empty search query behavior
+* Post title searching
+* Post excerpt searching
+* Post content searching
+* Published and non-deleted Post filtering
+* Search result ordering
+* Search result pagination
+* Anonymous search access
+* Prevention of unpublished Post disclosure
+* Query performance verification
+* Future PostgreSQL full-text search behavior
 
 A broader automated testing phase remains planned for:
 
@@ -855,7 +1031,10 @@ A broader automated testing phase remains planned for:
 * Categories APIs
 * Tags APIs
 * Comments APIs
+* Profiles APIs
 * Object-level permissions
 * Soft-delete lifecycle behavior
 * Taxonomy relationship synchronization
+* Signal behavior
+* Data migration behavior
 * Cross-domain integration

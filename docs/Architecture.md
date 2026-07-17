@@ -166,7 +166,8 @@ backend/
 │   ├── posts/
 │   ├── categories/
 │   ├── tags/
-│   └── comments/
+│   ├── comments/
+│   └── profiles/
 │
 ├── config/
 │
@@ -266,7 +267,6 @@ Choosing a custom user model before the first database migration prevents costly
 - Password Change
 - Password Reset
 - Email Verification
-- User Profiles
 - Role-Based Authorization
 
 ---
@@ -867,6 +867,166 @@ Threaded replies, restoration endpoints, reporting, and Editor moderation are in
 
 ---
 
+# Profiles Architecture
+
+The Profiles application is implemented as an independent business domain responsible for user profile information while keeping authentication concerns inside the Users domain.
+
+## Current Design
+
+* Dedicated `Profile` model
+* One-to-One relationship with User
+* Automatic Profile creation through Django signals
+* Existing User Profile backfill migration
+* Action-specific serializers
+* Private Profile API
+* Public Profile API
+* Profile ownership enforcement through authenticated User context
+* Public/private Profile representations
+* Query optimization through `select_related("user")`
+
+## Domain Relationship
+
+```text
+User (1)
+   │
+   ▼
+Profile (1)
+```
+
+Each User owns exactly one Profile.
+
+Each Profile belongs to exactly one User.
+
+## Separation of Responsibilities
+
+### Users Domain
+
+Responsible for:
+
+* Authentication
+* Authorization
+* JWT Management
+* User Identity
+* Login and Registration
+
+### Profiles Domain
+
+Responsible for:
+
+* Biography
+* Website
+* Location
+* Date of Birth
+* Public Profile Information
+* Profile APIs
+
+This separation prevents authentication concerns from becoming coupled with profile-management concerns.
+
+## API Architecture
+
+### Current User Profile
+
+```text
+GET   /api/profile/
+PATCH /api/profile/
+```
+
+Responsibilities:
+
+* Retrieve authenticated User Profile
+* Update authenticated User Profile
+* Enforce ownership through `request.user`
+
+### Public Profile
+
+```text
+GET /api/users/{username}/profile/
+```
+
+Responsibilities:
+
+* Expose safe public Profile information
+* Hide private Profile fields
+* Support public author discovery
+
+## Serializer Architecture
+
+The Profiles domain uses action-specific serializers:
+
+* `ProfileSerializer`
+* `ProfileUpdateSerializer`
+* `PublicProfileSerializer`
+
+This separation prevents accidental exposure of private data and keeps validation responsibilities isolated.
+
+## Automatic Profile Creation Flow
+
+```text
+User Created
+      │
+      ▼
+post_save Signal
+      │
+      ▼
+Profile Created
+```
+
+The signal guarantees that every newly created User receives a corresponding Profile.
+
+## Existing User Backfill
+
+A dedicated data migration creates Profiles for Users that existed before Feature 11.
+
+This guarantees:
+
+```text
+Every User has exactly one Profile
+```
+
+## Profile Request Flow
+
+```text
+React Frontend
+        │
+        ▼
+HTTP Request
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+request.user
+        │
+        ▼
+Profile Lookup
+        │
+        ▼
+Serializer
+        │
+        ▼
+PostgreSQL
+```
+
+## Public Profile Flow
+
+```text
+React Frontend
+        │
+        ▼
+Username
+        │
+        ▼
+Profile Lookup
+        │
+        ▼
+PublicProfileSerializer
+        │
+        ▼
+JSON Response
+```
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -919,6 +1079,16 @@ The backend is responsible for enforcing all security rules.
 - Avoid exposing User email addresses and Comment audit fields.
 - Treat Comment content as untrusted plain text.
 - Avoid rendering Comment content with `dangerouslySetInnerHTML` unless sanitization is introduced.
+- Automatically create Profiles for newly registered Users.
+- Ensure every User owns exactly one Profile.
+- Enforce Profile ownership through authenticated User context.
+- Prevent Profile ownership reassignment.
+- Prevent Profile updates using User IDs or Profile IDs.
+- Expose email addresses only through authenticated private Profile APIs.
+- Exclude email and date of birth from public Profile APIs.
+- Validate website URLs before persistence.
+- Prevent future dates of birth.
+- Load related User data efficiently through `select_related("user")`.
 
 
 ---
@@ -951,6 +1121,28 @@ Planned scalability features include:
 - Future Comment pagination
 - Future Comment throttling and spam protection
 - Flat Comment architecture that can be extended later through a dedicated threaded-replies feature
+- Independent Profiles business domain
+- One-to-One User–Profile architecture
+- Automatic Profile provisioning through signals
+- Public/private Profile serialization strategy
+- Query optimization for Profile retrieval using `select_related()`
+- Future avatar support without User model modifications
+- Future social-link support without authentication-layer changes
+
+---
+
+The Profiles application introduces the platform's first dedicated User-extension domain through a one-to-one relationship.
+
+This architecture demonstrates:
+
+* One-to-One domain modeling
+* Signal-based automation
+* Data migrations for existing records
+* Public/private API separation
+* Ownership enforcement through authenticated context
+* Secure Profile exposure patterns
+
+The Profiles domain serves as the reference implementation for future User-adjacent domains that extend account functionality without modifying authentication architecture.
 
 ---
 
@@ -968,6 +1160,7 @@ Planned scalability features include:
 - ✅ Feature 08 — Post–Category Relationship
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
+- ✅ Feature 11 — User Profiles
 
 ## In Progress
 
@@ -975,7 +1168,7 @@ Planned scalability features include:
 
 ## Next Feature
 
-- Feature 11 — User Profiles
+- Feature 12 — Search
 
 ---
 
@@ -1010,7 +1203,6 @@ These modules serve as reference implementations for future domains by demonstra
 
 As development progresses, the architecture will expand with:
 
-* User Profiles
 * Search
 * Media Uploads
 * Final Writer, Editor, and Admin authorization

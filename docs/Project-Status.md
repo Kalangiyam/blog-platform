@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-17
 
-**Current Milestone:** ✅ Feature 10 — Comments
+**Current Milestone:** ✅ Feature 11 — User Profiles
 
 ---
 
@@ -111,6 +111,18 @@ blog-platform/
 │   │   |    ├── views.py
 │   │   |    ├── migrations/
 │   │   |    └── tests/
+|   |   |
+│   │   ├── profiles/
+│   │   |    ├── admin.py
+│   │   |    ├── apps.py
+│   │   |    ├── models.py
+│   │   |    ├── serializers.py
+│   │   |    ├── signals.py
+│   │   |    ├── urls.py
+│   │   |    ├── views.py
+│   │   |    ├── migrations/
+│   │   |    └── tests/
+|   |   
 │   │
 │   ├── config/
 │   │   └── settings/
@@ -679,16 +691,95 @@ Successfully verified:
 
 ---
 
+## ✅ Feature 11 — User Profiles
+
+### Objective
+
+Introduce a dedicated Profiles domain as a one-to-one extension of the custom User model while separating authentication information from user-facing profile data.
+
+### Completed
+
+#### Domain Model
+
+* Profiles application
+* Profile model
+* User–Profile one-to-one relationship
+* Optional biography, website, location, and date-of-birth fields
+* Timestamp tracking through `TimeStampedModel`
+* User deletion cascade behavior
+
+#### Automatic Provisioning
+
+* Automatic Profile creation for new Users through `post_save`
+* Signal registration through `ProfilesConfig.ready()`
+* Existing User Profile backfill migration
+* Duplicate Profile prevention
+* One Profile per User database constraint
+
+#### APIs
+
+* Authenticated Profile retrieval
+* Authenticated Profile partial updates
+* Public Profile retrieval by username
+
+#### Security
+
+* JWT-protected private Profile operations
+* Backend-controlled Profile ownership
+* IDOR-resistant current-user endpoint design
+* Public/private serializer separation
+* Email and date-of-birth privacy
+* Protected ownership and account fields
+* Website and date-of-birth validation
+
+#### Architecture
+
+* Independent Profiles domain
+* One-to-one User-extension architecture
+* Action-specific serializers
+* DRF generic retrieve and update views
+* Explicit profile URL routing
+* Query optimization using `select_related("user")`
+* Django Admin fieldsets and read-only ownership
+
+#### Manual Testing
+
+Successfully verified:
+
+* Authenticated Profile retrieval
+* Anonymous private Profile access denial
+* Authenticated Profile updates
+* Anonymous Profile update denial
+* Public Profile retrieval
+* Unknown username handling
+* Public response privacy
+* Invalid website rejection
+* Future date-of-birth rejection
+* Optional field clearing
+* Ownership reassignment prevention
+* Unsupported method rejection
+* New User Profile creation
+* Existing User Profile backfill
+* Duplicate Profile prevention
+* User deletion cascade behavior
+* Query optimization
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
-| Module     | Status                                                              |
-| ---------- | ------------------------------------------------------------------- |
+| Module     | Status                                                             |
+| ---------- | ------------------------------------------------------------------ |
 | Core       | ✅ Completed                                                        |
 | Users      | ✅ Completed                                                        |
 | Posts      | ✅ Completed (Publishing Workflow + Category and Tag Relationships) |
 | Categories | ✅ Completed                                                        |
 | Tags       | ✅ Completed                                                        |
-| Comments   | ✅ Completed                                                          |
+| Comments   | ✅ Completed                                                        |
+| Profiles   | ✅ Completed                                                        |
+
 
 ---
 
@@ -775,11 +866,34 @@ Current behavior:
 
 ---
 
+## Profiles APIs
+
+Implemented
+
+* GET `/api/profile/`
+* PATCH `/api/profile/`
+* GET `/api/users/{username}/profile/`
+
+Current behavior:
+
+* Authenticated private Profile retrieval
+* Authenticated Profile partial updates
+* Public Profile retrieval by username
+* Backend-controlled Profile ownership
+* Public/private response separation
+* Email and date-of-birth privacy
+* Website URL validation
+* Future date-of-birth rejection
+* Query optimization using `select_related("user")`
+
+---
+
 # Database Status
 
 ## Implemented Tables
 
 - User
+- Profile
 - Post
 - Category
 - Tag
@@ -798,8 +912,12 @@ The platform now contains the following relationships:
 
 ```text
 User
+ ├── Profile (One-to-One)
  ├── Posts
  └── Comments
+
+Profile
+ └── User (One-to-One)
 
 Post
  ├── Author (ForeignKey)
@@ -832,12 +950,19 @@ Feature 10 introduces:
 * Post physical deletion through `CASCADE`
 * User physical deletion protection through `PROTECT`
 
+Feature 11 introduces:
+
+* User–Profile one-to-one relationship
+* Unique Profile ownership through `Profile.user`
+* Automatic Profile creation for new Users
+* Existing User Profile backfill migration
+* Profile timestamp tracking
+* User physical deletion cascade through `CASCADE`
+* Separation of Profile data from authentication data
+
+
 
 ## Planned Tables
-
-
-
----
 
 # Authentication Status
 
@@ -887,8 +1012,9 @@ Completed Feature Reports:
 - ✅ Feature 06 — Categories
 - ✅ Feature 07 — Tags
 - ✅ Feature 08 — Post–Category Relationship
-- ✅ Feature 09 — Post–Tag Relationship report pending documentation completion
+- ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
+- ✅ Feature 11 — User Profiles
 
 ---
 
@@ -910,6 +1036,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-012 — Post–Category Relationship Architecture
 - ✅ ADR-013 — Post–Tag Relationship Architecture pending creation
 - ✅ ADR-014 — Comments Domain Architecture
+- ✅ ADR-015 — User Profiles Architecture
 
 ---
 
@@ -917,7 +1044,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication, Posts, Categories, Tags, and Comments modules.
+Completed for the Authentication, Posts, Categories, Tags, Comments, and Profiles modules.
 
 Verified:
 
@@ -999,6 +1126,30 @@ Verified:
 - Public response field safety
 - Query optimization
 
+### Profiles
+
+* Authenticated private Profile retrieval
+* Anonymous private Profile access denial
+* Authenticated Profile updates
+* Anonymous Profile update denial
+* Public Profile retrieval
+* Unknown username handling
+* Public/private response separation
+* Email privacy enforcement
+* Date-of-birth privacy enforcement
+* Invalid website rejection
+* Future date-of-birth rejection
+* Optional Profile field clearing
+* Backend-controlled Profile ownership
+* Ownership reassignment prevention
+* Unsupported method rejection
+* Automatic Profile creation
+* Existing User Profile backfill
+* Duplicate Profile prevention
+* User deletion cascade behavior
+* Query optimization using `select_related("user")`
+
+
 ---
 
 ## Automated Testing
@@ -1013,7 +1164,6 @@ Planned during future feature development.
 
 ## Phase 2 — User Experience
 
-- Feature 11 — User Profiles
 - Feature 12 — Search
 - Feature 13 — Media Uploads
 
@@ -1027,30 +1177,34 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 10 — Comments
+✅ Feature 11 — User Profiles
 
-Status: **Implementation, migration, admin integration, API integration, manual testing, ADR, and Feature Completion Report completed**
+Status: **Architecture, model implementation, migrations, signal integration, existing User backfill, admin integration, serializers, APIs, URL routing, manual testing, ADR, Feature Completion Report, and documentation completed**
 
-Documentation completed.
+Feature 11 is complete.
 
 ---
 
 # Next Milestone
 
-## Feature 11 — User Profiles
+## Feature 12 — Search
 
-The next feature will introduce User Profiles as a one-to-one extension of the custom User model.
+The next feature will introduce content search across publicly available Posts.
 
 Planned topics include:
 
-* Profile business purpose
-* User-to-Profile one-to-one relationship
-* Profile ownership
-* Public and private profile fields
-* Authenticated profile updates
-* Safe public profile representation
-* Future profile-image compatibility
+* Search business requirements
+* Searchable Post fields
+* Public search access
+* Published and non-deleted Post filtering
+* Search query validation
+* Search result ordering
+* Search result pagination
+* PostgreSQL search capabilities
 * Query optimization
+* Indexing strategy
+* API contract design
+* Security against unpublished content disclosure
 * Manual and automated testing strategy
 * Documentation updates
 
@@ -1101,6 +1255,24 @@ The project currently follows these key architectural decisions:
 - Published-Post validation
 - Flat Comments with threaded replies deferred
 - Comment query optimization using `select_related()`
+* Independent Profiles domain
+* User–Profile one-to-one relationship
+* `TimeStampedModel` inheritance for Profiles
+* `CASCADE` for Profile deletion when a User is physically deleted
+* Automatic Profile provisioning through a `post_save` signal
+* Signal registration through `ProfilesConfig.ready()`
+* Existing User Profile backfill through a data migration
+* Database-enforced one-Profile-per-User constraint
+* Action-specific Profile serializers
+* Private, update, and public Profile representations
+* Current-user Profile endpoint without object identifiers
+* IDOR prevention through authenticated User context
+* Public Profile retrieval by username
+* Public Profile exclusion of email and date of birth
+* Profile field validation for URLs and future dates
+* Profile query optimization using `select_related("user")`
+* DRF generic views for Profile retrieval and updates
+
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1126,4 +1298,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 11 — User Profiles
+**Starting Point:** Feature 12 — Search

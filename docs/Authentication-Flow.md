@@ -20,9 +20,11 @@ Feature 09 extends the same taxonomy authorization model to the Post–Tag relat
 
 Feature 10 extends the authorization architecture through the Comments domain. Public users may list comments attached to published posts, while authenticated users may create comments. Comment updates and soft deletion are restricted to the Comment author through backend-enforced object-level permissions.
 
+Feature 11 extends the authentication and authorization architecture through the Profiles domain. Authenticated users may retrieve and update their own Profile, while public users may retrieve a safe public Profile representation by username. Profile ownership is enforced through `request.user`, and clients cannot select Profiles through User IDs or Profile IDs.
+
 ---
 
-# Current Status (Feature 10)
+# Current Status (Feature 11)
 
 ## Completed
 
@@ -43,6 +45,15 @@ Feature 10 extends the authorization architecture through the Comments domain. P
 * ✅ Refresh Token Blacklisting
 * ✅ Token Refresh Endpoint
 * ✅ Token Verify Endpoint
+* ✅ User Profile domain implemented
+* ✅ One-to-One User–Profile relationship implemented
+* ✅ Automatic Profile creation for new Users
+* ✅ Existing User Profile backfill migration
+* ✅ Authenticated Profile retrieval API
+* ✅ Authenticated Profile update API
+* ✅ Public Profile retrieval API
+* ✅ Public/private Profile response separation
+* ✅ Profile ownership enforcement through `request.user`
 
 ## Remaining Authentication Features
 
@@ -96,7 +107,7 @@ Authentication is performed using a custom Email Authentication Backend, while J
 
 Why a custom User model?
 
-* Future profile expansion
+* Profile expansion through a dedicated one-to-one Profile domain
 * Flexible authentication options
 * Role-based permissions
 * JWT compatibility
@@ -120,13 +131,16 @@ Implementing the custom User model before the initial migration is considered a 
 * Refresh Token Blacklisting
 * Token Refresh
 * Token Verification
+* Authenticated Profile Retrieval
+* Authenticated Profile Updates
+* Public User Profile Retrieval
+* Automatic Profile Provisioning
 
 ## Planned
 
 * Password Change
 * Password Reset
 * Email Verification
-* Profile Editing
 
 ---
 
@@ -265,6 +279,16 @@ The authentication system will follow these security practices:
 * Return `404 Not Found` for invalid, draft, unpublished, or soft-deleted parent Posts.
 * Exclude soft-deleted Comments from normal API querysets.
 * Avoid exposing User email addresses and Comment audit fields in public responses.
+* Require JWT authentication for private Profile retrieval and updates.
+* Resolve the private Profile from `request.user`.
+* Prevent clients from selecting Profiles through User IDs or Profile IDs.
+* Prevent Profile ownership reassignment.
+* Exclude email and date of birth from public Profile responses.
+* Expose private Profile information only to the authenticated owner.
+* Validate Profile website URLs on the backend.
+* Reject future dates of birth.
+* Treat Profile bio and location values as untrusted user-generated text.
+* Avoid rendering Profile bio with `dangerouslySetInnerHTML` unless sanitization is introduced.
 
 ---
 
@@ -311,6 +335,14 @@ Current authorization capabilities include:
 * Invalid, draft, unpublished, and soft-deleted Posts are hidden behind `404 Not Found`.
 * Soft-deleted Comments are excluded from normal API querysets.
 * Final Editor moderation permissions remain deferred to the advanced authorization feature.
+* Authenticated users may retrieve their own Profile.
+* Authenticated users may partially update their own Profile.
+* Private Profile ownership is derived from `request.user`.
+* Clients cannot select another Profile by changing a URL identifier or request field.
+* Public users may retrieve safe Profile information by username.
+* Public Profile responses exclude email and date of birth.
+* Public Profile endpoints are read-only.
+* Profile ownership fields cannot be reassigned through serializers.
 
 
 Future features will extend this authorization model with editor, moderator, and administrator roles.
@@ -331,6 +363,7 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 08 — Post–Category Relationship
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
+* ✅ Feature 11 — User Profiles
 
 ## Current Authentication State
 
@@ -375,6 +408,15 @@ The application now supports:
 - Author-only Comment soft deletion
 - Published-Post validation for Comment access
 - Object-level Comment permission enforcement through `IsCommentAuthor`
+- Authenticated Profile retrieval
+- Authenticated Profile updates
+- Public User Profile retrieval
+- Automatic Profile creation for new Users
+- Existing User Profile backfill
+- Backend-controlled Profile ownership
+- Public/private Profile response separation
+- Profile privacy enforcement
+- Profile update validation
 
 ---
 
@@ -431,6 +473,111 @@ Authentication establishes the user's identity, while `IsCommentAuthor` determin
 
 ---
 
+# Profile Authorization Flow
+
+## Retrieve Private Profile
+
+```text
+Authenticated User
+        │
+        ▼
+GET /api/profile/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+request.user
+        │
+        ▼
+Resolve request.user Profile
+        │
+        ▼
+Private Profile Serializer
+        │
+        ▼
+200 OK
+```
+
+The private Profile endpoint derives ownership from the authenticated User. The client does not provide a User ID, Profile ID, or username.
+
+---
+
+## Update Private Profile
+
+```text
+Authenticated User
+        │
+        ▼
+PATCH /api/profile/
+        │
+        ▼
+JWT Authentication
+        │
+        ▼
+Resolve Profile from request.user
+        │
+        ▼
+Validate writable Profile fields
+        │
+        ▼
+Update Profile
+        │
+        ▼
+Return private Profile representation
+```
+
+Writable fields are limited to:
+
+* `bio`
+* `website`
+* `location`
+* `date_of_birth`
+
+The client cannot update:
+
+* Profile owner
+* Username
+* Email
+* Created timestamp
+* Updated timestamp
+
+---
+
+## Retrieve Public Profile
+
+```text
+Public Client
+        │
+        ▼
+GET /api/users/{username}/profile/
+        │
+        ▼
+Resolve Profile by username
+        │
+        ▼
+Public Profile Serializer
+        │
+        ▼
+Safe public response
+```
+
+Public Profile responses include:
+
+* Username
+* Bio
+* Website
+* Location
+
+Public Profile responses exclude:
+
+* Email
+* Date of birth
+* Internal identifiers
+* System timestamps
+
+---
+
 # Authentication API Flow
 
 ```text
@@ -463,9 +610,10 @@ Logout
     ▼
 Refresh Token Blacklisted
 ```
+Profile APIs reuse the existing JWT authentication foundation. Feature 11 does not introduce new token types or modify the access-token, refresh-token, or logout workflows.
 
 ## Next Feature
 
-Feature 11 will introduce User Profiles.
+Feature 12 will introduce Search.
 
-The existing authentication and authorization infrastructure will support profile ownership, authenticated profile updates, safe public profile representations, and future role-based authorization.
+Search is primarily a content-discovery feature and is not expected to change the JWT authentication lifecycle. The existing authorization architecture will continue controlling which records are visible to public and authenticated users.
