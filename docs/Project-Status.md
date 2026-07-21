@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-17
+**Last Updated:** 2026-07-21
 
-**Current Milestone:** ✅ Feature 11 — User Profiles
+**Current Milestone:** ✅ Feature 12 — Search
 
 ---
 
@@ -75,16 +75,17 @@ blog-platform/
 │   │   |    ├── views.py
 │   │   |    └── ...
 │   │   ├── posts/
-│   │   |   ├── models.py
-│   │   |   ├── serializers/
-│   │   |   |   ├── mixins.py
-│   │   |   |   └── ...
-│   │   |   ├── permissions.py
-│   │   |   ├── urls.py
-│   │   |   ├── views.py
-│   │   |   ├── choices.py
-│   │   |   ├── admin/
-│   │   |   └── ...
+│   │   │   ├── admin/
+│   │   │   ├── serializers/
+│   │   │   ├── models.py
+│   │   │   ├── managers.py
+│   │   │   ├── pagination.py
+│   │   │   ├── constants.py
+│   │   │   ├── permissions.py
+│   │   │   ├── urls.py
+│   │   │   ├── views.py
+│   │   │   ├── choices.py
+│   │   │   └── ...
 │   │   ├── categories/
 │   │   |    ├── permissions.py
 │   │   |    ├── admin.py
@@ -768,13 +769,68 @@ Successfully verified:
 
 ---
 
+## ✅ Feature 12 — Search
+
+### Objective
+
+Implement a scalable, production-ready search system for published blog posts using PostgreSQL Full-Text Search while maintaining a stable public API.
+
+### Completed
+
+#### Search
+
+- Dedicated Search API
+- Query parameter validation
+- Search-specific pagination
+- Custom Post QuerySet
+- Custom Post Manager
+
+#### PostgreSQL
+
+- SearchVector
+- SearchQuery
+- SearchRank
+- Weighted search fields
+- Web-style search queries
+- Explicit search configuration
+- GIN index
+
+#### Security
+
+- Published posts only
+- Soft-deleted post exclusion
+- Backend-controlled visibility
+- Query validation
+- Pagination
+
+#### Manual Testing
+
+Successfully verified:
+
+- Title search
+- Excerpt search
+- Content search
+- Case-insensitive search
+- Phrase search
+- Multi-word search
+- OR search
+- Excluded-term search
+- Pagination
+- Ranking
+- Draft exclusion
+- Soft-delete exclusion
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
 | Module     | Status                                                             |
 | ---------- | ------------------------------------------------------------------ |
 | Core       | ✅ Completed                                                        |
 | Users      | ✅ Completed                                                        |
-| Posts      | ✅ Completed (Publishing Workflow + Category and Tag Relationships) |
+| Posts      | ✅ Completed (Publishing, Categories, Tags, Search)                 |
 | Categories | ✅ Completed                                                        |
 | Tags       | ✅ Completed                                                        |
 | Comments   | ✅ Completed                                                        |
@@ -809,6 +865,7 @@ Implemented
 - DELETE `/api/posts/{slug}/`
 - POST `/api/posts/{slug}/publish/`
 - POST `/api/posts/{slug}/unpublish/`
+- GET `/api/posts/search/?q=<query>`
 
 Taxonomy Support
 
@@ -960,7 +1017,24 @@ Feature 11 introduces:
 * User physical deletion cascade through `CASCADE`
 * Separation of Profile data from authentication data
 
+### Search Infrastructure
 
+Feature 12 introduces PostgreSQL Full-Text Search using:
+
+- SearchVector
+- SearchQuery
+- SearchRank
+- Weighted search fields
+- English search configuration
+- GIN index for optimized search performance
+
+Search operates on:
+
+- Post title
+- Post excerpt
+- Post content
+
+No additional database tables were introduced.
 
 ## Planned Tables
 
@@ -1015,6 +1089,7 @@ Completed Feature Reports:
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
 - ✅ Feature 11 — User Profiles
+- ✅ Feature 12 — Search
 
 ---
 
@@ -1034,9 +1109,10 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-010 — Categories Domain Architecture
 - ✅ ADR-011 — Tags Domain Architecture
 - ✅ ADR-012 — Post–Category Relationship Architecture
-- ✅ ADR-013 — Post–Tag Relationship Architecture pending creation
+- ✅ ADR-013 — Post–Tag Relationship Architecture
 - ✅ ADR-014 — Comments Domain Architecture
 - ✅ ADR-015 — User Profiles Architecture
+- ✅ ADR-016 — Post Search Architecture
 
 ---
 
@@ -1084,6 +1160,15 @@ Verified:
 - Omitted-field relationship preservation
 - Empty-list relationship clearing
 - Query optimization for author, categories, and tags
+- PostgreSQL Full-Text Search
+- Search relevance ranking
+- Phrase search
+- Multi-word search
+- OR search
+- Excluded-term search
+- Search pagination
+- Published-only visibility
+- Soft-delete exclusion
 
 ### Categories
 
@@ -1164,7 +1249,6 @@ Planned during future feature development.
 
 ## Phase 2 — User Experience
 
-- Feature 12 — Search
 - Feature 13 — Media Uploads
 
 ## Phase 3 — Advanced Features
@@ -1177,35 +1261,38 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 11 — User Profiles
+✅ Feature 12 — Search
 
-Status: **Architecture, model implementation, migrations, signal integration, existing User backfill, admin integration, serializers, APIs, URL routing, manual testing, ADR, Feature Completion Report, and documentation completed**
+Status: **Architecture, PostgreSQL Full-Text Search implementation, weighted ranking, search pagination, manual testing, ADR, Feature Completion Report, and documentation completed.**
 
-Feature 11 is complete.
+Feature 12 is complete.
 
 ---
 
 # Next Milestone
 
-## Feature 12 — Search
+## Feature 13 — Media Uploads
 
-The next feature will introduce content search across publicly available Posts.
+The next feature will introduce media upload capabilities for blog posts, enabling authors to upload, manage, and associate images with their content while maintaining security, scalability, and clean architecture.
 
 Planned topics include:
 
-* Search business requirements
-* Searchable Post fields
-* Public search access
-* Published and non-deleted Post filtering
-* Search query validation
-* Search result ordering
-* Search result pagination
-* PostgreSQL search capabilities
-* Query optimization
-* Indexing strategy
-* API contract design
-* Security against unpublished content disclosure
-* Manual and automated testing strategy
+* Media upload business requirements
+* Image storage strategy
+* Django media configuration
+* File upload API design
+* Image validation (type, size, dimensions)
+* Secure file handling
+* Media ownership and authorization
+* Post–Media relationship design
+* Image URL generation
+* File naming strategy
+* Storage backend abstraction
+* Local development storage
+* Future cloud storage compatibility (AWS S3, Cloudinary, etc.)
+* Performance optimization
+* Security against malicious file uploads
+* Manual testing strategy
 * Documentation updates
 
 # Important Architecture Decisions
@@ -1272,7 +1359,16 @@ The project currently follows these key architectural decisions:
 * Profile field validation for URLs and future dates
 * Profile query optimization using `select_related("user")`
 * DRF generic views for Profile retrieval and updates
-
+- Dedicated Search API
+- Custom PostQuerySet for reusable search logic
+- Custom PostManager for domain-specific queries
+- PostgreSQL Full-Text Search
+- SearchVector, SearchQuery, and SearchRank
+- Weighted search fields
+- Web-style search queries
+- Explicit PostgreSQL search configuration
+- Search-specific pagination
+- GIN index for search optimization
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1298,4 +1394,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 12 — Search
+**Starting Point:** Feature 13 — Media Uploads
