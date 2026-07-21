@@ -1,16 +1,17 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import status, mixins, viewsets
+from rest_framework import generics, status, mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.posts.models import Post
-from apps.posts.choices import PostStatus
 from apps.posts.permissions import IsPostAuthor
+from apps.posts.pagination import PostSearchPagination
 from apps.posts.serializers import (
     PostCreateSerializer,
     PostDetailSerializer,
     PostListSerializer,
     PostUpdateSerializer,
+    PostSearchQuerySerializer,
     PostPublishSerializer,
     PostUnpublishSerializer,
 )
@@ -52,14 +53,14 @@ class PostViewSet(
             "publish",
             "unpublish",
         ):
-            return Post.objects.select_related("author").prefetch_related("categories","tags")
+            return Post.objects.select_related("author").prefetch_related(
+                "categories", "tags"
+            )
 
         return (
-            Post.objects.filter(
-                status=PostStatus.PUBLISHED,
-            )
+            Post.objects.published()
             .select_related("author")
-            .prefetch_related("categories","tags")
+            .prefetch_related("categories", "tags")
         )
 
     def get_serializer_class(self):
@@ -126,7 +127,6 @@ class PostViewSet(
             response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
-
 
     def update(self, request, *args, **kwargs):
         """
@@ -210,4 +210,32 @@ class PostViewSet(
         return Response(
             response_serializer.data,
             status=status.HTTP_200_OK,
+        )
+
+
+class PostSearchAPIView(generics.ListAPIView):
+    """
+    Public API endpoint for searching published blog posts.
+    """
+
+    serializer_class = PostListSerializer
+    permission_classes = (AllowAny,)
+    pagination_class = PostSearchPagination
+
+    def get_queryset(self):
+        """
+        Return published, non-deleted posts matching the validated query.
+        """
+        query_serializer = PostSearchQuerySerializer(
+            data=self.request.query_params,
+        )
+        query_serializer.is_valid(raise_exception=True)
+
+        query = query_serializer.validated_data["q"]
+
+        return (
+            Post.objects.published()
+            .search(query)
+            .select_related("author")
+            .prefetch_related("categories", "tags")
         )

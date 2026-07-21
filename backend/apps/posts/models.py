@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector
 
 from apps.core.models import (
     AuditModel,
@@ -7,6 +9,8 @@ from apps.core.models import (
     TimeStampedModel,
 )
 from apps.posts.choices import PostStatus
+from apps.posts.constants import POST_SEARCH_CONFIG
+from apps.posts.managers import PostManager
 
 
 class Post(
@@ -17,6 +21,8 @@ class Post(
     """
     Represents a blog post.
     """
+
+    objects = PostManager()
 
     title = models.CharField(
         max_length=255,
@@ -84,6 +90,24 @@ class Post(
             models.Index(fields=["status"]),
             models.Index(fields=["published_at"]),
             models.Index(fields=["author"]),
+            GinIndex(
+                SearchVector(
+                    "title",
+                    weight="A",
+                    config=POST_SEARCH_CONFIG,
+                )
+                + SearchVector(
+                    "excerpt",
+                    weight="B",
+                    config=POST_SEARCH_CONFIG,
+                )
+                + SearchVector(
+                    "content",
+                    weight="C",
+                    config=POST_SEARCH_CONFIG,
+                ),
+                name="post_search_vector_gin",
+            ),
         ]
 
     def __str__(self):
