@@ -54,6 +54,7 @@ class PostAdmin(admin.ModelAdmin):
         "is_deleted",
         "deleted_at",
         "deleted_by",
+        # "featured_image"
     )
 
     fieldsets = (
@@ -65,6 +66,7 @@ class PostAdmin(admin.ModelAdmin):
                     "slug",
                     "excerpt",
                     "content",
+                    "featured_image"
                 ),
             },
         ),

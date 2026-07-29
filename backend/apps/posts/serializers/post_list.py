@@ -4,15 +4,24 @@ from apps.posts.models import Post
 
 from .author import AuthorSerializer
 from .post_category import PostCategorySerializer
+from .post_featured_image_mixin import (
+    PostFeaturedImageRepresentationMixin,
+)
 from .post_tag import PostTagSerializer
 
 
-class PostListSerializer(serializers.ModelSerializer):
+class PostListSerializer(
+    PostFeaturedImageRepresentationMixin,
+    serializers.ModelSerializer,
+):
     """
     Serializer for listing blog posts.
     """
 
+    featured_image_url = serializers.SerializerMethodField()
+
     author = AuthorSerializer(read_only=True)
+
     categories = PostCategorySerializer(
         many=True,
         read_only=True,
@@ -30,6 +39,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "excerpt",
+            "featured_image_url",
             "author",
             "published_at",
             "categories",

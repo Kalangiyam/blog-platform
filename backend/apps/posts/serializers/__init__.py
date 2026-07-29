@@ -5,6 +5,10 @@ from .post_list import PostListSerializer
 from .post_update import PostUpdateSerializer
 from .post_publish import PostPublishSerializer, PostUnpublishSerializer
 from .post_search_query import PostSearchQuerySerializer
+from .post_featured_image import (
+    PostFeaturedImageResponseSerializer,
+    PostFeaturedImageUploadSerializer,
+)
 
 __all__ = (
     "AuthorSerializer",
@@ -15,4 +19,6 @@ __all__ = (
     "PostPublishSerializer",
     "PostUnpublishSerializer",
     "PostSearchQuerySerializer",
+    "PostFeaturedImageResponseSerializer",
+    "PostFeaturedImageUploadSerializer",
 )
