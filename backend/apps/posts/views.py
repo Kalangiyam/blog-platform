@@ -2,6 +2,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics, status, mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import FormParser, MultiPartParser
 
 from apps.posts.models import Post
 from apps.posts.permissions import IsPostAuthor
@@ -14,6 +15,12 @@ from apps.posts.serializers import (
     PostSearchQuerySerializer,
     PostPublishSerializer,
     PostUnpublishSerializer,
+    PostFeaturedImageResponseSerializer,
+    PostFeaturedImageUploadSerializer,
+)
+from apps.posts.services.featured_image import (
+    remove_post_featured_image,
+    replace_post_featured_image,
 )
 
 
@@ -52,6 +59,7 @@ class PostViewSet(
             "destroy",
             "publish",
             "unpublish",
+            "featured_image",
         ):
             return Post.objects.select_related("author").prefetch_related(
                 "categories", "tags"
@@ -86,6 +94,9 @@ class PostViewSet(
         if self.action == "unpublish":
             return PostUnpublishSerializer
 
+        if self.action == "featured_image":
+            return PostFeaturedImageUploadSerializer
+
         return self.serializer_class
 
     def get_permissions(self):
@@ -101,6 +112,7 @@ class PostViewSet(
             "destroy",
             "publish",
             "unpublish",
+            "featured_image",
         ):
             permission_classes = (IsAuthenticated, IsPostAuthor)
         else:
@@ -211,6 +223,64 @@ class PostViewSet(
             response_serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    @action(
+        detail=True,
+        methods=["put", "delete"],
+        url_path="featured-image",
+        parser_classes=(MultiPartParser, FormParser),
+    )
+    def featured_image(self, request, *args, **kwargs):
+        """
+        Upload, replace, or remove a Post featured image.
+
+        PUT accepts a multipart image upload.
+        DELETE removes the current featured image.
+        """
+
+        post = self.get_object()
+
+        if request.method == "DELETE":
+            remove_post_featured_image(
+                post=post,
+                updated_by=request.user,
+            )
+
+            return Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        replace_post_featured_image(
+            post=post,
+            uploaded_file=serializer.validated_data["image"],
+            updated_by=request.user,
+        )
+
+        response_serializer = PostFeaturedImageResponseSerializer(
+            {
+                "featured_image_url": self._build_featured_image_url(post),
+            }
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def _build_featured_image_url(self, post):
+        """
+        Return an absolute featured-image URL or None.
+        """
+
+        if not post.featured_image:
+            return None
+
+        return self.request.build_absolute_uri(post.featured_image.url)
 
 
 class PostSearchAPIView(generics.ListAPIView):

@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-21
+**Last Updated:** 2026-07-29
 
-**Current Milestone:** ✅ Feature 12 — Search
+**Current Milestone:** ✅ Feature 13 — Media Uploads
 
 ---
 
@@ -824,13 +824,92 @@ Successfully verified:
 
 ---
 
+---
+
+## ✅ Feature 13 — Media Uploads
+
+### Objective
+
+Introduce production-ready featured image support for blog posts with secure uploads, storage abstraction, transaction-safe file lifecycle management, and future cloud-storage compatibility.
+
+### Completed
+
+#### Domain Model
+
+- Added optional featured image to the Post model
+- UUID-based filename generation
+- Date-based upload directory structure
+- Storage-provider independent implementation
+
+#### APIs
+
+- Upload/replace featured image API
+- Remove featured image API
+- Featured image URL included in Post list responses
+- Featured image URL included in Post detail responses
+- Featured image URL included in Search responses
+
+#### Validation
+
+- File presence validation
+- File size validation
+- Extension validation
+- MIME type validation
+- Image format verification
+- Corrupted image detection
+- Dimension validation
+- Pixel-count validation
+- Animated image rejection
+
+#### Security
+
+- JWT-protected upload and delete endpoints
+- Author-only image management
+- Backend-controlled file assignment
+- UUID filenames
+- Transaction-safe storage cleanup
+
+#### Architecture
+
+- Dedicated featured-image service
+- Action-specific serializers
+- Reusable image representation mixin
+- Upload-path abstraction
+- Django Storage API
+- Transaction-safe file lifecycle using `transaction.on_commit()`
+
+#### Manual Testing
+
+Successfully verified:
+
+- JPEG upload
+- PNG upload
+- WebP upload
+- Image replacement
+- Old-file cleanup
+- Image removal
+- Repeated deletion
+- Anonymous access denial
+- Non-author access denial
+- Invalid file rejection
+- Oversized image rejection
+- Corrupted image rejection
+- Public image URL generation
+- Search response image URL
+- Draft Post upload
+- Soft-delete image preservation
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
 | Module     | Status                                                             |
 | ---------- | ------------------------------------------------------------------ |
 | Core       | ✅ Completed                                                        |
 | Users      | ✅ Completed                                                        |
-| Posts      | ✅ Completed (Publishing, Categories, Tags, Search)                 |
+| Posts      | ✅ Completed (Publishing, Categories, Tags, Search, Media Uploads)  |
 | Categories | ✅ Completed                                                        |
 | Tags       | ✅ Completed                                                        |
 | Comments   | ✅ Completed                                                        |
@@ -866,6 +945,8 @@ Implemented
 - POST `/api/posts/{slug}/publish/`
 - POST `/api/posts/{slug}/unpublish/`
 - GET `/api/posts/search/?q=<query>`
+- PUT `/api/posts/{slug}/featured-image/`
+- DELETE `/api/posts/{slug}/featured-image/`
 
 Taxonomy Support
 
@@ -876,6 +957,16 @@ Taxonomy Support
 - Preserve taxonomy relationships when write fields are omitted
 - Nested category and tag representations in list and detail responses
 - Shared category and tag validation through `TaxonomyAssignmentMixin`
+
+Featured Image Support
+
+- Upload or replace a featured image
+- Remove a featured image
+- Public `featured_image_url` in list responses
+- Public `featured_image_url` in detail responses
+- Public `featured_image_url` in search responses
+- Multipart upload support
+- Author-only image management
 
 ---
 
@@ -978,6 +1069,7 @@ Profile
 
 Post
  ├── Author (ForeignKey)
+ ├── Featured Image (ImageField)
  ├── Categories (ManyToMany)
  ├── Tags (ManyToMany)
  └── Comments (One-to-Many)
@@ -1036,6 +1128,20 @@ Search operates on:
 
 No additional database tables were introduced.
 
+### Media Infrastructure
+
+Feature 13 introduces secure media management using:
+
+- Django ImageField
+- Django Storage API
+- UUID-based filenames
+- Date-based upload paths
+- Pillow image validation
+- Transaction-safe storage cleanup
+- Storage abstraction for future cloud providers
+
+The platform currently stores one optional featured image per Post.
+
 ## Planned Tables
 
 # Authentication Status
@@ -1090,6 +1196,7 @@ Completed Feature Reports:
 - ✅ Feature 10 — Comments
 - ✅ Feature 11 — User Profiles
 - ✅ Feature 12 — Search
+- ✅ Feature 13 — Media Uploads
 
 ---
 
@@ -1113,6 +1220,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-014 — Comments Domain Architecture
 - ✅ ADR-015 — User Profiles Architecture
 - ✅ ADR-016 — Post Search Architecture
+- ✅ ADR-017 — Featured Image Architecture
 
 ---
 
@@ -1169,6 +1277,19 @@ Verified:
 - Search pagination
 - Published-only visibility
 - Soft-delete exclusion
+- Featured image upload
+- Featured image replacement
+- Featured image removal
+- UUID filename generation
+- Image validation
+- MIME validation
+- Corrupted image rejection
+- Dimension validation
+- Pixel-count validation
+- Animated image rejection
+- Public image URL generation
+- Search image URL generation
+- Transaction-safe file cleanup
 
 ### Categories
 
@@ -1247,10 +1368,6 @@ Planned during future feature development.
 
 # Pending Features
 
-## Phase 2 — User Experience
-
-- Feature 13 — Media Uploads
-
 ## Phase 3 — Advanced Features
 
 - Feature 14 — Permissions & Authorization
@@ -1261,37 +1378,32 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 12 — Search
+✅ Feature 13 — Media Uploads
 
-Status: **Architecture, PostgreSQL Full-Text Search implementation, weighted ranking, search pagination, manual testing, ADR, Feature Completion Report, and documentation completed.**
+Status: **Architecture, implementation, manual testing, ADR, Feature Completion Report, and documentation completed.**
 
-Feature 12 is complete.
+Feature 13 is complete.
 
 ---
 
 # Next Milestone
 
-## Feature 13 — Media Uploads
+## Feature 14 — Permissions & Authorization
 
-The next feature will introduce media upload capabilities for blog posts, enabling authors to upload, manage, and associate images with their content while maintaining security, scalability, and clean architecture.
+The next feature will introduce a production-ready authorization architecture for the application.
 
 Planned topics include:
 
-* Media upload business requirements
-* Image storage strategy
-* Django media configuration
-* File upload API design
-* Image validation (type, size, dimensions)
-* Secure file handling
-* Media ownership and authorization
-* Post–Media relationship design
-* Image URL generation
-* File naming strategy
-* Storage backend abstraction
-* Local development storage
-* Future cloud storage compatibility (AWS S3, Cloudinary, etc.)
-* Performance optimization
-* Security against malicious file uploads
+* Authentication vs Authorization
+* Django Permission System
+* Django Groups
+* Role-Based Access Control (RBAC)
+* Object-Level Permissions
+* django-guardian fundamentals
+* Custom DRF Permission Classes
+* Permission composition
+* Backend authorization flow
+* Security best practices
 * Manual testing strategy
 * Documentation updates
 
@@ -1369,6 +1481,16 @@ The project currently follows these key architectural decisions:
 - Explicit PostgreSQL search configuration
 - Search-specific pagination
 - GIN index for search optimization
+- Featured image support through `ImageField`
+- UUID-based upload filenames
+- Date-based upload directory structure
+- Django Storage API abstraction
+- Dedicated featured-image service layer
+- Layered image validation
+- Transaction-safe storage cleanup using `transaction.on_commit()`
+- Dedicated featured-image upload endpoint
+- Public `featured_image_url` representation
+- Soft-delete image preservation
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1394,4 +1516,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 13 — Media Uploads
+**Starting Point:** Feature 14 — Permissions & Authorization

@@ -11,6 +11,8 @@ from apps.core.models import (
 from apps.posts.choices import PostStatus
 from apps.posts.constants import POST_SEARCH_CONFIG
 from apps.posts.managers import PostManager
+from apps.posts.upload_paths import post_featured_image_upload_path
+from apps.posts.validators import validate_post_featured_image
 
 
 class Post(
@@ -63,6 +65,13 @@ class Post(
 
     content = models.TextField(
         help_text="Main content of the blog post.",
+    )
+
+    featured_image = models.ImageField(
+        upload_to=post_featured_image_upload_path,
+        validators=(validate_post_featured_image,),
+        blank=True,
+        help_text="Optional featured image displayed with the blog post.",
     )
 
     status = models.CharField(
