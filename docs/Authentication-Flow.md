@@ -10,13 +10,13 @@ Feature 04 introduced JWT authentication and object-level authorization for the 
 
 Feature 05 extends this foundation by securing the publishing workflow, allowing only authenticated post authors to publish and unpublish their own posts while enforcing backend business rules for valid status transitions.
 
-Feature 06 extends the authorization layer by introducing the Categories domain. Category listing and retrieval are publicly accessible, while category creation and updates are restricted to staff users through backend-enforced permissions.
+Feature 06 introduced public taxonomy reads. Feature 14 now restricts Category writes to authenticated Editors rather than Django staff users.
 
-Feature 07 extends the same authorization model to the Tags domain. Tag listing and retrieval are publicly accessible, while tag creation and updates are restricted to staff users through dedicated backend-enforced permissions.
+Feature 07 introduced the same public-read model for Tags. Feature 14 now restricts Tag writes to authenticated Editors.
 
-Feature 08 extends the authorization model by introducing the Post–Category relationship. Authenticated post authors may assign active categories to their own posts, while category lifecycle management remains restricted to staff users.
+Feature 08 introduced Post–Category assignment. Authors may assign active Categories to owned Posts, and Editors may do so for any active Post.
 
-Feature 09 extends the same taxonomy authorization model to the Post–Tag relationship. Authenticated post authors may assign active tags to their own posts, while tag lifecycle management remains restricted to staff users.
+Feature 09 introduced Post–Tag assignment under the same Author-ownership and Editor-override rules.
 
 Feature 10 extends the authorization architecture through the Comments domain. Public users may list comments attached to published posts, while authenticated users may create comments. Comment updates and soft deletion are restricted to the Comment author through backend-enforced object-level permissions.
 
@@ -24,7 +24,7 @@ Feature 11 extends the authentication and authorization architecture through the
 
 ---
 
-# Current Status (Feature 11)
+# Current Status (Feature 14)
 
 ## Completed
 
@@ -109,7 +109,7 @@ Why a custom User model?
 
 * Profile expansion through a dedicated one-to-one Profile domain
 * Flexible authentication options
-* Role-based permissions
+* User-facing role administration APIs
 * JWT compatibility
 * Enterprise scalability
 * Avoid changing the user model after migrations
@@ -252,9 +252,9 @@ The authentication system will follow these security practices:
 * Refresh token blacklisting
 * Generic authentication error messages
 * Custom email authentication backend
-* Staff-only authorization for category management
+* Editor-only authorization for category management
 * Public read access for active categories
-* Staff-only authorization for tag management
+* Editor-only authorization for tag management
 * Public read access for active tags
 * Validate category assignments on the backend
 * Validate tag assignments on the backend
@@ -296,33 +296,33 @@ The authentication system will follow these security practices:
 
 Authentication is complete.
 
-Feature 04 introduces the first authorization layer through object-level permissions.
+Feature 04 introduced object-level authorization; Feature 14 extends it with centralized role-based access control.
 
 Current authorization capabilities include:
 
 * Public read access for published posts.
-* Authenticated users can create posts.
-* Only the author of a post can update, delete, publish, or unpublish it.
-* Ownership is enforced using `request.user` together with a custom DRF permission class.
+* Authenticated Authors and Editors can create Posts.
+* Authors can manage owned Posts; Editors can manage any active, non-deleted Post.
+* Ownership and Editor override are enforced by `IsPostAuthor`.
 * Publishing state transitions are validated on the backend to prevent invalid workflow changes.
 * Public read access for active categories.
-* Only staff users can create or update categories.
-* Category management is enforced using a dedicated DRF permission class.
+* Only Editors can create or update Categories.
+* Category management is enforced through shared `IsEditorOrReadOnly`.
 * Public read access for active tags.
-* Only staff users can create or update tags.
-* Tag management is enforced using a dedicated DRF permission class.
+* Only Editors can create or update Tags.
+* Tag management is enforced through shared `IsEditorOrReadOnly`.
 * Authenticated post authors may assign active categories to their own posts.
 * Only active categories may be assigned through the Posts API.
 * Category assignments are validated through serializers before persistence.
-* Category administration remains restricted to staff users.
+* Category administration requires the Editor role.
 * Posts may reference categories, but Posts APIs cannot create or modify Category records.
-* Existing object-level permissions continue protecting post ownership during category updates.
+* Post queryset scoping and object permissions protect category assignment updates.
 * Authenticated post authors may assign active tags to their own posts.
 * Only active tags may be assigned through the Posts API.
 * Tag assignments are validated through serializers before persistence.
-* Tag administration remains restricted to staff users.
+* Tag administration requires the Editor role.
 * Posts may reference tags, but Posts APIs cannot create or modify Tag records.
-* Existing object-level permissions continue protecting post ownership during tag updates.
+* Post queryset scoping and object permissions protect tag assignment updates.
 * Shared taxonomy validation is implemented through reusable serializer mixins.
 * Public users may list Comments attached to published, non-deleted Posts.
 * Only authenticated users may create Comments.
@@ -334,7 +334,7 @@ Current authorization capabilities include:
 * Post ownership does not grant permission over another user's Comment.
 * Invalid, draft, unpublished, and soft-deleted Posts are hidden behind `404 Not Found`.
 * Soft-deleted Comments are excluded from normal API querysets.
-* Final Editor moderation permissions remain deferred to the advanced authorization feature.
+* Comment moderation remains deferred; current Comment updates and deletion remain author-only.
 * Authenticated users may retrieve their own Profile.
 * Authenticated users may partially update their own Profile.
 * Private Profile ownership is derived from `request.user`.
@@ -345,7 +345,54 @@ Current authorization capabilities include:
 * Profile ownership fields cannot be reassigned through serializers.
 
 
-Future features will extend this authorization model with editor, moderator, and administrator roles.
+The implemented application roles are Author, Editor, and Administrator. Future APIs will provide safe Administrator-only user and role management.
+
+## Role-Based Authorization Flow
+
+JWT authentication establishes identity; it does not grant a business role. After token validation, DRF evaluates role permissions backed by Django Group membership.
+
+```text
+Bearer access token
+        │
+        ▼
+JWTAuthentication
+        │
+        ▼
+Authenticated User
+        │
+        ▼
+Role permission
+Author OR Editor OR Administrator
+        │
+        ▼
+Authorization-scoped queryset
+        │
+        ▼
+Object-level permission
+        │
+        ▼
+Serializer and business validation
+```
+
+The roles are independent:
+
+* `Author` creates Posts and manages only owned Posts.
+* `Editor` creates Posts, manages any active Post, and manages Categories and Tags.
+* `Administrator` is reserved for future user administration and does not inherit Editor access.
+
+A user may belong to multiple groups. Registration does not automatically assign a role, and normal account/Profile APIs cannot modify Group membership.
+
+For Post management, the effective rule is:
+
+```text
+Authenticated
+AND (Author OR Editor)
+AND (Post owner OR Editor)
+```
+
+The queryset is also scoped: Editors can resolve every active Post, while Authors can resolve only owned Posts. This normally turns cross-owner access into `404 Not Found` and reduces IDOR exposure.
+
+Django `is_staff` controls Django Admin access only. It does not grant Editor or Administrator API privileges. Likewise, an application Administrator is not automatically a Django staff user or superuser.
 
 ---
 
@@ -364,6 +411,9 @@ Future features will extend this authorization model with editor, moderator, and
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
 * ✅ Feature 11 — User Profiles
+* ✅ Feature 12 — Search
+* ✅ Feature 13 — Media Uploads
+* ✅ Feature 14 — Permissions & Authorization
 
 ## Current Authentication State
 
@@ -378,14 +428,14 @@ The application now supports:
 - JWT access-token refresh
 - Refresh-token blacklisting
 - Token blacklisting
-- Ownership-based authorization for Posts APIs
+- Role-based and ownership-based authorization for Posts APIs
 - Object-level permission enforcement
-- Author-only publishing and unpublishing workflows
+- Owner-Author or Editor publishing and unpublishing workflows
 - Backend validation of publishing state transitions
-- Staff-only category management
+- Editor-only category management
 - Public category browsing
 - Action-based permission selection
-- Staff-only tag management
+- Editor-only tag management
 - Public tag browsing
 - Dedicated tag permission enforcement
 - Author-controlled category assignment
@@ -417,6 +467,12 @@ The application now supports:
 - Public/private Profile response separation
 - Profile privacy enforcement
 - Profile update validation
+- Independent Author, Editor, and Administrator roles
+- Shared DRF role permission classes
+- Author-or-Editor Post creation
+- Editor override for Post management
+- Authorization-scoped Post querysets
+- Separation of Django staff access from application roles
 
 ---
 
@@ -614,6 +670,4 @@ Profile APIs reuse the existing JWT authentication foundation. Feature 11 does n
 
 ## Next Feature
 
-Feature 12 will introduce Search.
-
-Search is primarily a content-discovery feature and is not expected to change the JWT authentication lifecycle. The existing authorization architecture will continue controlling which records are visible to public and authenticated users.
+Feature 15 will introduce Administrator-only User Administration and Role Management APIs. It will reuse the existing JWT lifecycle and `IsAdministrator` permission while adding allowlisted role changes, account activation controls, self-administration safeguards, and auditability.

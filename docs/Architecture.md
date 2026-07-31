@@ -246,7 +246,7 @@ The project adopts a **custom Django User model** from the beginning of developm
 
 Choosing a custom user model before the first database migration prevents costly schema migrations later and provides flexibility for future authentication requirements.
 
-## Current Status (Feature 03)
+## Current Status (Feature 14)
 
 ### Implemented:
 
@@ -267,7 +267,14 @@ Choosing a custom user model before the first database migration prevents costly
 - Password Change
 - Password Reset
 - Email Verification
-- Role-Based Authorization
+
+### Implemented Authorization Extension:
+
+- Independent Django Group roles: Author, Editor, and Administrator
+- Reusable DRF role permissions in `apps.core.permissions`
+- Authorization-scoped Post querysets
+- Object ownership with Editor override
+- Separation of Django staff access from application roles
 
 ---
 
@@ -522,7 +529,7 @@ The Categories application is implemented as an independent domain module that p
 - DRF `GenericViewSet` with explicit mixins
 - Action-based serializer selection
 - Action-based permission selection
-- Staff-managed category administration
+- Editor-managed category administration
 - Active status management through a custom manager
 - Audit fields for creation and updates
 - Automatic slug generation
@@ -594,7 +601,7 @@ The Tags application is implemented as an independent taxonomy domain that provi
 - DRF `GenericViewSet` with explicit mixins
 - Action-based serializer selection
 - Action-based permission selection
-- Staff-managed tag administration
+- Editor-managed tag administration
 - Active status management through a custom manager
 - Audit fields for creation and updates
 - Automatic slug generation
@@ -666,7 +673,7 @@ Comments are classified as business entities and therefore use audit tracking an
 * Required ForeignKey relationship to Post
 * Required ForeignKey relationship to User through `author`
 * `CASCADE` behavior for physical Post deletion
-* `PROTECT` behavior for physical User deletion
+* `CASCADE` behavior for physical User deletion
 * Shared timestamp, audit, and soft-delete abstract models
 * Flat Comment structure without threaded replies
 * Action-specific serializers
@@ -1027,6 +1034,61 @@ JSON Response
 
 ---
 
+# Search Architecture
+
+Feature 12 adds a public Post search endpoint without creating a separate search domain or table.
+
+- `PostSearchAPIView` validates `q` through `PostSearchQuerySerializer`.
+- `PostQuerySet.search()` centralizes PostgreSQL full-text search.
+- Title, excerpt, and content use weights A, B, and C.
+- PostgreSQL `websearch` parsing and the `english` configuration are used.
+- A functional GIN index matches the weighted search vector.
+- Only published, non-deleted Posts are searchable.
+- Results are relevance-ranked and page-number paginated.
+- Author, Category, and Tag relationships are eagerly loaded.
+
+---
+
+# Featured Image Architecture
+
+Feature 13 extends the Post domain with one optional `ImageField` rather than introducing a separate media domain.
+
+- `PUT` and `DELETE` share the `/api/posts/{slug}/featured-image/` action.
+- Multipart parsing is isolated to the featured-image action.
+- Serializer and model validation share a Pillow-backed validation pipeline.
+- The upload path uses UUID filenames under date-based directories.
+- A dedicated service layer handles replacement and removal.
+- Old storage objects are deleted only after database commit.
+- Public serializers expose an absolute `featured_image_url`, not a storage path.
+- Soft deletion preserves the image because a soft-deleted Post may be restored.
+
+---
+
+# Authorization Architecture
+
+Feature 14 centralizes cross-domain role checks in `apps.core.permissions` and keeps resource ownership rules close to their domains.
+
+The application roles are independent Django Groups:
+
+- `Author` — creates Posts and manages owned Posts.
+- `Editor` — creates Posts, manages any active Post, and manages Categories and Tags.
+- `Administrator` — reserved for user and role administration; it does not automatically receive editorial access.
+
+The effective Post-management policy is:
+
+```text
+Authenticated
+AND (Author OR Editor)
+AND (owned Post OR Editor override)
+AND authorization-scoped queryset
+```
+
+Public Post actions use published querysets. For management actions, Editors receive all active Posts while Authors receive only owned Posts. Queryset scoping limits object enumeration; object permissions remain as defense in depth.
+
+`IsEditorOrReadOnly` provides public taxonomy reads and Editor-only writes. Django `is_staff` continues to control Django Admin access and does not grant application API privileges. Group records are provisioned by a historical-safe data migration, while runtime code uses centralized role-name constants.
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -1041,15 +1103,17 @@ The backend is responsible for enforcing all security rules.
 - Authenticate protected endpoints using JWT.
 - Blacklist refresh tokens during logout.
 - Enforce object-level permissions for resource ownership.
-- Restrict post updates, deletion, publishing, and unpublishing to the resource owner.
+- Restrict Post creation to Authors and Editors.
+- Restrict Post management to the owning Author or an Editor.
+- Scope Post management querysets before object lookup.
 - Validate publishing state transitions on the backend.
 - Automatically manage publication timestamps on the backend.
 - Use soft deletion to preserve audit history and prevent accidental data loss.
-- Restrict category creation and updates to staff users.
+- Restrict category creation and updates to Editors.
 - Allow public read access to active categories.
 - Generate category slugs automatically on the backend.
 - Prevent duplicate category names through backend validation.
-- Restrict tag creation and updates to staff users.
+- Restrict tag creation and updates to Editors.
 - Allow public read access to active tags.
 - Generate tag slugs automatically on the backend.
 - Prevent duplicate tag names through backend validation.
@@ -1089,6 +1153,10 @@ The backend is responsible for enforcing all security rules.
 - Validate website URLs before persistence.
 - Prevent future dates of birth.
 - Load related User data efficiently through `select_related("user")`.
+- Keep Author, Editor, and Administrator roles independent and least-privileged.
+- Keep Django staff/superuser flags separate from application roles.
+- Validate featured-image content, size, dimensions, animation state, extension, and MIME type.
+- Delete replaced media only after a successful database commit.
 
 
 ---
@@ -1161,6 +1229,9 @@ The Profiles domain serves as the reference implementation for future User-adjac
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
 - ✅ Feature 11 — User Profiles
+- ✅ Feature 12 — Search
+- ✅ Feature 13 — Media Uploads
+- ✅ Feature 14 — Permissions & Authorization
 
 ## In Progress
 
@@ -1168,7 +1239,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 ## Next Feature
 
-- Feature 12 — Search
+- Feature 15 — User Administration & Role Management
 
 ---
 
@@ -1180,6 +1251,9 @@ Future applications will reuse:
 * The modular business-domain architecture established in Feature 04
 * The reusable taxonomy architecture established through Features 06–09
 * The ownership and soft-delete architecture extended through Feature 10
+* The PostgreSQL search architecture introduced in Feature 12
+* The storage-safe featured-image architecture introduced in Feature 13
+* The role-based authorization architecture introduced in Feature 14
 
 The Posts, Categories, Tags, and Comments applications now demonstrate cross-domain integration without merging domain responsibilities.
 
@@ -1203,9 +1277,7 @@ These modules serve as reference implementations for future domains by demonstra
 
 As development progresses, the architecture will expand with:
 
-* Search
-* Media Uploads
-* Final Writer, Editor, and Admin authorization
+* User administration and safe role management
 * Performance optimization
 * Deployment and CI/CD
 

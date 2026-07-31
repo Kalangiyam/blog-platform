@@ -6,6 +6,8 @@ from rest_framework.parsers import FormParser, MultiPartParser
 
 from apps.posts.models import Post
 from apps.posts.permissions import IsPostAuthor
+from apps.core.permissions import IsAuthor, IsEditor
+from apps.users.constants import EDITOR_GROUP
 from apps.posts.pagination import PostSearchPagination
 from apps.posts.serializers import (
     PostCreateSerializer,
@@ -50,25 +52,41 @@ class PostViewSet(
 
     def get_queryset(self):
         """
-        Return the queryset for the current action.
+        Return an action-specific and authorization-scoped Post queryset.
+
+        Public read actions expose only published, non-deleted posts.
+
+        For management actions, Editors may access every non-deleted post,
+        while Authors may access only posts they own.
         """
 
-        if self.action in (
+        queryset = (
+            Post.objects.select_related("author")
+            .prefetch_related("categories", "tags")
+        )
+
+        management_actions = (
             "update",
             "partial_update",
             "destroy",
             "publish",
             "unpublish",
             "featured_image",
-        ):
-            return Post.objects.select_related("author").prefetch_related(
-                "categories", "tags"
-            )
+        )
 
-        return (
-            Post.objects.published()
-            .select_related("author")
-            .prefetch_related("categories", "tags")
+        if self.action in management_actions:
+            user = self.request.user
+
+            if user.groups.filter(name=EDITOR_GROUP).exists():
+                return queryset
+
+            return queryset.filter(author=user)
+
+        return Post.objects.published().select_related(
+            "author"
+        ).prefetch_related(
+            "categories",
+            "tags",
         )
 
     def get_serializer_class(self):
@@ -101,11 +119,25 @@ class PostViewSet(
 
     def get_permissions(self):
         """
-        Return the permissions required for the current action.
+        Return action-specific permissions for Post APIs.
+
+        Public users may read published posts.
+
+        Authors and Editors may create posts.
+
+        Authors may manage only their own posts, while Editors may manage
+        any post through the object-level IsPostAuthor permission.
         """
 
         if self.action in ("list", "retrieve"):
             permission_classes = (AllowAny,)
+
+        elif self.action == "create":
+            permission_classes = (
+                IsAuthenticated,
+                IsAuthor | IsEditor,
+            )
+
         elif self.action in (
             "update",
             "partial_update",
@@ -114,7 +146,12 @@ class PostViewSet(
             "unpublish",
             "featured_image",
         ):
-            permission_classes = (IsAuthenticated, IsPostAuthor)
+            permission_classes = (
+                IsAuthenticated,
+                IsAuthor | IsEditor,
+                IsPostAuthor,
+            )
+
         else:
             permission_classes = (IsAuthenticated,)
 

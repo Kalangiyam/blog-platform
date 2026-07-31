@@ -1,8 +1,7 @@
 from rest_framework import mixins, viewsets
-from rest_framework.permissions import AllowAny
 
 from .models import Category
-from .permissions import IsCategoryManager
+from apps.core.permissions import IsEditorOrReadOnly
 from .serializers import (
     CategoryCreateSerializer,
     CategoryReadSerializer,
@@ -22,6 +21,7 @@ class CategoryViewSet(
     """
 
     queryset = Category.objects.all()
+    permission_classes = [IsEditorOrReadOnly]
     lookup_field = "slug"
 
     def get_serializer_class(self):
@@ -36,18 +36,6 @@ class CategoryViewSet(
             return CategoryUpdateSerializer
 
         return CategoryReadSerializer
-    
-    def get_permissions(self):
-        """
-        Return permission classes based on the current action.
-        """
-
-        if self.action in ("list", "retrieve"):
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsCategoryManager]
-
-        return [permission() for permission in permission_classes]
     
     def perform_create(self, serializer):
         """

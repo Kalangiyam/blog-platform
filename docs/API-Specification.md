@@ -4,7 +4,7 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 11, the platform provides six API modules:
+At the completion of Feature 14, the platform provides six API modules:
 
 - Authentication APIs
 - Posts APIs
@@ -17,13 +17,13 @@ Feature 08 extended the Posts API by introducing a many-to-many relationship bet
 
 Feature 09 extends the same taxonomy architecture by introducing a many-to-many relationship between Posts and Tags. Categories and tags can now be assigned to posts using slug-based write fields, while post responses include lightweight nested category and tag representations.
 
-Feature 10 introduces the Comments domain, allowing authenticated users to create, update, and soft delete comments on published posts while allowing public users to read comment discussions.
+Feature 10 introduced the Comments domain, Feature 11 introduced Profiles, Feature 12 added public PostgreSQL full-text search, Feature 13 added featured-image management, and Feature 14 introduced role-based authorization.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
 The Posts module provides the foundation for blog content management, including post creation, retrieval, updating, soft deletion, publishing workflows, category assignment, and tag assignment.
 
-The Categories and Tags modules provide reusable taxonomy management through slug-based endpoints with staff-controlled administration. Both taxonomy domains are now fully integrated with Posts.
+The Categories and Tags modules provide reusable taxonomy management through slug-based endpoints with Editor-controlled administration. Both taxonomy domains are fully integrated with Posts.
 
 Future features will continue extending this document as new API modules are introduced.
 
@@ -146,13 +146,13 @@ The Posts module provides blog post management while enforcing authentication, o
 
 | Method | Endpoint                     | Authentication                 | Status         |
 | ------ | ---------------------------- | ------------------------------ | -------------- |
-| POST   | /api/posts/                  | JWT Access Token               | ✅ Implemented |
+| POST   | /api/posts/                  | JWT (Author or Editor)         | ✅ Implemented |
 | GET    | /api/posts/                  | Public                         | ✅ Implemented |
 | GET    | /api/posts/{slug}/           | Public                         | ✅ Implemented |
-| PATCH  | /api/posts/{slug}/           | JWT Access Token (Author Only) | ✅ Implemented |
-| DELETE | /api/posts/{slug}/           | JWT Access Token (Author Only) | ✅ Implemented |
-| POST   | /api/posts/{slug}/publish/   | JWT Access Token (Author Only) | ✅ Implemented |
-| POST   | /api/posts/{slug}/unpublish/ | JWT Access Token (Author Only) | ✅ Implemented |
+| PATCH  | /api/posts/{slug}/           | JWT (Owner Author or Editor)   | ✅ Implemented |
+| DELETE | /api/posts/{slug}/           | JWT (Owner Author or Editor)   | ✅ Implemented |
+| POST   | /api/posts/{slug}/publish/   | JWT (Owner Author or Editor)   | ✅ Implemented |
+| POST   | /api/posts/{slug}/unpublish/ | JWT (Owner Author or Editor)   | ✅ Implemented |
 
 ## Post Taxonomy Contract
 
@@ -188,7 +188,7 @@ POST /api/posts/
 
 ### Authentication
 
-JWT Access Token required.
+JWT Access Token and the Author or Editor role are required.
 
 ### Example Request
 
@@ -277,7 +277,7 @@ JWT Access Token required.
 
 ### Permission
 
-Only the post author may update the post under the current permission model.
+Authors may update their own posts. Editors may update any active, non-deleted post.
 
 ### Example Request
 
@@ -379,7 +379,7 @@ JWT Access Token required.
 
 ### Permission
 
-Only the post author may delete the post under the current permission model.
+Authors may delete their own posts. Editors may delete any active, non-deleted post.
 
 ### Behavior
 
@@ -407,7 +407,7 @@ JWT Access Token required.
 
 ### Permission
 
-Only the post author may publish the post under the current permission model.
+Authors may publish their own posts. Editors may publish any active, non-deleted post.
 
 ### Business Rule
 
@@ -427,7 +427,7 @@ JWT Access Token required.
 
 ### Permission
 
-Only the post author may unpublish the post under the current permission model.
+Authors may unpublish their own posts. Editors may unpublish any active, non-deleted post.
 
 ### Business Rule
 
@@ -437,10 +437,10 @@ Only a published post may transition to draft.
 
 ## Post Business Rules
 
-- Only authenticated users can create posts.
+- Only authenticated Authors and Editors can create posts.
 - Newly created posts are saved as **Draft**.
 - Only **Published** posts are publicly visible.
-- Only the post author can update, delete, publish, or unpublish a post under the current permission model.
+- Authors can manage only their own posts; Editors can manage any active, non-deleted post.
 - A post can only transition from **Draft → Published**.
 - A post can only transition from **Published → Draft**.
 - The backend automatically manages the `published_at` timestamp.
@@ -575,14 +575,14 @@ Example error:
 
 Implemented ✅
 
-The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable, while creation and updates are restricted to staff users.
+The Categories module provides reusable taxonomy for organizing blog content. Categories are publicly readable, while creation and updates require the Editor application role.
 
 | Method | Endpoint                | Authentication                | Status         |
 | ------ | ----------------------- | ----------------------------- | -------------- |
 | GET    | /api/categories/        | Public                        | ✅ Implemented |
 | GET    | /api/categories/{slug}/ | Public                        | ✅ Implemented |
-| POST   | /api/categories/        | JWT Access Token (Staff Only) | ✅ Implemented |
-| PATCH  | /api/categories/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| POST   | /api/categories/        | JWT Access Token (Editor)     | ✅ Implemented |
+| PATCH  | /api/categories/{slug}/ | JWT Access Token (Editor)     | ✅ Implemented |
 
 ## List Categories
 
@@ -610,7 +610,7 @@ Retrieves an active category by slug.
 POST /api/categories/
 ```
 
-Restricted to staff users.
+Restricted to authenticated Editors.
 
 ---
 
@@ -620,7 +620,7 @@ Restricted to staff users.
 PATCH /api/categories/{slug}/
 ```
 
-Restricted to staff users.
+Restricted to authenticated Editors.
 
 ---
 
@@ -630,7 +630,7 @@ Restricted to staff users.
 - Category slugs are generated automatically.
 - Category slugs remain stable after creation.
 - Categories are publicly readable.
-- Only staff users can create or update categories.
+- Only Editors can create or update categories; `is_staff` alone grants no taxonomy API access.
 - Active categories are returned by default.
 - Inactive categories cannot be assigned to new or updated posts.
 - Existing relationships remain intact when a category becomes inactive.
@@ -647,14 +647,14 @@ Restricted to staff users.
 
 Implemented ✅
 
-The Tags module provides reusable taxonomy for classifying and improving discovery of blog content. Tags are publicly readable, while creation and updates are restricted to staff users.
+The Tags module provides reusable taxonomy for classifying and improving discovery of blog content. Tags are publicly readable, while creation and updates require the Editor application role.
 
 | Method | Endpoint          | Authentication                | Status         |
 | ------ | ----------------- | ----------------------------- | -------------- |
 | GET    | /api/tags/        | Public                        | ✅ Implemented |
 | GET    | /api/tags/{slug}/ | Public                        | ✅ Implemented |
-| POST   | /api/tags/        | JWT Access Token (Staff Only) | ✅ Implemented |
-| PATCH  | /api/tags/{slug}/ | JWT Access Token (Staff Only) | ✅ Implemented |
+| POST   | /api/tags/        | JWT Access Token (Editor)     | ✅ Implemented |
+| PATCH  | /api/tags/{slug}/ | JWT Access Token (Editor)     | ✅ Implemented |
 
 ## List Tags
 
@@ -682,7 +682,7 @@ Retrieves an active tag by slug.
 POST /api/tags/
 ```
 
-Restricted to staff users.
+Restricted to authenticated Editors.
 
 ---
 
@@ -692,7 +692,7 @@ Restricted to staff users.
 PATCH /api/tags/{slug}/
 ```
 
-Restricted to staff users.
+Restricted to authenticated Editors.
 
 ---
 
@@ -702,7 +702,7 @@ Restricted to staff users.
 - Tag slugs are generated automatically.
 - Tag slugs remain stable after creation.
 - Tags are publicly readable.
-- Only staff users can create or update tags.
+- Only Editors can create or update tags; `is_staff` alone grants no taxonomy API access.
 - Active tags are returned by default.
 - Inactive tags cannot be assigned to new or updated posts.
 - Existing relationships remain intact when a tag becomes inactive.
@@ -974,7 +974,7 @@ Using `404` prevents disclosure of unpublished content.
 - Soft-deleted Comments are excluded from normal queries.
 - Comment responses expose `id` and `username` for the author.
 - Email addresses and audit fields are not exposed publicly.
-- Final Editor moderation is deferred to the advanced permissions feature.
+- Editor Comment moderation is not currently implemented and remains a future feature.
 
 ---
 
@@ -1262,15 +1262,89 @@ This ensures Profile and User information are loaded efficiently in a single dat
 
 ---
 
+# Search API
+
+## Current Status
+
+Implemented ✅
+
+| Method | Endpoint             | Authentication | Status         |
+| ------ | -------------------- | -------------- | -------------- |
+| GET    | /api/posts/search/   | Public         | ✅ Implemented |
+
+`q` is required, trimmed, and must contain 2–100 characters.
+
+```http
+GET /api/posts/search/?q=django+rest&page=1&page_size=10
+```
+
+Search is limited to published, non-deleted posts. PostgreSQL web-search syntax is used with weighted fields: title (`A`), excerpt (`B`), and content (`C`). Results are ordered by rank, publication time, and creation time.
+
+Pagination defaults to 10 results and allows `page_size` values up to 50. Responses use the normal paginated DRF structure and the Post list representation.
+
+---
+
+# Featured Image API
+
+## Current Status
+
+Implemented ✅
+
+| Method | Endpoint                                  | Authentication               | Content Type          |
+| ------ | ----------------------------------------- | ---------------------------- | --------------------- |
+| PUT    | /api/posts/{slug}/featured-image/         | JWT (Owner Author or Editor) | `multipart/form-data` |
+| DELETE | /api/posts/{slug}/featured-image/         | JWT (Owner Author or Editor) | —                     |
+
+The upload field is named `image`. A successful upload or replacement returns:
+
+```json
+{
+  "featured_image_url": "http://localhost:8000/media/posts/featured/2026/07/example.webp"
+}
+```
+
+Validation requires a genuine, non-animated JPEG, PNG, or WebP image. The filename extension, declared MIME type, and Pillow-detected format must agree. Limits are 5 MB, 8,000 × 8,000 pixels, and 40 million total pixels.
+
+Replacing or removing an image updates storage through the Django Storage API. Old-file deletion is scheduled with `transaction.on_commit()` so a rolled-back database transaction does not prematurely remove the existing file. Deleting the image returns `204 No Content`.
+
+Public Post list, detail, and search responses expose `featured_image_url`; clients never receive internal storage paths.
+
+---
+
+# Role-Based Authorization
+
+Feature 14 uses independent Django Groups as application roles:
+
+- `Author`
+- `Editor`
+- `Administrator`
+
+Registration does not assign roles. Roles are provisioned as Group records by a data migration and must be assigned through a trusted administrative process.
+
+| Operation | Required authorization |
+| --------- | ---------------------- |
+| Public Post list/detail/search | Public; published and non-deleted Posts only |
+| Create Post | Authenticated Author or Editor |
+| Manage Post | Owner Author or Editor; queryset is scoped before object lookup |
+| Create/update Category or Tag | Authenticated Editor |
+| List/retrieve Category or Tag | Public |
+| Create Comment | Any authenticated user |
+| Update/delete Comment | Authenticated Comment author |
+| Private Profile access | Authenticated profile owner |
+
+Administrator is intentionally not an editorial super-role. An Administrator who also needs editorial access must additionally belong to the Editor group. Django `is_staff` and `is_superuser` remain framework-level flags and are not substitutes for application roles.
+
+For Post management, Editors receive all active, non-deleted Posts while Authors receive only their own. Consequently, an Author requesting another user's private Post normally receives `404 Not Found`, reducing object enumeration and IDOR risk.
+
+---
+
 # Future API Modules
 
 As the project grows, additional API modules will be added.
 
 Planned modules include:
 
-- Search
-- Media Uploads
-- Advanced Permissions and Authorization
+- User Administration and Role Management
 - Performance Optimization
 - Deployment and CI/CD
 
@@ -1354,8 +1428,10 @@ The backend validates every protected request before processing it.
 The current API enforces:
 
 - Authentication for protected operations
-- Staff-only taxonomy management
-- Post ownership for update, delete, publish, and unpublish operations
+- Editor-only taxonomy management
+- Author ownership with Editor override for Post management
+- Author-or-Editor role checks for Post creation
+- Authorization-scoped Post management querysets
 - Backend relationship validation
 - Backend publishing workflow validation
 - Comment ownership for update and soft-delete operations
@@ -1368,7 +1444,7 @@ The current API enforces:
 
 Frontend restrictions are considered user-experience controls only and are not trusted for security.
 
-The planned advanced permissions feature will extend this foundation into the final Writer, Editor, and Admin role model.
+Application roles are independent: Author, Editor, and Administrator. Multiple groups may be assigned when a user needs combined responsibilities.
 
 ---
 
@@ -1458,28 +1534,31 @@ Versioning will be introduced only when required to preserve backward compatibil
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
 - ✅ Feature 11 — User Profiles
+- ✅ Feature 12 — Search
+- ✅ Feature 13 — Media Uploads
+- ✅ Feature 14 — Permissions & Authorization
 
 ## Current API State
 
-Authentication, Posts, Categories, Tags, and Comments APIs have been implemented and manually tested.
+Authentication, Posts, Categories, Tags, Comments, Profiles, Search, Media Uploads, and role-based authorization have been implemented and manually tested.
 
 The platform currently supports:
 
 - User registration and authentication
-- JWT-based authorization
-- Post creation
+- JWT authentication
+- Author-or-Editor Post creation
 - Public listing of published posts
 - Published post retrieval by slug
-- Author-only post updates
-- Author-only soft deletion
-- Author-only publishing
-- Author-only unpublishing
+- Owner-Author or Editor post updates
+- Owner-Author or Editor soft deletion
+- Owner-Author or Editor publishing
+- Owner-Author or Editor unpublishing
 - Backend-enforced publishing workflow
 - Public category listing and retrieval
-- Staff-managed category creation and updates
+- Editor-managed category creation and updates
 - Automatic category slug generation
 - Public tag listing and retrieval
-- Staff-managed tag creation and updates
+- Editor-managed tag creation and updates
 - Automatic tag slug generation
 - Category assignment using `category_slugs`
 - Tag assignment using `tag_slugs`
@@ -1510,8 +1589,16 @@ The platform currently supports:
 - Profile ownership enforcement
 - Date-of-birth validation
 - Profile query optimization using `select_related`
+- Public full-text Post search with weighted ranking
+- Search pagination and query validation
+- Featured-image upload, replacement, removal, and public URL generation
+- Layered image validation and transaction-safe storage cleanup
+- Independent Author, Editor, and Administrator roles
+- Centralized DRF role permissions
+- Post queryset scoping and Editor override
+- Separation of application roles from Django staff access
 
-Future features will extend the API with user profiles, search, media uploads, advanced permissions, performance improvements, and deployment support.
+Future features will extend the API with user administration, role management, performance improvements, and deployment support.
 
 ---
 
@@ -1548,8 +1635,8 @@ Future features will extend the API with user profiles, search, media uploads, a
 | ----------------------------- | ---------------------------------- |
 | GET /api/categories/          | List active categories             |
 | GET /api/categories/{slug}/   | Retrieve a category by slug        |
-| POST /api/categories/         | Create a new category (Staff Only) |
-| PATCH /api/categories/{slug}/ | Update a category (Staff Only)     |
+| POST /api/categories/         | Create a new category (Editor Only) |
+| PATCH /api/categories/{slug}/ | Update a category (Editor Only)     |
 
 ## Category Relationship Support
 
@@ -1574,8 +1661,8 @@ Post responses include lightweight nested category objects containing:
 | ----------------------- | ----------------------------- |
 | GET /api/tags/          | List active tags              |
 | GET /api/tags/{slug}/   | Retrieve a tag by slug        |
-| POST /api/tags/         | Create a new tag (Staff Only) |
-| PATCH /api/tags/{slug}/ | Update a tag (Staff Only)     |
+| POST /api/tags/         | Create a new tag (Editor Only) |
+| PATCH /api/tags/{slug}/ | Update a tag (Editor Only)     |
 
 ## Tag Relationship Support
 
@@ -1617,13 +1704,4 @@ Post responses include lightweight nested tag objects containing:
 
 # Next Update
 
-Feature 12 will introduce Search.
-
-The next API design phase is expected to define:
-
-- Search across Posts
-- Search result filtering
-- Search query validation
-- Search performance considerations
-- Search API contracts
-- Query optimization strategies
+Feature 15 will introduce Administrator-only User Administration and Role Management APIs, including safe account activation/deactivation and allowlisted application-role assignment.

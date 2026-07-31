@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-31
 
-**Current Milestone:** ✅ Feature 13 — Media Uploads
+**Current Milestone:** ✅ Feature 14 — Permissions & Authorization
 
 ---
 
@@ -66,9 +66,14 @@ blog-platform/
 ├── backend/
 │   ├── apps/
 │   │   ├── core/
+│   │   │   └── permissions/
+│   │   │       ├── base.py
+│   │   │       ├── ownership.py
+│   │   │       └── roles.py
 │   │   ├── users/
 │   │   |    ├── authentication.py
 │   │   |    ├── admin.py
+│   │   |    ├── constants.py
 │   │   |    ├── models.py
 │   │   |    ├── serializers.py
 │   │   |    ├── urls.py
@@ -81,13 +86,11 @@ blog-platform/
 │   │   │   ├── managers.py
 │   │   │   ├── pagination.py
 │   │   │   ├── constants.py
-│   │   │   ├── permissions.py
 │   │   │   ├── urls.py
 │   │   │   ├── views.py
 │   │   │   ├── choices.py
 │   │   │   └── ...
 │   │   ├── categories/
-│   │   |    ├── permissions.py
 │   │   |    ├── admin.py
 │   │   |    ├── models.py
 │   │   |    ├── serializers.py
@@ -95,7 +98,6 @@ blog-platform/
 │   │   |    ├── views.py
 │   │   |    └── ...
 │   │   ├── tags/
-│   │   |    ├── permissions.py
 │   │   |    ├── admin.py
 │   │   |    ├── models.py
 │   │   |    ├── serializers.py
@@ -903,6 +905,78 @@ Successfully verified:
 
 ---
 
+## ✅ Feature 14 — Permissions & Authorization
+
+### Objective
+
+Introduce a centralized Role-Based Access Control (RBAC) architecture using Django Groups and reusable Django REST Framework permission classes while enforcing least-privilege access throughout the application.
+
+### Completed
+
+#### Authorization
+
+- Django Groups
+- Author role
+- Editor role
+- Administrator role
+- Independent application roles
+- Role constants
+- Shared permission package
+
+#### Permissions
+
+- IsAuthor
+- IsEditor
+- IsAdministrator
+- IsEditorOrReadOnly
+- Permission composition
+- Object-level authorization
+
+#### Security
+
+- Backend-only authorization
+- Least privilege
+- Queryset scoping
+- IDOR protection
+- Separation of Django staff from application roles
+
+#### Architecture
+
+- Centralized reusable permission package
+- Shared role permission classes
+- Django Group data migration
+- Role-based Post authorization
+- Role-based Category authorization
+- Role-based Tag authorization
+
+#### Documentation
+
+- API Specification synchronized through Feature 14
+- Architecture documentation synchronized through Feature 14
+- Authentication and authorization flows synchronized through Feature 14
+- Database design synchronized with Search, Media Uploads, and Django Group roles
+- Comment–User physical deletion behavior documented as `CASCADE`
+- Feature 15 identified as the next documentation and implementation milestone
+
+#### Manual Testing
+
+Successfully verified:
+
+- Author permissions
+- Editor permissions
+- Administrator permissions
+- Multiple-role users
+- Category authorization
+- Tag authorization
+- Post authorization
+- Queryset scoping
+- Object ownership
+- Permission composition
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
 | Module     | Status                                                             |
@@ -1146,6 +1220,17 @@ The platform currently stores one optional featured image per Post.
 
 # Authentication Status
 
+## Authorization
+
+Implemented
+
+- Django Groups
+- Role-Based Access Control (RBAC)
+- Shared DRF permission classes
+- Permission composition
+- Queryset scoping
+- Object-level permissions
+
 ## Implemented
 
 - Custom User Model
@@ -1169,13 +1254,15 @@ The platform currently stores one optional featured image per Post.
 
 ## Core Documentation
 
-- ✅ README
-- ✅ Architecture
-- ✅ Database Design
-- ✅ API Specification
-- ✅ Authentication Flow
-- ✅ Testing Strategy
-- ✅ Project Status
+| Document | Status | Coverage |
+| -------- | ------ | -------- |
+| README | ✅ Current | Project overview |
+| Architecture | ✅ Current | Features 01–14 |
+| Database Design | ✅ Current | Features 01–14 |
+| API Specification | ✅ Current | Implemented APIs through Feature 14 |
+| Authentication Flow | ✅ Current | JWT, ownership, and RBAC through Feature 14 |
+| Testing Strategy | ✅ Current | Current testing strategy |
+| Project Status | ✅ Current | Feature 14 complete; Feature 15 next |
 
 ---
 
@@ -1197,6 +1284,7 @@ Completed Feature Reports:
 - ✅ Feature 11 — User Profiles
 - ✅ Feature 12 — Search
 - ✅ Feature 13 — Media Uploads
+- ✅ Feature 14 — Permissions & Authorization
 
 ---
 
@@ -1221,6 +1309,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-015 — User Profiles Architecture
 - ✅ ADR-016 — Post Search Architecture
 - ✅ ADR-017 — Featured Image Architecture
+- ✅ ADR-018 — Role-Based Authorization Architecture
 
 ---
 
@@ -1290,6 +1379,10 @@ Verified:
 - Public image URL generation
 - Search image URL generation
 - Transaction-safe file cleanup
+- Role-based authorization
+- Editor override
+- Author ownership
+- Queryset scoping
 
 ### Categories
 
@@ -1299,8 +1392,9 @@ Verified:
 - Update
 - Duplicate validation
 - Slug generation
-- Staff permissions
+- Editor permissions
 - Active category filtering
+
 
 ### Tags
 
@@ -1310,7 +1404,7 @@ Verified:
 - Update
 - Duplicate validation
 - Slug generation
-- Staff permissions
+- Editor permissions
 - Active tag filtering
 
 ### Comments
@@ -1355,6 +1449,16 @@ Verified:
 * User deletion cascade behavior
 * Query optimization using `select_related("user")`
 
+### Authorization
+
+- Author role
+- Editor role
+- Administrator role
+- Multiple role membership
+- Permission composition
+- Queryset scoping
+- Object-level permissions
+- IDOR protection
 
 ---
 
@@ -1370,42 +1474,45 @@ Planned during future feature development.
 
 ## Phase 3 — Advanced Features
 
-- Feature 14 — Permissions & Authorization
-- Feature 15 — Performance Optimization
-- Feature 16 — Deployment & CI/CD
+- Feature 15 — User Administration & Role Management
+- Feature 16 — Performance Optimization
+- Feature 17 — Deployment & CI/CD
 
 ---
 
 # Current Milestone
 
-✅ Feature 13 — Media Uploads
+✅ Feature 14 — Permissions & Authorization
 
-Status: **Architecture, implementation, manual testing, ADR, Feature Completion Report, and documentation completed.**
+Status: **Architecture, implementation, manual testing, ADR, Feature Completion Report, and core documentation synchronization completed.**
 
-Feature 13 is complete.
+Feature 14 is complete.
 
 ---
 
 # Next Milestone
 
-## Feature 14 — Permissions & Authorization
+## Feature 15 — User Administration & Role Management
 
-The next feature will introduce a production-ready authorization architecture for the application.
+The next feature will introduce secure Administrator-only APIs for managing application users and role membership.
 
 Planned topics include:
 
-* Authentication vs Authorization
-* Django Permission System
-* Django Groups
-* Role-Based Access Control (RBAC)
-* Object-Level Permissions
-* django-guardian fundamentals
-* Custom DRF Permission Classes
-* Permission composition
-* Backend authorization flow
-* Security best practices
-* Manual testing strategy
-* Documentation updates
+- Administrator-only API access
+- User listing and retrieval
+- User activation and deactivation
+- Application role assignment
+- Application role removal
+- Approved-role allowlisting
+- Self-administration safeguards
+- Last-Administrator protection
+- Transactional role updates
+- Privilege-escalation prevention
+- Action-specific serializers
+- Manual testing strategy
+- Documentation updates
+
+---
 
 # Important Architecture Decisions
 
@@ -1431,7 +1538,7 @@ The project currently follows these key architectural decisions:
 - Backend-enforced publishing state transitions
 - Dedicated Categories domain
 - Active-status manager for taxonomy models
-- Staff-managed taxonomy administration
+- Editor-managed taxonomy administration
 - Reusable slug generation strategy
 - Dedicated Tags domain
 - Reusable taxonomy architecture
@@ -1491,6 +1598,15 @@ The project currently follows these key architectural decisions:
 - Dedicated featured-image upload endpoint
 - Public `featured_image_url` representation
 - Soft-delete image preservation
+- Centralized shared permission package
+- Django Groups as application roles
+- Independent Author, Editor, and Administrator roles
+- Role-based authorization
+- Permission composition
+- Queryset scoping for authorization
+- Separation of authentication and authorization
+- Separation of Django staff from application roles
+- Backend-enforced RBAC
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1516,4 +1632,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 14 — Permissions & Authorization
+**Starting Point:** Feature 15 — User Administration & Role Management

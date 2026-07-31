@@ -46,9 +46,9 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 11)
+# Current Database Schema (Feature 14)
 
-At the completion of Feature 11, the database contains six primary entities:
+At the completion of Feature 14, the application contains six primary domain entities:
 
 * User
 * Profile
@@ -56,6 +56,8 @@ At the completion of Feature 11, the database contains six primary entities:
 * Category
 * Tag
 * Comment
+
+Django's built-in authorization schema also stores the `Author`, `Editor`, and `Administrator` Groups and their many-to-many User memberships.
 
 
 Feature 05 introduced the publishing workflow by utilizing the existing `status` and `published_at` fields of the `Post` model without requiring schema changes.
@@ -77,6 +79,8 @@ Comments establish:
 - Author ownership
 - Audit tracking
 - Soft deletion
+- Optional featured-image storage
+- PostgreSQL full-text search
 
 Categories remain independently manageable while now supporting reusable assignment across multiple posts.
 
@@ -98,6 +102,8 @@ Profiles establish:
 - Timestamp tracking through `TimeStampedModel`
 
 The Profile entity inherits only from `TimeStampedModel` because its lifecycle is directly tied to the owning User and it does not require independent audit, soft-delete, or active-status behavior.
+
+Feature 12 adds a functional PostgreSQL GIN index named `post_search_vector_gin` over the weighted Post search vector. Feature 13 adds the optional `Post.featured_image` storage-name column. Feature 14 reuses Django's existing `auth_group` and User–Group join tables; a data migration creates the three approved application roles without adding a custom role table.
 
 Future entities will reuse these base models to maintain consistency across the project.
 
@@ -132,6 +138,7 @@ Future entities will reuse these base models to maintain consistency across the 
 │ slug                          │
 │ excerpt                       │
 │ content                       │
+│ featured_image                │
 │ status                        │
 │ published_at                  │
 │ author_id (FK)                │
@@ -186,7 +193,6 @@ Future entities will reuse these base models to maintain consistency across the 
 │ updated_at                    │
 └───────────────────────────────┘
 
-```text
 ┌───────────────────────────────┐
 │            Comment            │
 ├───────────────────────────────┤
@@ -282,6 +288,27 @@ Inherited from `AbstractUser`:
 * date_joined
 
 No custom database fields have been added yet. This feature establishes the architectural foundation for future enhancements.
+
+---
+
+# Application Role Storage
+
+Feature 14 uses Django's built-in authorization tables:
+
+```text
+User  * ───────── *  Group
+       user_groups
+```
+
+The approved Group names are:
+
+- Author
+- Editor
+- Administrator
+
+Roles are independent, so a User may belong to zero, one, or multiple Groups. Application-role membership is separate from the `is_staff` and `is_superuser` columns on User. The role data migration uses historical models and fixed strings so it remains stable if runtime constants later change.
+
+No application API currently exposes Group assignment. Feature 15 is expected to add a protected service/API layer rather than allowing clients to manipulate the join table directly.
 
 ---
 
@@ -414,6 +441,7 @@ Current capabilities include:
 - slug
 - excerpt
 - content
+- featured_image
 - status
 - published_at
 - created_at
@@ -442,7 +470,7 @@ Current capabilities include:
 - Active status management
 - Audit tracking
 - Public category browsing
-- Staff-managed administration
+- Editor-managed administration
 
 ## Relationships
 
@@ -477,7 +505,7 @@ Current capabilities include:
 - Active status management
 - Audit tracking
 - Public tag browsing
-- Staff-managed administration
+- Editor-managed administration
 
 ## Relationships
 
@@ -693,7 +721,7 @@ The project follows a migration-first approach.
 * Feature 10 introduced the `Comment` table through `comments.0001_initial`.
 * Foreign-key relationships were created from Comment to Post and User.
 * Post physical deletion uses `CASCADE`.
-* User physical deletion is prevented through `PROTECT` while authored Comments exist.
+* User physical deletion cascades to authored Comments.
 * Comment timestamp, audit, and soft-delete fields were inherited from shared abstract models.
 * No data migration was required because the Comment table was newly introduced.
 * Feature 11 introduced the `Profile` table through `profiles.0001_initial`.
@@ -704,6 +732,10 @@ The project follows a migration-first approach.
 * The backfill migration avoided duplicate Profile creation.
 * Historical migration models were resolved using `apps.get_model()`.
 * Existing User and authentication tables did not require schema modification.
+* Feature 12 added `posts.0004_post_post_search_vector_gin`, creating the functional GIN search index.
+* Feature 13 added `posts.0005_post_featured_image`, introducing the optional featured-image storage name.
+* Feature 14 added `users.0002_create_application_groups`, which idempotently creates Author, Editor, and Administrator Groups through `get_or_create()`.
+* Feature 14 uses Django's existing User–Group join table and requires no custom role table.
 
 
 ---
@@ -737,7 +769,7 @@ The project follows these principles:
 * One-to-many parent-child relationships
 * Explicit Comment ownership
 * Required Post and author relationships
-* Protected User relationship for user-generated content preservation
+* Cascading physical deletion for User-owned Comments
 * Soft-delete lifecycle for Comments
 * Backend-enforced published-Post validation
 * Deterministic Comment ordering
@@ -772,12 +804,15 @@ Current:
 * Optimized individual Comment loading using `select_related("author", "post")`
 * Unique index on `Profile.user_id` created by `OneToOneField`
 * Optimized Profile and User retrieval using `select_related("user")`
+* Functional GIN index `post_search_vector_gin` over weighted Post title, excerpt, and content search vectors
+* Unique index on Django Group names
+* Indexed User–Group foreign keys and uniqueness constraint supplied by Django's many-to-many join table
 
 
 Future:
 
 - Composite indexes
-- Full-text search indexes (when search functionality is introduced)
+- Additional search indexes only when profiling justifies them
 
 Indexes will be added only when justified by application requirements.
 
@@ -816,7 +851,7 @@ Data integrity is maintained through:
 * Required Comment-to-Post relationship
 * Required Comment-to-User relationship
 * `CASCADE` enforcement for physical Post deletion
-* `PROTECT` enforcement for physical User deletion
+* `CASCADE` enforcement for physical User deletion of authored Comments
 * Backend-controlled Comment author assignment
 * Backend-controlled parent Post assignment
 * Prevention of Comment author reassignment
@@ -836,6 +871,10 @@ Data integrity is maintained through:
 * Prevention of Profile owner reassignment through the API
 * Future date-of-birth validation
 * Public/private Profile data separation
+* Featured-image file-name persistence with layered content validation
+* Transaction-aware cleanup of replaced or removed storage objects
+* Database-backed Group membership for application roles
+* Idempotent creation of approved application Groups
 
 The frontend is never responsible for enforcing database integrity.
 
@@ -856,6 +895,9 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
 * ✅ Feature 11 — User Profiles
+* ✅ Feature 12 — Search
+* ✅ Feature 13 — Media Uploads
+* ✅ Feature 14 — Permissions & Authorization
 
 ## Current Database Version
 Current schema includes:
@@ -899,6 +941,10 @@ Current schema includes:
 * Profile ownership
 * Public and private Profile data support
 * Profile query optimization using `select_related()`
+* Optional Post featured-image storage field
+* Functional PostgreSQL GIN search index
+* Author, Editor, and Administrator Group records
+* User–Group many-to-many role membership
 
 The publishing workflow introduced in Feature 05 continues to operate entirely through application logic, reusing the existing `Post` schema.
 
@@ -946,16 +992,7 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 12 will introduce Search.
-
-The initial Search feature may not require a new database table. Expected database considerations include:
-
-* PostgreSQL text-search capabilities
-* Searchable Post fields
-* Query performance
-* Appropriate indexes
-* Future full-text search indexes
-* Search ranking and filtering strategy
+Feature 15 will introduce User Administration and Role Management. It is expected to reuse the current User, Group, and User–Group tables. New tables should be added only if audit history or role-change event records become part of the approved design.
 
 Future database enhancements may also include:
 
@@ -964,4 +1001,4 @@ Future database enhancements may also include:
 * Likes
 * Comment replies
 * Comment moderation records
-* Advanced search indexes
+* Additional search indexes based on measured query plans
