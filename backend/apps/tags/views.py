@@ -1,8 +1,7 @@
 from rest_framework import mixins, viewsets
-from rest_framework.permissions import AllowAny
 
 from .models import Tag
-from .permissions import IsTagManager
+from apps.core.permissions import IsEditorOrReadOnly
 from .serializers import (
     TagCreateSerializer,
     TagReadSerializer,
@@ -22,6 +21,7 @@ class TagViewSet(
     """
 
     queryset = Tag.objects.all()
+    permission_classes = [IsEditorOrReadOnly]
     lookup_field = "slug"
 
     def get_serializer_class(self):
@@ -36,19 +36,7 @@ class TagViewSet(
             return TagUpdateSerializer
 
         return TagReadSerializer
-
-    def get_permissions(self):
-        """
-        Return permission classes based on the current action.
-        """
-
-        if self.action in ("list", "retrieve"):
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsTagManager]
-
-        return [permission() for permission in permission_classes]
-
+    
     def perform_create(self, serializer):
         """
         Save the tag with audit information.
