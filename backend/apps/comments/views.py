@@ -14,6 +14,7 @@ from apps.comments.serializers import (
 )
 from apps.posts.models import Post
 from apps.posts.choices import PostStatus
+from apps.core.pagination import StandardPageNumberPagination
 
 
 class PostCommentViewSet(
@@ -24,7 +25,7 @@ class PostCommentViewSet(
     """
     List and create comments belonging to a published post.
     """
-
+    pagination_class = StandardPageNumberPagination
     serializer_class = CommentListSerializer
 
     def get_permissions(self):

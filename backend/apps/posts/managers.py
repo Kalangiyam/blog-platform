@@ -70,6 +70,7 @@ class PostQuerySet(SoftDeleteQuerySet):
                 "-search_rank",
                 "-published_at",
                 "-created_at",
+                "-pk",
             )
         )
 

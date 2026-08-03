@@ -91,6 +91,7 @@ class Post(
         ordering = (
             "-published_at",
             "-created_at",
+            "-pk",
         )
         verbose_name = "Post"
         verbose_name_plural = "Posts"
