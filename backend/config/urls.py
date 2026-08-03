@@ -37,6 +37,13 @@ urlpatterns = [
         include("apps.comments.urls"),
     ),
     path("api/", include("apps.profiles.urls")),
+    path(
+        "api/admin/users/",
+        include(
+            "apps.users.admin_urls",
+            namespace="user_administration",
+        ),
+    ),
 ]
 
 if settings.DEBUG:

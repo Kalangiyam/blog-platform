@@ -192,6 +192,8 @@ class UserAdministrationService:
         if requested_groups:
             target_user.groups.add(*requested_groups)
 
+        target_user._prefetched_objects_cache = {}
+
         return target_user
 
     @staticmethod

@@ -31,6 +31,25 @@ class ApplicationRoleListMixin:
         ]
 
 
+class EmptyRequestSerializerMixin:
+    """
+    Reject request bodies containing unsupported fields.
+    """
+
+    def to_internal_value(self, data):
+        """
+        Accept only an empty object.
+        """
+        if data:
+            raise serializers.ValidationError(
+                {
+                    "detail": "This endpoint does not accept request data.",
+                }
+            )
+
+        return super().to_internal_value(data)
+
+
 class AdminUserCreateSerializer(
     ApplicationRoleListMixin,
     serializers.ModelSerializer,
@@ -286,7 +305,7 @@ class UserRoleUpdateSerializer(serializers.Serializer):
         )
 
 
-class UserActivationSerializer(serializers.Serializer):
+class UserActivationSerializer(EmptyRequestSerializerMixin, serializers.Serializer):
     """
     Activate an existing user through the administration service.
 
@@ -310,7 +329,7 @@ class UserActivationSerializer(serializers.Serializer):
         )
 
 
-class UserDeactivationSerializer(serializers.Serializer):
+class UserDeactivationSerializer(EmptyRequestSerializerMixin, serializers.Serializer):
     """
     Deactivate an existing user through the administration service.
 
