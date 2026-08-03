@@ -24,7 +24,7 @@ Feature 11 extends the authentication and authorization architecture through the
 
 ---
 
-# Current Status (Feature 15)
+# Current Status (Feature 16)
 
 ## Completed
 
@@ -423,6 +423,7 @@ Django `is_staff` controls Django Admin access only. It does not grant Editor or
 * ✅ Feature 13 — Media Uploads
 * ✅ Feature 14 — Permissions & Authorization
 * ✅ Feature 15 — User Administration & Role Management
+* ✅ Feature 16 — Performance Optimization
 
 ## Current Authentication State
 
@@ -677,6 +678,28 @@ Refresh Token Blacklisted
 ```
 Profile APIs reuse the existing JWT authentication foundation. Feature 11 does not introduce new token types or modify the access-token, refresh-token, or logout workflows.
 
+## Pagination and Authorization Flow
+
+Feature 16 adds pagination after authentication, permission evaluation, and queryset scoping:
+
+```text
+Request
+    ↓
+JWT authentication when required
+    ↓
+Role and object permissions
+    ↓
+Published, active, ownership, soft-delete, and parent-resource scoping
+    ↓
+Pagination count and page retrieval
+    ↓
+Serialized response
+```
+
+Pagination does not broaden visibility or replace backend security controls. Post, Post Comment, Category, and Tag lists use standard `20/100` pagination. Post search retains specialized `10/50` pagination, and Administrator User listing retains Administrator-only specialized `20/100` pagination.
+
+Create, retrieve, update, delete, workflow, featured-image, and Profile detail responses remain unpaginated.
+
 ## Next Feature
 
-Feature 16 will focus on performance optimization while retaining the current closed-registration, JWT, ownership, and role-based authorization model.
+Feature 17 will focus on Deployment & CI/CD while retaining the current closed-registration, JWT, ownership, role-based authorization, and endpoint-scoped pagination architecture.

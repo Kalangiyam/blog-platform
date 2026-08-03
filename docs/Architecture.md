@@ -246,7 +246,7 @@ The project adopts a **custom Django User model** from the beginning of developm
 
 Choosing a custom user model before the first database migration prevents costly schema migrations later and provides flexibility for future authentication requirements.
 
-## Current Status (Feature 15)
+## Current Status (Feature 16)
 
 ### Implemented:
 
@@ -1206,7 +1206,7 @@ Planned scalability features include:
 - Independent Comments business domain
 - Query optimization for Comment authors and Posts using `select_related()`
 - Separate Comment collection endpoint to avoid embedding unbounded Comments in Post responses
-- Future Comment pagination
+- Standard Comment pagination through shared endpoint-level infrastructure
 - Future Comment throttling and spam protection
 - Flat Comment architecture that can be extended later through a dedicated threaded-replies feature
 - Independent Profiles business domain
@@ -1253,6 +1253,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
+- ✅ Feature 16 — Performance Optimization
 
 ## In Progress
 
@@ -1260,7 +1261,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 ## Next Feature
 
-- Feature 16 — Performance Optimization
+- Feature 17 — Deployment & CI/CD
 
 ---
 
@@ -1299,7 +1300,48 @@ These modules serve as reference implementations for future domains by demonstra
 As development progresses, the architecture will expand with:
 
 * User administration and safe role management
-* Performance optimization
+* Shared endpoint-level pagination and stable collection ordering
 * Deployment and CI/CD
 
 Each application will remain independently responsible for its own models, serializers, permissions, views, and routes while integrating through explicit database relationships and REST APIs.
+
+---
+
+# Feature 16 Performance Architecture
+
+Feature 16 introduces `StandardPageNumberPagination` with a default page size of 20, a client `page_size` parameter, and a maximum of 100. Post, Post Comment, Category, and Tag collection ViewSets adopt it explicitly; no global DRF pagination policy was added.
+
+Post search retains specialized `10/50` pagination. Administrator User listing retains specialized `20/100` pagination.
+
+```text
+Client request
+        ↓
+Authentication and permissions
+        ↓
+Visibility-scoped and deterministically ordered QuerySet
+        ↓
+Pagination count
+        ↓
+Bounded page retrieval and eager loading
+        ↓
+Serializer
+        ↓
+Paginated response envelope
+```
+
+Pagination operates after security and visibility rules. It does not bypass roles, ownership, published-only visibility, soft deletion, active-status filtering, or Comment parent-Post scoping.
+
+Stable ordering is:
+
+```text
+Posts:               -published_at, -created_at, -pk
+Search:              -search_rank, -published_at, -created_at, -pk
+Comments:            created_at, id
+Categories:          unique name
+Tags:                unique name
+Administrator Users: -date_joined, -pk
+```
+
+Measurements showed eager loading already prevented N+1 growth. Pagination addressed unbounded serialization, rendering, payload, memory, and client-processing costs. PostgreSQL plans confirmed `post_search_vector_gin` for selective and missing searches; broad searches may correctly use a sequential scan.
+
+No speculative cache, stored search vector, or new database index was introduced.

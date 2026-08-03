@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-03
 
-**Current Milestone:** ✅ Feature 15 — User Administration & Role Management
+**Current Milestone:** ✅ Feature 16 — Performance Optimization
 
 ---
 
@@ -1005,6 +1005,37 @@ Convert the platform to a closed-registration editorial CMS and provide secure A
 
 ---
 
+## ✅ Feature 16 — Performance Optimization
+
+### Objective
+
+Measure current API and PostgreSQL behavior and introduce evidence-based performance improvements without weakening authorization, visibility, correctness, or maintainability.
+
+### Completed
+
+- Audited pagination across all collection endpoints
+- Captured runtime and response-size baselines for Posts, Comments, Categories, and Tags
+- Added shared `StandardPageNumberPagination` infrastructure with a default page size of 20 and maximum of 100
+- Explicitly paginated Post, Post Comment, Category, and Tag lists
+- Retained specialized `10/50` Search pagination and `20/100` Administrator User pagination
+- Preserved endpoint-level configuration without global DRF pagination settings
+- Added `-pk` as the final Post ordering tie-breaker
+- Added `-pk` as the final Search ordering tie-breaker
+- Preserved deterministic Comment, Category, Tag, and Administrator User ordering
+- Verified bounded Post and Comment responses through before-and-after measurements
+- Verified that existing eager loading continues to prevent N+1 query growth
+- Analyzed PostgreSQL full-text-search retrieval and count plans
+- Confirmed selective and missing searches use `post_search_vector_gin`
+- Confirmed broad searches may correctly use sequential scanning
+- Preserved authentication, authorization, ownership, soft-delete, active-status, and queryset-scoping rules
+- Completed manual functional pagination verification
+- Deferred automated regression testing to the planned backend testing phase
+- Added Feature 16 completion report and ADR-020
+
+**Status:** Completed
+
+---
+
 # Current Backend Modules
 
 | Module     | Status                                                             |
@@ -1049,6 +1080,11 @@ Implemented
 - PUT `/api/posts/{slug}/featured-image/`
 - DELETE `/api/posts/{slug}/featured-image/`
 
+Collection Pagination
+
+- Post list: Standard pagination, default 20, maximum 100
+- Post search: Specialized pagination, default 10, maximum 50
+
 Taxonomy Support
 
 - Assign categories using `category_slugs`
@@ -1080,6 +1116,8 @@ Implemented
 - GET /api/categories/{slug}/
 - PATCH /api/categories/{slug}/
 
+Category listing uses standard pagination with a default of 20 and maximum of 100.
+
 ---
 
 ## Tags APIs
@@ -1090,6 +1128,8 @@ Implemented
 - GET /api/tags/
 - GET /api/tags/{slug}/
 - PATCH /api/tags/{slug}/
+
+Tag listing uses standard pagination with a default of 20 and maximum of 100.
 
 ---
 
@@ -1105,6 +1145,7 @@ Implemented
 Current behavior:
 
 * Public Comment listing
+* Standard Comment-list pagination with a default of 20 and maximum of 100
 * Authenticated Comment creation
 * Comment author ownership enforcement
 * Author-only updates
@@ -1148,7 +1189,7 @@ Implemented (Administrator only)
 - POST `/api/admin/users/{id}/deactivate/`
 - PUT `/api/admin/users/{id}/roles/`
 
-Current behavior includes closed registration, active-user creation, paginated listing, allowlisted role replacement, unrelated-Group preservation, idempotent activation/deactivation, self-protection, and last-active-Administrator protection.
+Current behavior includes closed registration, active-user creation, specialized paginated listing with a default of 20 and maximum of 100, allowlisted role replacement, unrelated-Group preservation, idempotent activation/deactivation, self-protection, and last-active-Administrator protection.
 
 ---
 
@@ -1279,11 +1320,27 @@ User creation, activation, deactivation, and role replacement use transactional 
 
 Role replacement modifies only application-managed Groups and preserves unrelated Django Group memberships.
 
+### Performance Optimization Infrastructure
+
+Feature 16 introduces no new business table, field, index, or constraint.
+
+It adds a state-only migration for deterministic Post ordering:
+
+```text
+-published_at
+-created_at
+-pk
+```
+
+The migration changes Django model options and emits no physical schema SQL.
+
+The existing `post_search_vector_gin` index was retained and verified through PostgreSQL execution plans. Selective and missing searches used the GIN index, while an 80%-selectivity search correctly used a sequential scan.
+
+No speculative cache, stored search vector, or additional database index was introduced.
+
 ## Planned Tables
 
-No additional database tables are currently committed for Feature 16.
-
-Performance Optimization will be evidence-driven and may introduce indexes only when profiling demonstrates a measurable need.
+No additional database tables are currently planned for Feature 17.
 
 # Authentication Status
 
@@ -1324,12 +1381,12 @@ Implemented
 | Document | Status | Coverage |
 | -------- | ------ | -------- |
 | README | ✅ Current | Project overview |
-| Architecture | ✅ Current | Features 01–14 |
-| Database Design | ✅ Current | Features 01–14 |
-| API Specification | ✅ Current | Implemented APIs through Feature 15 |
-| Authentication Flow | ✅ Current | JWT, closed registration, ownership, and RBAC through Feature 15 |
+| Architecture | ✅ Current | Features 01–16 |
+| Database Design | ✅ Current | Features 01–16 |
+| API Specification | ✅ Current | Implemented APIs through Feature 16 |
+| Authentication Flow | ✅ Current | JWT, closed registration, ownership, RBAC, and pagination through Feature 16 |
 | Testing Strategy | ✅ Current | Current testing strategy |
-| Project Status | ✅ Current | Feature 15 complete; Feature 16 next |
+| Project Status | ✅ Current | Feature 16 complete; Feature 17 next |
 
 ---
 
@@ -1353,6 +1410,7 @@ Completed Feature Reports:
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
+- ✅ Feature 16 — Performance Optimization
 
 ---
 
@@ -1379,6 +1437,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-017 — Featured Image Architecture
 - ✅ ADR-018 — Role-Based Authorization Architecture
 - ✅ ADR-019 — User Administration and Role Management
+- ✅ ADR-020 — Collection Pagination and Stable Ordering Architecture
 
 ---
 
@@ -1415,6 +1474,10 @@ Verified:
 
 ### Posts
 
+- Standard pagination envelope for Post listing
+- Default page size 20, custom `page_size`, and maximum page size 100
+- Second-page, invalid-page, and empty-collection behavior
+- Stable Post ordering
 - Create
 - List
 - Retrieve
@@ -1469,6 +1532,10 @@ Verified:
 
 ### Categories
 
+- Standard pagination envelope
+- Default, custom, and maximum page sizes
+- Second-page navigation
+- Alphabetical paginated ordering
 - Create
 - List
 - Retrieve
@@ -1481,6 +1548,10 @@ Verified:
 
 ### Tags
 
+- Standard pagination envelope
+- Default, custom, and maximum page sizes
+- Second-page navigation
+- Alphabetical paginated ordering
 - Create
 - List
 - Retrieve
@@ -1492,6 +1563,11 @@ Verified:
 
 ### Comments
 
+- Standard pagination envelope
+- Default, custom, and maximum page sizes
+- Second-page navigation
+- Stable chronological pagination
+- Unpaginated creation responses
 - Public listing
 - Authenticated creation
 - Anonymous creation denial
@@ -1543,13 +1619,27 @@ Verified:
 - Object-level permissions
 - IDOR protection
 
+### Feature 16 Performance Verification
+
+- Runtime Post and Comment baselines
+- Before-and-after pagination measurements
+- Query-count and response-size comparison
+- Eager-loading and N+1 verification
+- Category and Tag baseline measurements
+- Maximum page-size enforcement
+- PostgreSQL full-text-search execution plans
+- Selective-term and missing-term GIN usage
+- Broad-term sequential-scan behavior
+- Pagination count-query plans
+- Security and visibility preservation
+
 ---
 
 ## Automated Testing
 
 Not yet implemented.
 
-Planned during future feature development.
+Automated pagination, query-count, ordering, visibility, and performance regression tests are deferred to the planned backend testing and quality-assurance phase.
 
 ---
 
@@ -1557,50 +1647,42 @@ Planned during future feature development.
 
 ## Phase 3 — Advanced Features
 
-- Feature 16 — Performance Optimization
 - Feature 17 — Deployment & CI/CD
+- Backend automated testing and quality-assurance phase
+- Frontend development
 
 ---
 
 # Current Milestone
 
-✅ Feature 15 — User Administration & Role Management
+✅ Feature 16 — Performance Optimization
 
-Status: **Architecture, implementation, manual testing, ADR, Feature Completion Report, and core documentation synchronization completed.**
+Status: **Architecture, implementation, manual testing, performance verification, ADR, Feature Completion Report, and Project Status update completed.**
 
-Feature 15 is complete.
+Feature 16 is complete. Automated regression testing remains deferred to the planned backend testing phase.
 
 ---
 
 # Next Milestone
 
-## Feature 16 — Performance Optimization
+## Feature 17 — Deployment & CI/CD
 
 ### Objective
 
-Profile the current API and database behavior and introduce evidence-based performance improvements without weakening authorization, correctness, or data-integrity guarantees.
+Prepare the existing application for repeatable deployment and continuous integration without changing established business behavior.
 
 ### Planned Areas
 
-- Establish performance baselines
-- Measure database query counts
-- Detect N+1 query problems
-- Review `select_related()` and `prefetch_related()` usage
-- Analyze PostgreSQL query plans
-- Review database indexes
-- Measure pagination behavior
-- Review serializer overhead
-- Analyze search performance
-- Review media-response performance
-- Identify unnecessary database work
-- Add regression tests for query counts
-- Document performance trade-offs
+- Review the existing roadmap and production requirements
+- Define environment and deployment configuration
+- Establish a repeatable build and deployment workflow
+- Introduce continuous-integration checks
+- Plan static-file, media, database-migration, and secret handling
+- Define deployment verification and rollback expectations
 
 ### Engineering Rule
 
-Optimizations must be based on measurements.
-
-The feature will not add caching, indexes, denormalization, or query complexity without evidence that the change solves a measured problem.
+Deployment architecture and provider-specific decisions remain subject to Feature 17 design and verification.
 
 ---
 
@@ -1715,6 +1797,16 @@ The project currently follows these key architectural decisions:
 - Paginated Administrator user listing
 - Deterministic user ordering using `-date_joined` and `-pk`
 - No user-deletion API
+- Shared standard pagination infrastructure
+- Explicit endpoint-level pagination
+- No global DRF pagination policy
+- Specialized Search and Administrator User pagination
+- Deterministic ordering for standard paginated collections
+- Stable Post ordering using `-published_at`, `-created_at`, and `-pk`
+- Stable Search ordering using `-search_rank`, `-published_at`, `-created_at`, and `-pk`
+- Evidence-driven performance optimization
+- Existing GIN search index retained after execution-plan verification
+- No speculative caching or database indexes
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1740,4 +1832,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 16 — Performance Optimization
+**Starting Point:** Feature 17 — Deployment & CI/CD
