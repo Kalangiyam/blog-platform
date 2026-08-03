@@ -7,6 +7,7 @@ from .serializers import (
     TagReadSerializer,
     TagUpdateSerializer,
 )
+from apps.core.pagination import StandardPageNumberPagination
 
 
 class TagViewSet(
@@ -19,7 +20,7 @@ class TagViewSet(
     """
     API endpoints for managing tags.
     """
-
+    pagination_class = StandardPageNumberPagination
     queryset = Tag.objects.all()
     permission_classes = [IsEditorOrReadOnly]
     lookup_field = "slug"

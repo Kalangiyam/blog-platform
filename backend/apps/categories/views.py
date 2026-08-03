@@ -7,7 +7,7 @@ from .serializers import (
     CategoryReadSerializer,
     CategoryUpdateSerializer,
 )
-
+from apps.core.pagination import StandardPageNumberPagination
 
 class CategoryViewSet(
     mixins.CreateModelMixin,
@@ -20,6 +20,7 @@ class CategoryViewSet(
     API endpoints for managing categories.
     """
 
+    pagination_class = StandardPageNumberPagination
     queryset = Category.objects.all()
     permission_classes = [IsEditorOrReadOnly]
     lookup_field = "slug"

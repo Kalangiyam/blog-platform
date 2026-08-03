@@ -46,9 +46,9 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 15)
+# Current Database Schema (Feature 16)
 
-At the completion of Feature 15, the application contains six primary domain entities:
+At the completion of Feature 16, the application contains six primary domain entities:
 
 * User
 * Profile
@@ -739,6 +739,7 @@ The project follows a migration-first approach.
 * Feature 14 added `users.0002_create_application_groups`, which idempotently creates Author, Editor, and Administrator Groups through `get_or_create()`.
 * Feature 14 uses Django's existing User–Group join table and requires no custom role table.
 * Feature 15 adds no migration or model. It reuses `User.is_active`, `auth_group`, and the existing User–Group join table for account lifecycle and role management.
+* Feature 16 adds `posts.0006_alter_post_options`, a state-only migration that adds `-pk` as the final Post ordering tie-breaker and emits no physical schema SQL.
 
 
 ---
@@ -902,6 +903,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 13 — Media Uploads
 * ✅ Feature 14 — Permissions & Authorization
 * ✅ Feature 15 — User Administration & Role Management
+* ✅ Feature 16 — Performance Optimization
 
 ## Current Database Version
 Current schema includes:
@@ -994,9 +996,31 @@ The project uses reusable abstract base models to avoid duplicated code.
 
 All future business entities should inherit from these models where appropriate to ensure consistent auditing, lifecycle management, and maintainability.
 
+## Feature 16 Database Verification
+
+Feature 16 introduces no new business table, field, index, or constraint.
+
+Post model state records deterministic default ordering:
+
+```python
+ordering = (
+    "-published_at",
+    "-created_at",
+    "-pk",
+)
+```
+
+Search orders by `-search_rank`, `-published_at`, `-created_at`, and the unique `-pk` tie-breaker.
+
+The existing weighted GIN index remains `post_search_vector_gin`, covering title with weight A, excerpt with weight B, and content with weight C under the English configuration.
+
+Execution-plan verification against 1,000 published, non-deleted Posts confirmed GIN bitmap scans for a three-match rare term and a zero-match missing term. PostgreSQL selected a sequential scan for an 800-match broad term because its 80% selectivity made that plan reasonable.
+
+No planner setting, stored `SearchVectorField`, cache, or speculative index was added.
+
 ## Next Planned Database Changes
 
-Feature 16 will focus on performance optimization. Any new indexes or database changes should be introduced only after profiling identifies a concrete need. User administration continues to reuse the current User, Group, and User–Group tables.
+Feature 17 — Deployment & CI/CD has not yet established new schema requirements. Future database changes must continue to be supported by application requirements or measured evidence.
 
 Future database enhancements may also include:
 

@@ -4,7 +4,7 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 15, the platform provides seven API modules:
+At the completion of Feature 16, the platform provides seven API modules:
 
 - Authentication APIs
 - Posts APIs
@@ -18,7 +18,7 @@ Feature 08 extended the Posts API by introducing a many-to-many relationship bet
 
 Feature 09 extends the same taxonomy architecture by introducing a many-to-many relationship between Posts and Tags. Categories and tags can now be assigned to posts using slug-based write fields, while post responses include lightweight nested category and tag representations.
 
-Feature 10 introduced the Comments domain, Feature 11 introduced Profiles, Feature 12 added public PostgreSQL full-text search, Feature 13 added featured-image management, Feature 14 introduced role-based authorization, and Feature 15 added Administrator-only user lifecycle and role management.
+Feature 10 introduced the Comments domain, Feature 11 introduced Profiles, Feature 12 added public PostgreSQL full-text search, Feature 13 added featured-image management, Feature 14 introduced role-based authorization, Feature 15 added Administrator-only user lifecycle and role management, and Feature 16 standardized bounded collection pagination and stable ordering.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
@@ -258,6 +258,19 @@ prefetch_related("categories", "tags")
 ```
 
 This prevents N+1 queries when serializing authors, categories, and tags.
+
+### Pagination
+
+The list uses standard page-number pagination:
+
+```text
+Default page size: 20
+Client parameter: page_size
+Maximum page size: 100
+Ordering: -published_at, -created_at, -pk
+```
+
+Successful responses use the standard `count`, `next`, `previous`, and `results` envelope.
 
 ---
 
@@ -604,6 +617,8 @@ GET /api/categories/
 
 Returns active categories by default.
 
+The list uses standard page-number pagination with a default of 20, the `page_size` query parameter, a maximum of 100, and deterministic ordering by unique `name`.
+
 ---
 
 ## Retrieve Category
@@ -675,6 +690,8 @@ GET /api/tags/
 ```
 
 Returns active tags by default.
+
+The list uses standard page-number pagination with a default of 20, the `page_size` query parameter, a maximum of 100, and deterministic ordering by unique `name`.
 
 ---
 
@@ -756,7 +773,7 @@ Public.
 
 Returns non-deleted comments belonging to a published, non-deleted post.
 
-Comments are returned in chronological order.
+Comments are returned in deterministic chronological order using `created_at`, then `id`.
 
 Related author information is loaded using:
 
@@ -772,27 +789,39 @@ Status:
 200 OK
 ```
 
+The list uses standard page-number pagination with a default of 20, the `page_size` query parameter, and a maximum of 100.
+
 Example:
 
 ```json
-[
-  {
-    "id": 1,
-    "content": "This article was very helpful.",
-    "author": {
-      "id": 2,
-      "username": "john"
-    },
-    "created_at": "2026-07-15T10:00:00+05:30",
-    "updated_at": "2026-07-15T10:00:00+05:30"
-  }
-]
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "content": "This article was very helpful.",
+      "author": {
+        "id": 2,
+        "username": "john"
+      },
+      "created_at": "2026-07-15T10:00:00+05:30",
+      "updated_at": "2026-07-15T10:00:00+05:30"
+    }
+  ]
+}
 ```
 
-A post with no comments returns an empty list:
+A post with no comments returns an empty paginated result:
 
 ```json
-[]
+{
+  "count": 0,
+  "next": null,
+  "previous": null,
+  "results": []
+}
 ```
 
 ---
@@ -1551,6 +1580,7 @@ Versioning will be introduced only when required to preserve backward compatibil
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
+- ✅ Feature 16 — Performance Optimization
 
 ## Current API State
 
@@ -1729,6 +1759,10 @@ Post responses include lightweight nested tag objects containing:
 
 ---
 
-# Next Update
+# Feature 16 Pagination Contract
 
-Feature 16 is expected to focus on performance optimization. This document will be updated when that API surface or behavior is approved and implemented.
+The Post, Post Comment, Category, and Tag collection endpoints use `StandardPageNumberPagination` with a default of 20 and maximum of 100. Post search retains specialized `10/50` pagination, and Administrator User listing retains specialized `20/100` pagination.
+
+No global DRF pagination policy is configured. Pagination is adopted explicitly by each collection endpoint, and non-list responses remain unpaginated.
+
+The next planned API milestone is Feature 17 — Deployment & CI/CD. It does not yet define new business endpoints.

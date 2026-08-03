@@ -24,6 +24,7 @@ from apps.posts.services.featured_image import (
     remove_post_featured_image,
     replace_post_featured_image,
 )
+from apps.core.pagination import StandardPageNumberPagination
 
 
 class PostViewSet(
@@ -46,7 +47,8 @@ class PostViewSet(
     - Publish Post
     - Unpublish Post
     """
-
+    
+    pagination_class = StandardPageNumberPagination
     serializer_class = PostCreateSerializer
     lookup_field = "slug"
 
