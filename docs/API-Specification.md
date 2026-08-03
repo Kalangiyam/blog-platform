@@ -4,7 +4,7 @@
 
 The Blog Platform follows an **API-First Architecture**, where all communication between the frontend and backend occurs through REST APIs.
 
-At the completion of Feature 14, the platform provides six API modules:
+At the completion of Feature 15, the platform provides seven API modules:
 
 - Authentication APIs
 - Posts APIs
@@ -12,12 +12,13 @@ At the completion of Feature 14, the platform provides six API modules:
 - Tags APIs
 - Comments APIs
 - Profiles APIs
+- User Administration APIs
 
 Feature 08 extended the Posts API by introducing a many-to-many relationship between Posts and Categories.
 
 Feature 09 extends the same taxonomy architecture by introducing a many-to-many relationship between Posts and Tags. Categories and tags can now be assigned to posts using slug-based write fields, while post responses include lightweight nested category and tag representations.
 
-Feature 10 introduced the Comments domain, Feature 11 introduced Profiles, Feature 12 added public PostgreSQL full-text search, Feature 13 added featured-image management, and Feature 14 introduced role-based authorization.
+Feature 10 introduced the Comments domain, Feature 11 introduced Profiles, Feature 12 added public PostgreSQL full-text search, Feature 13 added featured-image management, Feature 14 introduced role-based authorization, and Feature 15 added Administrator-only user lifecycle and role management.
 
 Authentication is implemented using JWT Authentication with Django REST Framework and Simple JWT.
 
@@ -69,11 +70,10 @@ https://your-domain.com/api/
 
 Implemented ✅
 
-The authentication module is fully functional and provides registration, login, logout, current-user retrieval, token refresh, and token verification APIs.
+The authentication module provides login, logout, current-user retrieval, token refresh, and token verification APIs. Public registration was removed in Feature 15; Administrators create accounts through the user-administration API.
 
 | Method | Endpoint                 | Authentication   | Status         |
 | ------ | ------------------------ | ---------------- | -------------- |
-| POST   | /api/auth/register/      | Public           | ✅ Implemented |
 | POST   | /api/auth/login/         | Public           | ✅ Implemented |
 | GET    | /api/auth/me/            | JWT Access Token | ✅ Implemented |
 | POST   | /api/auth/logout/        | JWT Access Token | ✅ Implemented |
@@ -83,21 +83,6 @@ The authentication module is fully functional and provides registration, login, 
 ---
 
 ## Authentication Request Examples
-
-### Register
-
-POST `/api/auth/register/`
-
-```json
-{
-  "username": "john",
-  "email": "john@example.com",
-  "password": "StrongPassword@123",
-  "password_confirm": "StrongPassword@123"
-}
-```
-
----
 
 ### Login
 
@@ -133,6 +118,33 @@ POST `/api/auth/logout/`
   "refresh": "<refresh_token>"
 }
 ```
+
+---
+
+# User Administration APIs
+
+## Current Status
+
+Implemented ✅
+
+All endpoints require a JWT access token and membership in the `Administrator` application Group. Django staff or superuser flags do not substitute for this role.
+
+| Method | Endpoint                            | Purpose                         |
+| ------ | ----------------------------------- | ------------------------------- |
+| POST   | /api/admin/users/                   | Create an active user           |
+| GET    | /api/admin/users/                   | List users (paginated)          |
+| GET    | /api/admin/users/{id}/              | Retrieve user details           |
+| POST   | /api/admin/users/{id}/activate/     | Activate a user                 |
+| POST   | /api/admin/users/{id}/deactivate/   | Deactivate a user               |
+| PUT    | /api/admin/users/{id}/roles/        | Replace managed application roles |
+
+User creation accepts `username`, `email`, `password`, `password_confirm`, optional names, and an optional `roles` list. Supported role names are `Author`, `Editor`, and `Administrator`. Passwords are validated and hashed, email uniqueness is case-insensitive, and creation plus initial role assignment is atomic.
+
+Role replacement treats the submitted list as the complete desired set of application-managed roles. An empty list is valid, unrelated Django Groups are preserved, duplicate or unsupported roles are rejected, and clients cannot manage staff, superuser, direct-permission, or arbitrary Group state.
+
+Activation and deactivation require an empty JSON body and are idempotent. Administrators cannot deactivate themselves or remove their own Administrator role. The service also prevents deactivation or role removal that would leave no active Administrator.
+
+The user list uses page-number pagination with a default size of 20, a maximum of 100, and the `page_size` query parameter. Users are ordered by `-date_joined`, then `-pk`. General update and deletion endpoints are intentionally not exposed.
 
 ---
 
@@ -1319,7 +1331,7 @@ Feature 14 uses independent Django Groups as application roles:
 - `Editor`
 - `Administrator`
 
-Registration does not assign roles. Roles are provisioned as Group records by a data migration and must be assigned through a trusted administrative process.
+Roles are provisioned as Group records by a data migration and assigned only through the Administrator user-management API.
 
 | Operation | Required authorization |
 | --------- | ---------------------- |
@@ -1331,6 +1343,7 @@ Registration does not assign roles. Roles are provisioned as Group records by a 
 | Create Comment | Any authenticated user |
 | Update/delete Comment | Authenticated Comment author |
 | Private Profile access | Authenticated profile owner |
+| User administration | Authenticated Administrator |
 
 Administrator is intentionally not an editorial super-role. An Administrator who also needs editorial access must additionally belong to the Editor group. Django `is_staff` and `is_superuser` remain framework-level flags and are not substitutes for application roles.
 
@@ -1537,14 +1550,15 @@ Versioning will be introduced only when required to preserve backward compatibil
 - ✅ Feature 12 — Search
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
+- ✅ Feature 15 — User Administration & Role Management
 
 ## Current API State
 
-Authentication, Posts, Categories, Tags, Comments, Profiles, Search, Media Uploads, and role-based authorization have been implemented and manually tested.
+Authentication, Administrator user management, Posts, Categories, Tags, Comments, Profiles, Search, Media Uploads, and role-based authorization have been implemented and manually tested.
 
 The platform currently supports:
 
-- User registration and authentication
+- Closed account provisioning and user authentication
 - JWT authentication
 - Author-or-Editor Post creation
 - Public listing of published posts
@@ -1597,8 +1611,9 @@ The platform currently supports:
 - Centralized DRF role permissions
 - Post queryset scoping and Editor override
 - Separation of application roles from Django staff access
+- Administrator-only user creation, listing, retrieval, activation, deactivation, and role replacement
 
-Future features will extend the API with user administration, role management, performance improvements, and deployment support.
+Future features will extend the platform with performance improvements and deployment support.
 
 ---
 
@@ -1606,12 +1621,24 @@ Future features will extend the API with user administration, role management, p
 
 | Endpoint                      | Description                                |
 | ----------------------------- | ------------------------------------------ |
-| POST /api/auth/register/      | Register a new account                     |
 | POST /api/auth/login/         | Authenticate a user and receive JWT tokens |
 | GET /api/auth/me/             | Retrieve the authenticated user's account information |
 | POST /api/auth/logout/        | Blacklist the supplied refresh token       |
 | POST /api/auth/token/refresh/ | Obtain a new access token                  |
 | POST /api/auth/token/verify/  | Verify the validity of a JWT               |
+
+---
+
+# User Administration Endpoints
+
+| Endpoint                                | Description                                 |
+| --------------------------------------- | ------------------------------------------- |
+| POST /api/admin/users/                  | Create an active user                       |
+| GET /api/admin/users/                   | List users with pagination                  |
+| GET /api/admin/users/{id}/              | Retrieve Administrator-facing user details |
+| POST /api/admin/users/{id}/activate/    | Activate a user                             |
+| POST /api/admin/users/{id}/deactivate/  | Deactivate a user with lockout safeguards   |
+| PUT /api/admin/users/{id}/roles/        | Replace application-managed roles           |
 
 ---
 
@@ -1704,4 +1731,4 @@ Post responses include lightweight nested tag objects containing:
 
 # Next Update
 
-Feature 15 will introduce Administrator-only User Administration and Role Management APIs, including safe account activation/deactivation and allowlisted application-role assignment.
+Feature 16 is expected to focus on performance optimization. This document will be updated when that API surface or behavior is approved and implemented.

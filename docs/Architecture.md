@@ -246,7 +246,7 @@ The project adopts a **custom Django User model** from the beginning of developm
 
 Choosing a custom user model before the first database migration prevents costly schema migrations later and provides flexibility for future authentication requirements.
 
-## Current Status (Feature 14)
+## Current Status (Feature 15)
 
 ### Implemented:
 
@@ -254,7 +254,7 @@ Choosing a custom user model before the first database migration prevents costly
 - AUTH_USER_MODEL configured
 - Email-based authentication backend
 - JWT Authentication using Simple JWT
-- User Registration API
+- Administrator-controlled User Creation API
 - User Login API
 - User Logout API
 - Current User API
@@ -914,7 +914,7 @@ Responsible for:
 * Authorization
 * JWT Management
 * User Identity
-* Login and Registration
+* Login and Administrator-controlled account provisioning
 
 ### Profiles Domain
 
@@ -1089,6 +1089,26 @@ Public Post actions use published querysets. For management actions, Editors rec
 
 ---
 
+# User Administration Architecture
+
+Feature 15 changes the platform to a closed-registration editorial CMS. Public registration is removed, and account provisioning is handled by `UserAdministrationViewSet` under `/api/admin/users/`.
+
+```text
+JWT authentication
+    → IsAdministrator
+    → action-specific serializer
+    → UserAdministrationService
+    → atomic User and Group updates
+```
+
+The ViewSet combines only create, list, and retrieve mixins. Activation, deactivation, and complete application-role replacement are explicit actions; generic user update and deletion routes are not exposed. Responses omit password hashes, staff and superuser flags, direct permissions, and unrelated Groups.
+
+`UserAdministrationService` owns lifecycle invariants and transaction boundaries. Operations that can reduce Administrator access lock the Administrator Group and target User rows so concurrent requests cannot both remove the final active Administrator. The service also prevents self-deactivation and self-removal of the Administrator role.
+
+Role replacement manages only `Author`, `Editor`, and `Administrator`, preserving unrelated Django Group memberships. The administration queryset prefetches Groups, uses deterministic newest-first ordering, and paginates lists with a default of 20 and maximum of 100 users.
+
+---
+
 # Security Architecture
 
 The backend is responsible for enforcing all security rules.
@@ -1143,7 +1163,7 @@ The backend is responsible for enforcing all security rules.
 - Avoid exposing User email addresses and Comment audit fields.
 - Treat Comment content as untrusted plain text.
 - Avoid rendering Comment content with `dangerouslySetInnerHTML` unless sanitization is introduced.
-- Automatically create Profiles for newly registered Users.
+- Automatically create Profiles for users provisioned by an Administrator.
 - Ensure every User owns exactly one Profile.
 - Enforce Profile ownership through authenticated User context.
 - Prevent Profile ownership reassignment.
@@ -1232,6 +1252,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 - ✅ Feature 12 — Search
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
+- ✅ Feature 15 — User Administration & Role Management
 
 ## In Progress
 
@@ -1239,7 +1260,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 ## Next Feature
 
-- Feature 15 — User Administration & Role Management
+- Feature 16 — Performance Optimization
 
 ---
 

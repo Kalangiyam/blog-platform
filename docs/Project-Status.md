@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-07-31
 
-**Current Milestone:** ✅ Feature 14 — Permissions & Authorization
+**Current Milestone:** ✅ Feature 15 — User Administration & Role Management
 
 ---
 
@@ -75,9 +75,10 @@ blog-platform/
 │   │   |    ├── admin.py
 │   │   |    ├── constants.py
 │   │   |    ├── models.py
-│   │   |    ├── serializers.py
+│   │   |    ├── serializers/
 │   │   |    ├── urls.py
-│   │   |    ├── views.py
+│   │   |    ├── views/
+│   │   |    ├── services/
 │   │   |    └── ...
 │   │   ├── posts/
 │   │   │   ├── admin/
@@ -244,7 +245,8 @@ Implement secure JWT authentication for all future protected APIs.
 
 #### APIs
 
-- User Registration API
+- User Registration API implemented initially
+- Public registration later removed by Feature 15
 - User Login API
 - Current User API
 - User Logout API
@@ -263,7 +265,7 @@ Implement secure JWT authentication for all future protected APIs.
 
 Successfully verified:
 
-- User registration
+- Historical public user registration before its removal in Feature 15
 - Duplicate username validation
 - Duplicate email validation
 - Password confirmation validation
@@ -951,12 +953,12 @@ Introduce a centralized Role-Based Access Control (RBAC) architecture using Djan
 
 #### Documentation
 
-- API Specification synchronized through Feature 14
-- Architecture documentation synchronized through Feature 14
-- Authentication and authorization flows synchronized through Feature 14
+- API Specification synchronized through Feature 14 at completion time
+- Architecture documentation synchronized through Feature 14 at completion time
+- Authentication and authorization flows synchronized through Feature 14 at completion time
 - Database design synchronized with Search, Media Uploads, and Django Group roles
 - Comment–User physical deletion behavior documented as `CASCADE`
-- Feature 15 identified as the next documentation and implementation milestone
+- Feature 15 identified as the next milestone at Feature 14 completion
 
 #### Manual Testing
 
@@ -972,6 +974,32 @@ Successfully verified:
 - Queryset scoping
 - Object ownership
 - Permission composition
+
+**Status:** Completed
+
+---
+
+## ✅ Feature 15 — User Administration & Role Management
+
+### Objective
+
+Convert the platform to a closed-registration editorial CMS and provide secure Administrator-only APIs for account provisioning, account activation, and application-role management.
+
+### Completed
+
+- Removed public registration (`POST /api/auth/register/`)
+- Added Administrator-only create, list, and retrieve user APIs
+- Added explicit activate and deactivate actions
+- Added complete replacement of allowlisted application roles
+- Restricted managed roles to Author, Editor, and Administrator
+- Preserved unrelated Django Group memberships
+- Added password, email, and duplicate-role validation
+- Added atomic service-layer mutations and row locking
+- Prevented self-deactivation and self-removal of Administrator access
+- Protected the final active Administrator
+- Added deterministic ordering and page-number pagination
+- Excluded password, staff, superuser, direct-permission, and unrelated-Group data from responses
+- Added Feature 15 completion report and ADR-019
 
 **Status:** Completed
 
@@ -998,7 +1026,6 @@ Successfully verified:
 
 Implemented
 
-- POST `/api/auth/register/`
 - POST `/api/auth/login/`
 - GET `/api/auth/me/`
 - POST `/api/auth/logout/`
@@ -1110,6 +1137,21 @@ Current behavior:
 
 ---
 
+## User Administration APIs
+
+Implemented (Administrator only)
+
+- POST `/api/admin/users/`
+- GET `/api/admin/users/`
+- GET `/api/admin/users/{id}/`
+- POST `/api/admin/users/{id}/activate/`
+- POST `/api/admin/users/{id}/deactivate/`
+- PUT `/api/admin/users/{id}/roles/`
+
+Current behavior includes closed registration, active-user creation, paginated listing, allowlisted role replacement, unrelated-Group preservation, idempotent activation/deactivation, self-protection, and last-active-Administrator protection.
+
+---
+
 # Database Status
 
 ## Implemented Tables
@@ -1216,7 +1258,32 @@ Feature 13 introduces secure media management using:
 
 The platform currently stores one optional featured image per Post.
 
+### User Administration Infrastructure
+
+Feature 15 introduces no new database tables.
+
+It reuses:
+
+- Custom User model
+- User `is_active` field
+- Django Group model
+- User–Group many-to-many relationship
+
+Application roles are represented by these Django Groups:
+
+- Author
+- Editor
+- Administrator
+
+User creation, activation, deactivation, and role replacement use transactional service-layer operations.
+
+Role replacement modifies only application-managed Groups and preserves unrelated Django Group memberships.
+
 ## Planned Tables
+
+No additional database tables are currently committed for Feature 16.
+
+Performance Optimization will be evidence-driven and may introduce indexes only when profiling demonstrates a measurable need.
 
 # Authentication Status
 
@@ -1259,10 +1326,10 @@ Implemented
 | README | ✅ Current | Project overview |
 | Architecture | ✅ Current | Features 01–14 |
 | Database Design | ✅ Current | Features 01–14 |
-| API Specification | ✅ Current | Implemented APIs through Feature 14 |
-| Authentication Flow | ✅ Current | JWT, ownership, and RBAC through Feature 14 |
+| API Specification | ✅ Current | Implemented APIs through Feature 15 |
+| Authentication Flow | ✅ Current | JWT, closed registration, ownership, and RBAC through Feature 15 |
 | Testing Strategy | ✅ Current | Current testing strategy |
-| Project Status | ✅ Current | Feature 14 complete; Feature 15 next |
+| Project Status | ✅ Current | Feature 15 complete; Feature 16 next |
 
 ---
 
@@ -1285,6 +1352,7 @@ Completed Feature Reports:
 - ✅ Feature 12 — Search
 - ✅ Feature 13 — Media Uploads
 - ✅ Feature 14 — Permissions & Authorization
+- ✅ Feature 15 — User Administration & Role Management
 
 ---
 
@@ -1310,6 +1378,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-016 — Post Search Architecture
 - ✅ ADR-017 — Featured Image Architecture
 - ✅ ADR-018 — Role-Based Authorization Architecture
+- ✅ ADR-019 — User Administration and Role Management
 
 ---
 
@@ -1317,18 +1386,32 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication, Posts, Categories, Tags, Comments, and Profiles modules.
+Completed for the Authentication, User Administration, Posts, Categories, Tags, Comments, and Profiles modules.
 
 Verified:
 
 ### Authentication
 
-- Registration
+- Historical public-registration coverage (endpoint removed in Feature 15)
 - Login
 - Logout
 - Protected endpoints
 - Token Refresh
 - Token Verification
+
+### User Administration
+
+- Administrator-only access
+- User creation with hashed passwords and optional roles
+- Case-insensitive email uniqueness
+- Weak-password, mismatch, invalid-role, and duplicate-role rejection
+- Paginated user listing and safe detail responses
+- Application-role replacement with unrelated-Group preservation
+- Idempotent activation and deactivation
+- Self-deactivation prevention
+- Self-removal of Administrator role prevention
+- Last-active-Administrator protection
+- Transactional and concurrency-safe mutations
 
 ### Posts
 
@@ -1474,7 +1557,6 @@ Planned during future feature development.
 
 ## Phase 3 — Advanced Features
 
-- Feature 15 — User Administration & Role Management
 - Feature 16 — Performance Optimization
 - Feature 17 — Deployment & CI/CD
 
@@ -1482,35 +1564,43 @@ Planned during future feature development.
 
 # Current Milestone
 
-✅ Feature 14 — Permissions & Authorization
+✅ Feature 15 — User Administration & Role Management
 
 Status: **Architecture, implementation, manual testing, ADR, Feature Completion Report, and core documentation synchronization completed.**
 
-Feature 14 is complete.
+Feature 15 is complete.
 
 ---
 
 # Next Milestone
 
-## Feature 15 — User Administration & Role Management
+## Feature 16 — Performance Optimization
 
-The next feature will introduce secure Administrator-only APIs for managing application users and role membership.
+### Objective
 
-Planned topics include:
+Profile the current API and database behavior and introduce evidence-based performance improvements without weakening authorization, correctness, or data-integrity guarantees.
 
-- Administrator-only API access
-- User listing and retrieval
-- User activation and deactivation
-- Application role assignment
-- Application role removal
-- Approved-role allowlisting
-- Self-administration safeguards
-- Last-Administrator protection
-- Transactional role updates
-- Privilege-escalation prevention
-- Action-specific serializers
-- Manual testing strategy
-- Documentation updates
+### Planned Areas
+
+- Establish performance baselines
+- Measure database query counts
+- Detect N+1 query problems
+- Review `select_related()` and `prefetch_related()` usage
+- Analyze PostgreSQL query plans
+- Review database indexes
+- Measure pagination behavior
+- Review serializer overhead
+- Analyze search performance
+- Review media-response performance
+- Identify unnecessary database work
+- Add regression tests for query counts
+- Document performance trade-offs
+
+### Engineering Rule
+
+Optimizations must be based on measurements.
+
+The feature will not add caching, indexes, denormalization, or query complexity without evidence that the change solves a measured problem.
 
 ---
 
@@ -1607,6 +1697,24 @@ The project currently follows these key architectural decisions:
 - Separation of authentication and authorization
 - Separation of Django staff from application roles
 - Backend-enforced RBAC
+- Closed-registration CMS architecture
+- Administrator-only user provisioning
+- Separation of authentication and user administration APIs
+- Dedicated `UserAdministrationService`
+- Transactional user creation and role assignment
+- Explicit activation and deactivation actions
+- Idempotent account-status operations
+- Application-role allowlisting through `APPLICATION_GROUPS`
+- Complete application-role replacement through `PUT`
+- Preservation of unrelated Django Groups
+- Self-deactivation prevention
+- Self-removal of Administrator-role prevention
+- Last-active-Administrator protection
+- Row locking through `select_for_update()`
+- Administrator Group as a shared concurrency lock
+- Paginated Administrator user listing
+- Deterministic user ordering using `-date_joined` and `-pk`
+- No user-deletion API
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
@@ -1632,4 +1740,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 15 — User Administration & Role Management
+**Starting Point:** Feature 16 — Performance Optimization

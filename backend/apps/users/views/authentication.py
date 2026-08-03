@@ -1,26 +1,26 @@
 from rest_framework import generics, status
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from .serializers import (
-    RegisterSerializer,
+from apps.users.serializers import (
     LoginSerializer,
-    UserSerializer,
     LogoutSerializer,
+    UserSerializer,
 )
 
 
-# Create your views here.
-class RegisterAPIView(generics.CreateAPIView):
-    serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
-
-
 class LoginAPIView(generics.GenericAPIView):
+    """
+    Authenticate a user and return JWT access and refresh tokens.
+    """
+
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
+        """
+        Validate credentials and return authentication tokens.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -42,22 +42,38 @@ class LoginAPIView(generics.GenericAPIView):
 
 
 class UserAPIView(generics.RetrieveAPIView):
+    """
+    Return the currently authenticated user's account information.
+    """
+
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        """
+        Return the user resolved by JWT authentication.
+        """
         return self.request.user
 
 
 class LogoutAPIView(generics.GenericAPIView):
+    """
+    Blacklist a submitted JWT refresh token.
+    """
+
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        """
+        Validate and blacklist the submitted refresh token.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         return Response(
-            {"detail": "Successfully logged out."},
+            {
+                "detail": "Successfully logged out.",
+            },
             status=status.HTTP_200_OK,
         )

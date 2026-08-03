@@ -46,9 +46,9 @@ The project follows these database principles:
 
 ---
 
-# Current Database Schema (Feature 14)
+# Current Database Schema (Feature 15)
 
-At the completion of Feature 14, the application contains six primary domain entities:
+At the completion of Feature 15, the application contains six primary domain entities:
 
 * User
 * Profile
@@ -308,7 +308,9 @@ The approved Group names are:
 
 Roles are independent, so a User may belong to zero, one, or multiple Groups. Application-role membership is separate from the `is_staff` and `is_superuser` columns on User. The role data migration uses historical models and fixed strings so it remains stable if runtime constants later change.
 
-No application API currently exposes Group assignment. Feature 15 is expected to add a protected service/API layer rather than allowing clients to manipulate the join table directly.
+Feature 15 exposes application-role assignment only through an Administrator-protected service/API layer. It allowlists the `Author`, `Editor`, and `Administrator` Groups, replaces only managed role memberships, preserves unrelated Groups, and never exposes direct join-table manipulation.
+
+User administration adds no model or migration. Account activation and deactivation reuse `User.is_active`. The service layer uses atomic transactions and locks the target User and Administrator Group for changes that could reduce active Administrator access, preserving the invariant that at least one active Administrator remains. Deactivation is used instead of physical deletion so content ownership, Profiles, and audit relationships remain intact.
 
 ---
 
@@ -736,6 +738,7 @@ The project follows a migration-first approach.
 * Feature 13 added `posts.0005_post_featured_image`, introducing the optional featured-image storage name.
 * Feature 14 added `users.0002_create_application_groups`, which idempotently creates Author, Editor, and Administrator Groups through `get_or_create()`.
 * Feature 14 uses Django's existing User–Group join table and requires no custom role table.
+* Feature 15 adds no migration or model. It reuses `User.is_active`, `auth_group`, and the existing User–Group join table for account lifecycle and role management.
 
 
 ---
@@ -898,6 +901,7 @@ The frontend is never responsible for enforcing database integrity.
 * ✅ Feature 12 — Search
 * ✅ Feature 13 — Media Uploads
 * ✅ Feature 14 — Permissions & Authorization
+* ✅ Feature 15 — User Administration & Role Management
 
 ## Current Database Version
 Current schema includes:
@@ -992,7 +996,7 @@ All future business entities should inherit from these models where appropriate 
 
 ## Next Planned Database Changes
 
-Feature 15 will introduce User Administration and Role Management. It is expected to reuse the current User, Group, and User–Group tables. New tables should be added only if audit history or role-change event records become part of the approved design.
+Feature 16 will focus on performance optimization. Any new indexes or database changes should be introduced only after profiling identifies a concrete need. User administration continues to reuse the current User, Group, and User–Group tables.
 
 Future database enhancements may also include:
 

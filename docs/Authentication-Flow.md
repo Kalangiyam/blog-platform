@@ -24,7 +24,7 @@ Feature 11 extends the authentication and authorization architecture through the
 
 ---
 
-# Current Status (Feature 14)
+# Current Status (Feature 15)
 
 ## Completed
 
@@ -35,7 +35,7 @@ Feature 11 extends the authentication and authorization architecture through the
 * ✅ Authentication architecture established
 * ✅ Email-based authentication
 * ✅ Custom Email Authentication Backend
-* ✅ User Registration API
+* ✅ Administrator-controlled User Creation API
 * ✅ User Login API
 * ✅ JWT Authentication
 * ✅ JWT Access Token
@@ -77,8 +77,8 @@ The authentication system follows a layered architecture.
 React Frontend
         │
         ▼
-Authentication API
-(Register / Login / Logout / Me)
+Authentication and Administration APIs
+(Login / Logout / Me / Administrator User Provisioning)
         │
         ▼
 Serializers
@@ -122,7 +122,7 @@ Implementing the custom User model before the initial migration is considered a 
 
 ## Implemented
 
-* User Registration
+* Administrator-controlled User Creation
 * User Login
 * JWT Access Token
 * JWT Refresh Token
@@ -145,6 +145,14 @@ Implementing the custom User model before the initial migration is considered a 
 ---
 
 # JWT Authentication Flow
+
+Feature 15 removes public self-registration. Accounts are provisioned only by an authenticated Administrator through `POST /api/admin/users/`. Identity fields, password strength and confirmation, email uniqueness, and allowlisted roles are validated before the user and initial roles are created atomically.
+
+The administration API also provides protected listing and retrieval, idempotent activation/deactivation, and complete replacement of application-managed roles. It does not expose staff or superuser state, direct permissions, arbitrary Groups, general account editing, or deletion.
+
+An Administrator cannot deactivate themselves or remove their own Administrator role. No operation may leave the platform without an active Administrator; target User and Administrator Group row locks serialize concurrent changes that could violate this invariant. Inactive users cannot authenticate to obtain new JWTs.
+
+---
 
 ```text
 React Frontend
@@ -380,7 +388,7 @@ The roles are independent:
 * `Editor` creates Posts, manages any active Post, and manages Categories and Tags.
 * `Administrator` is reserved for future user administration and does not inherit Editor access.
 
-A user may belong to multiple groups. Registration does not automatically assign a role, and normal account/Profile APIs cannot modify Group membership.
+A user may belong to multiple groups. Roles may be assigned only through the Administrator user-management API; normal authentication and Profile APIs cannot modify Group membership.
 
 For Post management, the effective rule is:
 
@@ -414,6 +422,7 @@ Django `is_staff` controls Django Admin access only. It does not grant Editor or
 * ✅ Feature 12 — Search
 * ✅ Feature 13 — Media Uploads
 * ✅ Feature 14 — Permissions & Authorization
+* ✅ Feature 15 — User Administration & Role Management
 
 ## Current Authentication State
 
@@ -421,7 +430,7 @@ Authentication module fully implemented.
 
 The application now supports:
 
-- User registration
+- Administrator-controlled user provisioning
 - User login
 - JWT authentication
 - Protected endpoints
@@ -637,10 +646,10 @@ Public Profile responses exclude:
 # Authentication API Flow
 
 ```text
-Register
+Administrator provisions user
     │
     ▼
-User Created
+Active user created
     │
     ▼
 Login
@@ -670,4 +679,4 @@ Profile APIs reuse the existing JWT authentication foundation. Feature 11 does n
 
 ## Next Feature
 
-Feature 15 will introduce Administrator-only User Administration and Role Management APIs. It will reuse the existing JWT lifecycle and `IsAdministrator` permission while adding allowlisted role changes, account activation controls, self-administration safeguards, and auditability.
+Feature 16 will focus on performance optimization while retaining the current closed-registration, JWT, ownership, and role-based authorization model.
