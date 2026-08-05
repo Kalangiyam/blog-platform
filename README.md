@@ -21,9 +21,12 @@ The project demonstrates real-world software engineering practices, including sc
 
 ## Frontend
 
-* React
-* Vite
-* Tailwind CSS
+* React 19
+* Vite 8
+* React Router 8
+* Tailwind CSS 4
+* Axios
+* ESLint
 
 ---
 
@@ -192,6 +195,44 @@ blog-platform/
 
 ---
 
+# Frontend Development
+
+The frontend lives in `frontend/`. Its current source structure is:
+
+```text
+frontend/
+├── src/
+│   ├── config/
+│   ├── layouts/
+│   ├── lib/
+│   ├── pages/
+│   └── routes/
+├── .env.example
+├── package.json
+└── vite.config.js
+```
+
+Install and configure it from that directory:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env.local
+```
+
+`VITE_API_BASE_URL` is required and must be an absolute HTTP(S) URL without embedded credentials. `VITE_` values are public browser configuration, not secrets; `.env.local` is ignored.
+
+```text
+npm run dev      Start the Vite development server
+npm run lint     Run ESLint
+npm run build    Create the production bundle
+npm run preview  Preview the production bundle locally
+```
+
+The current frontend provides the root layout, Home page, wildcard Not Found page, route error boundary, Tailwind styling, environment validation, and a shared Axios client. Authentication and real API requests are not implemented yet.
+
+---
+
 # Current API
 
 Implemented APIs:
@@ -314,6 +355,12 @@ Documentation is updated incrementally as each feature is completed.
 
 # Roadmap
 
+The next milestone is **Frontend Feature 02 — Authentication & Session Architecture**. Remaining frontend development follows it. Backend automated testing and quality assurance remain pending.
+
+Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
+
+Historical roadmap items below are already implemented on the backend:
+
 Upcoming features include:
 
 * Search
@@ -342,7 +389,15 @@ This project emphasizes:
 
 # Current Status
 
-**Current Milestone:** ✅ Feature 11 — User Profiles
+**Authoritative Current Milestone:** ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+
+The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 adds the verified React/Vite foundation, centralized routing, shared layout and pages, validated public environment configuration, Tailwind styling, and a shared Axios client.
+
+Frontend authentication and real API requests are not implemented. The next milestone is **Frontend Feature 02 — Authentication & Session Architecture**. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
+
+The older milestone narrative retained below is historical backend feature context and is superseded by this update.
+
+**Historical Backend Milestone:** ✅ Feature 11 — User Profiles
 
 The blog platform now includes production-ready authentication, Posts, Categories, Tags, taxonomy relationships, and Comments.
 
@@ -407,6 +462,6 @@ Implemented Profile capabilities include:
 * Query optimization using `select_related()`
 * Django Admin integration for Profile management
 
-The next milestone is **Feature 12 — Search**.
+The historical next milestone at that point was **Feature 12 — Search**, which is now complete.
 
-Feature 12 will introduce search capabilities across the platform, enabling users to discover content efficiently while maintaining performance, scalability, and clean API design.
+Feature 12 subsequently introduced search capabilities across the platform while maintaining performance, scalability, and clean API design.

@@ -97,7 +97,7 @@ Examples:
 
 ---
 
-# Current Testing Status (Feature 11)
+# Historical Backend Testing Status (Feature 11)
 
 ## Implemented
 
@@ -908,6 +908,41 @@ Every test should answer at least one of the following questions:
 
 ---
 
+# Frontend Testing and Verification
+
+## Frontend Feature 01 Verification
+
+Frontend Feature 01 currently relies on static, build, configuration, and manual browser verification:
+
+* `npm run lint` verifies source and configuration lint rules.
+* `npm run build` verifies environment loading, module reachability, transforms, Tailwind integration, and production bundling.
+* The Home route, wildcard route, shared header/footer, and client-side Return home navigation were manually verified.
+* A missing `VITE_API_BASE_URL` was verified to fail the Vite build after build-time validation was introduced; restoring configuration allowed lint and build to pass.
+* Browser-runtime validation is implemented to reject missing, malformed, non-HTTP(S), and credential-bearing URLs. During Feature 01, the missing-variable build-time failure was manually verified; the remaining validation branches require automated or dedicated manual tests.
+* Git ignore behavior was verified for `.env.local`, `node_modules/`, and `dist/`.
+* Node `v24.18.0` and npm `11.16.0` were verified during documentation completion.
+* Dependency installation succeeded and npm audit reported zero vulnerabilities at installation time.
+
+No automated React tests were added in Feature 01. Manual checks and successful builds do not provide regression coverage for component behavior.
+
+## Planned Frontend Automated Testing
+
+The following areas are pending and will be introduced with suitable tools only when selected and installed:
+
+* Component rendering, interaction, loading, empty, and error states
+* Custom hook state transitions and cleanup
+* Integration across routes, providers, forms, and shared UI
+* Router index, wildcard, error-boundary, and protected-route behavior
+* API-client configuration, request mapping, cancellation, and error mapping
+* Login, current-user restoration, refresh, expiry, and logout behavior
+* Permission-aware UI and role-aware navigation, while retaining backend enforcement
+* Keyboard, focus, semantic, contrast, and accessible-name checks
+* End-to-end critical user and editorial workflows against a controlled backend
+
+Vitest, React Testing Library, Playwright, and Cypress are not installed. This section does not select or claim any of them.
+
+---
+
 # Tools
 
 The project will primarily use:
@@ -1005,9 +1040,9 @@ The project currently has validated:
 
 The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
 
-## Next Testing Milestone
+## Historical Next Testing Milestone
 
-Feature 12 will introduce Search.
+Feature 12 subsequently introduced Search. The current next frontend milestone is Frontend Feature 02 — Authentication & Session Architecture; automated frontend tooling has not yet been selected or installed.
 
 The next testing scope is expected to include:
 

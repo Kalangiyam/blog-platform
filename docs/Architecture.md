@@ -15,8 +15,8 @@ This project emphasizes production-ready software engineering practices, includi
 - React
 - Vite
 - Tailwind CSS
-- React Router _(planned)_
-- Axios _(planned)_
+- React Router 8
+- Axios
 
 ### Backend
 
@@ -112,6 +112,69 @@ The project follows these engineering principles:
 - Display server responses and validation errors.
 
 The frontend is responsible only for presentation and user interaction. It never contains business rules or permission enforcement.
+
+---
+
+# Frontend Feature 01 Architecture Detail
+
+The browser application is an independent npm project under `frontend/`. React 19 renders the UI, Vite 8 supplies development and production builds, React Router 8 provides Data Mode routing, Tailwind CSS 4 supplies utility styling through its first-party Vite plugin, and Axios defines the future HTTP boundary.
+
+## Application Startup and Route Composition
+
+```text
+frontend/index.html (#root)
+        ↓
+src/main.jsx (CSS, API-client setup, StrictMode)
+        ↓
+App.jsx / RouterProvider
+        ↓
+routes/router.jsx / createBrowserRouter
+        ↓
+RootLayout → Outlet → HomePage or NotFoundPage
+           ↘ RouteErrorPage on route failure
+```
+
+The router is created once at module scope. `/` uses an index child route; `*` renders the custom Not Found page. The root route owns the error boundary. Layout modules own persistent composition, while page modules own route-level content.
+
+## Configuration and Axios Boundary
+
+```text
+.env.local or process environment
+        ↓
+vite.config.js build/config validation
+        ↓
+VITE_API_BASE_URL in browser code
+        ↓
+config/environment.js runtime validation and normalization
+        ↓
+lib/apiClient.js shared Axios instance
+        ↓
+Django REST API (future requests; none in Feature 01)
+```
+
+Both validation boundaries require an absolute HTTP(S) URL and reject embedded credentials. Runtime normalization removes trailing slashes. Vite variables are public browser configuration and must never contain secrets.
+
+The Axios instance centralizes the base URL, 10-second timeout, and `Accept: application/json`. It omits global `Content-Type`, preserving automatic multipart boundaries for future image uploads. JWT interceptors are deferred to Frontend Feature 02.
+
+## Styling and Folder Responsibilities
+
+Tailwind is loaded through `@tailwindcss/vite` and the CSS import. Global CSS owns only base sizing and body margin; JSX uses mobile-first utilities.
+
+```text
+src/config/   Validated browser configuration
+src/layouts/  Shared route composition
+src/lib/      Shared infrastructure clients
+src/pages/    Route-level screens
+src/routes/   Central route objects
+```
+
+Feature-oriented folders will be introduced only when they own real behavior. No Redux, TanStack Query, or global application state exists. Authentication Context and server-state tooling decisions remain deferred.
+
+## Frontend and Backend Security Responsibilities
+
+Frontend code owns presentation, navigation, and controlled error output. The backend remains authoritative for authentication, authorization, validation, visibility, and business rules. Frontend route visibility is not authorization, raw internal route errors are not displayed, and token storage requires a Frontend Feature 02 security decision.
+
+Browser-history routing will require deployment-time SPA fallback to `index.html`. Deployment remains intentionally deferred until backend and frontend development are complete.
 
 ---
 
@@ -1261,7 +1324,9 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 ## Next Feature
 
-- Feature 17 — Deployment & CI/CD
+- Frontend Feature 02 — Authentication & Session Architecture
+
+Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
 ---
 

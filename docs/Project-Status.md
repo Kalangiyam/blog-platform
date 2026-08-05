@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-08-03
+**Last Updated:** 2026-08-05
 
-**Current Milestone:** ✅ Feature 16 — Performance Optimization
+**Current Milestone:** ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 
 ---
 
@@ -37,9 +37,12 @@ The project is designed to follow real-world software engineering practices, emp
 
 ## Frontend
 
-- React
-- Vite
-- Tailwind CSS
+- React 19
+- Vite 8
+- React Router 8
+- Tailwind CSS 4
+- Axios
+- ESLint
 
 ---
 
@@ -1036,6 +1039,46 @@ Measure current API and PostgreSQL behavior and introduce evidence-based perform
 
 ---
 
+## ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+
+### Objective
+
+Establish a validated, maintainable React application foundation without prematurely implementing authentication or API-driven features.
+
+### Completed
+
+* React 19 and Vite 8 application startup through ES modules and Strict Mode
+* React Router 8 Data Mode with one centralized `createBrowserRouter`
+* Nested root layout with shared header, `Outlet`, and footer
+* Home index route, wildcard Not Found route, and route-level error boundary
+* Tailwind CSS 4 through the first-party Vite plugin and minimal global CSS
+* Required `VITE_API_BASE_URL` example, build-time validation, runtime validation, and normalization
+* Absolute HTTP(S)-only configuration with embedded credentials rejected
+* One shared Axios client with a 10-second timeout and JSON Accept header
+* Multipart-safe request defaults with no global `Content-Type`
+* Separate browser and Node.js ESLint environments
+* Successful lint, production build, environment-failure, routing, navigation, and ignore verification
+* ADR-021, Feature Completion Report, and synchronized project documentation
+
+Authentication, token storage, protected routes, and real API requests are not implemented.
+
+---
+
+# Current Frontend Modules
+
+| Area | Current status |
+| --- | --- |
+| Application foundation | `index.html` mounts `main.jsx`; React Strict Mode renders `App`. |
+| Routing | Central Data Mode router with `/`, `*`, nesting, and an error boundary. |
+| Layout | Shared responsive header, main `Outlet`, and footer. |
+| Pages | Home, Not Found, and safe Route Error pages. |
+| Configuration | Build-time and browser-runtime validation of the public API URL. |
+| API client | Shared Axios instance configured; no requests or JWT interceptors yet. |
+| Styling | Tailwind CSS 4 utilities with minimal global base CSS. |
+| Tooling | npm lockfile, Vite, ESLint browser/Node separation, lint/build/preview scripts. |
+
+---
+
 # Current Backend Modules
 
 | Module     | Status                                                             |
@@ -1340,7 +1383,7 @@ No speculative cache, stored search vector, or additional database index was int
 
 ## Planned Tables
 
-No additional database tables are currently planned for Feature 17.
+No additional database table was introduced by Frontend Feature 01. Future schema changes remain requirement-driven.
 
 # Authentication Status
 
@@ -1386,7 +1429,8 @@ Implemented
 | API Specification | ✅ Current | Implemented APIs through Feature 16 |
 | Authentication Flow | ✅ Current | JWT, closed registration, ownership, RBAC, and pagination through Feature 16 |
 | Testing Strategy | ✅ Current | Current testing strategy |
-| Project Status | ✅ Current | Feature 16 complete; Feature 17 next |
+| Project Status | ✅ Current | Frontend Feature 01 complete; Frontend Feature 02 next |
+| Frontend README | ✅ Current | Frontend Feature 01 developer guide |
 
 ---
 
@@ -1411,6 +1455,7 @@ Completed Feature Reports:
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
 - ✅ Feature 16 — Performance Optimization
+- ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 
 ---
 
@@ -1438,6 +1483,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-018 — Role-Based Authorization Architecture
 - ✅ ADR-019 — User Administration and Role Management
 - ✅ ADR-020 — Collection Pagination and Stable Ordering Architecture
+- ✅ ADR-021 — Frontend Foundation and Architecture
 
 ---
 
@@ -1635,6 +1681,23 @@ Verified:
 
 ---
 
+### Frontend Feature 01 Verification
+
+* Node `v24.18.0` and npm `11.16.0` verified during documentation completion
+* Dependencies installed successfully and installation-time npm audit reported zero vulnerabilities
+* ESLint passed
+* Production build passed
+* Missing `VITE_API_BASE_URL` caused the expected build failure after validation was introduced
+* Restored environment configuration allowed lint and build to pass
+* Home and wildcard routes manually verified
+* Shared header and footer manually verified
+* Client-side Return home navigation manually verified
+* `.env.local`, `node_modules`, and `dist` confirmed ignored
+
+No automated frontend tests have been written.
+
+---
+
 ## Automated Testing
 
 Not yet implemented.
@@ -1645,44 +1708,56 @@ Automated pagination, query-count, ordering, visibility, and performance regress
 
 # Pending Features
 
-## Phase 3 — Advanced Features
+## Frontend and Delivery Work
 
-- Feature 17 — Deployment & CI/CD
-- Backend automated testing and quality-assurance phase
-- Frontend development
+* Frontend Feature 02 — Authentication & Session Architecture
+* Remaining frontend features
+* Backend automated testing and quality-assurance phase
+* Deployment and CI/CD
+
+Deployment & CI/CD is intentionally deferred until backend and frontend development are complete.
 
 ---
 
 # Current Milestone
 
-✅ Feature 16 — Performance Optimization
+✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 
-Status: **Architecture, implementation, manual testing, performance verification, ADR, Feature Completion Report, and Project Status update completed.**
+Status: Architecture, implementation, linting, production-build verification, manual routing verification, environment-validation verification, ADR, Feature Completion Report, and Project Status update completed.
 
-Feature 16 is complete. Automated regression testing remains deferred to the planned backend testing phase.
+Frontend Feature 01 is complete. Authentication and real API requests are not implemented. Automated frontend and backend regression testing remains pending.
+
+Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
 ---
 
 # Next Milestone
 
-## Feature 17 — Deployment & CI/CD
+## Frontend Feature 02 — Authentication & Session Architecture
 
 ### Objective
 
-Prepare the existing application for repeatable deployment and continuous integration without changing established business behavior.
+Introduce browser authentication and session behavior while preserving the backend as the authority for identity, permissions, and data access.
 
 ### Planned Areas
 
-- Review the existing roadmap and production requirements
-- Define environment and deployment configuration
-- Establish a repeatable build and deployment workflow
-- Introduce continuous-integration checks
-- Plan static-file, media, database-migration, and secret handling
-- Define deployment verification and rollback expectations
+* Login UI
+* Authentication context
+* Current-user state
+* JWT access token strategy
+* Refresh token strategy
+* Token storage decision
+* Axios authentication integration
+* Logout
+* Protected routes
+* Role-aware frontend navigation
+* Authentication error handling
+* Security review
+* Manual and automated testing strategy
 
 ### Engineering Rule
 
-Deployment architecture and provider-specific decisions remain subject to Feature 17 design and verification.
+None of these areas is implemented yet. Token handling requires an explicit security decision before authentication integration.
 
 ---
 
@@ -1810,6 +1885,18 @@ The project currently follows these key architectural decisions:
 
 Detailed rationale for each decision is documented in the project's ADRs.
 
+Frontend Feature 01 additionally accepts:
+
+* React with Vite, JavaScript, npm, and a committed lockfile
+* Tailwind CSS through the first-party Vite integration and minimal global CSS
+* React Router Data Mode with centralized route objects, nested layout, wildcard page, and route error boundary
+* One shared Axios instance with environment base URL, 10-second timeout, and no global `Content-Type`
+* Required build-time and runtime validation of public `VITE_API_BASE_URL` configuration
+* No Redux, TanStack Query, or global state before demonstrated requirements
+* Authentication Context, JWT interceptors, and token storage deferred to Frontend Feature 02
+* Backend-authoritative security; frontend route visibility is never authorization
+* Small responsibility-based folders now, with feature modules introduced only for real behavior
+
 ---
 
 # Development Workflow
@@ -1832,4 +1919,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Feature 17 — Deployment & CI/CD
+**Starting Point:** Frontend Feature 02 — Authentication & Session Architecture
