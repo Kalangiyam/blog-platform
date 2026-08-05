@@ -4,7 +4,7 @@
 
 Testing is a core part of the Blog Platform. Every major feature includes a defined automated testing strategy and undergoes manual verification until the automated test suite is implemented. This approach helps verify functionality, prevent regressions, and ensure long-term maintainability.
 
-Testing will be introduced incrementally alongside feature development rather than postponed until the end of the project.
+Testing is being introduced incrementally alongside feature development rather than postponed until the end of the project.
 
 ---
 
@@ -101,11 +101,11 @@ Examples:
 
 ## Implemented
 
-An automated test suite has not yet been created.
+At the Feature 11 milestone, an automated backend test suite had not yet been created.
 
-However, the Authentication, Posts, Categories, Tags, Comments, and Profiles modules have been comprehensively verified through manual API testing during development.
+However, the Authentication, Posts, Categories, Tags, Comments, and Profiles modules had been comprehensively verified through manual API testing during development.
 
-Manual testing currently validates:
+Manual testing at that milestone validated:
 
 - Authentication workflows
 - Request validation
@@ -181,31 +181,36 @@ Manual testing currently validates:
 - User deletion cascading to Profile
 - Profile query optimization using `select_related("user")`
 
-Automated tests will be introduced incrementally in future features.
+At that milestone, automated tests remained planned for incremental introduction in future features.
 
 ---
 
-# Planned Automated Tests
+# Backend Automated Testing Plan
 
 ## Authentication Module
 
-The following tests will be added when the testing phase begins:
+The broader backend suite remains planned. Its authentication scope follows the current closed-registration contract:
 
 ### User Authentication Tests
 
-- User registration
+- Administrator-controlled user provisioning
 - Duplicate username validation
 - Duplicate email validation
 - Password confirmation validation
 - Password strength validation
+- Application-role allowlist and replacement validation
 - Successful login
 - Invalid login credentials
+- Successful-login `last_login` update
 - Protected endpoint authentication
 - Missing access token
 - Invalid access token
+- Current-user identity and managed-role response
 - Logout
 - Refresh token blacklisting
-- Token refresh
+- Refresh token rotation and blacklist-after-rotation
+- Token verification
+- Development CORS allowlist and credential-free behavior
 
 ## Posts Module
 
@@ -320,10 +325,10 @@ The following automated tests are planned for the Categories application:
 
 - Anonymous list access
 - Anonymous retrieve access
-- Staff create access
-- Non-staff create denial
-- Staff update access
-- Non-staff update denial
+- Editor create access
+- Non-Editor create denial
+- Editor update access
+- Non-Editor update denial
 
 ---
 
@@ -347,7 +352,7 @@ The following automated tests are planned for the Profiles application.
 * Create a Profile automatically when a new User is created
 * Verify updating a User does not create another Profile
 * Verify exactly one Profile exists per User
-* Verify Profile creation through the registration flow
+* Verify Profile creation through the Administrator user-provisioning flow
 * Document that `bulk_create()` does not trigger `post_save` signals
 
 ### Data Migration Tests
@@ -523,7 +528,7 @@ As new features are completed, testing coverage will expand to include:
 - Update category
 - Duplicate name validation
 - Automatic slug generation
-- Staff-only management
+- Editor-only management
 - Active category filtering
 - Category assignment to posts
 - Category relationship validation
@@ -569,10 +574,10 @@ The following automated tests are planned for the Tags application:
 
 - Anonymous list access
 - Anonymous retrieve access
-- Staff create access
-- Non-staff create denial
-- Staff update access
-- Non-staff update denial
+- Editor create access
+- Non-Editor create denial
+- Editor update access
+- Non-Editor update denial
 
 ### Relationship Tests
 
@@ -701,7 +706,7 @@ The following automated tests are planned for the Comments application.
 ## Permissions
 
 - Anonymous access
-- Writer permissions
+- Author permissions
 - Editor permissions
 - Admin permissions
 - Object-level ownership checks
@@ -710,7 +715,7 @@ The following automated tests are planned for the Comments application.
 
 # Manual Verification Completed
 
-During Features 03 and 04, the following scenarios were manually verified using API requests:
+During Features 03 and 04, the following scenarios were manually verified using API requests. This is a historical record: the public registration flow listed below was removed by Feature 15 and replaced by Administrator-controlled user provisioning.
 
 ### Authentication
 
@@ -783,8 +788,8 @@ During Features 03 and 04, the following scenarios were manually verified using 
 - List active categories
 - Retrieve category by slug
 - Update category
-- Prevent non-staff users from creating categories
-- Prevent non-staff users from updating categories
+- Prevent non-Editors from creating categories
+- Prevent non-Editors from updating categories
 - Verify audit fields (`created_by`, `updated_by`)
 - Verify inactive categories are excluded by the default manager
 
@@ -796,8 +801,8 @@ During Features 03 and 04, the following scenarios were manually verified using 
 - List active tags
 - Retrieve tag by slug
 - Update tag
-- Prevent non-staff users from creating tags
-- Prevent non-staff users from updating tags
+- Prevent non-Editors from creating tags
+- Prevent non-Editors from updating tags
 - Verify audit fields (`created_by`, `updated_by`)
 - Verify inactive tags are excluded by the default manager
 
@@ -912,7 +917,7 @@ Every test should answer at least one of the following questions:
 
 ## Frontend Feature 01 Verification
 
-Frontend Feature 01 currently relies on static, build, configuration, and manual browser verification:
+Frontend Feature 01 relied on static, build, configuration, and manual browser verification:
 
 * `npm run lint` verifies source and configuration lint rules.
 * `npm run build` verifies environment loading, module reachability, transforms, Tailwind integration, and production bundling.
@@ -923,34 +928,76 @@ Frontend Feature 01 currently relies on static, build, configuration, and manual
 * Node `v24.18.0` and npm `11.16.0` were verified during documentation completion.
 * Dependency installation succeeded and npm audit reported zero vulnerabilities at installation time.
 
-No automated React tests were added in Feature 01. Manual checks and successful builds do not provide regression coverage for component behavior.
+No automated React tests were added during Feature 01 itself. Frontend Feature 02 subsequently introduced the automated frontend suite described below.
 
-## Planned Frontend Automated Testing
+## Frontend Feature 02 Automated Testing
 
-The following areas are pending and will be introduced with suitable tools only when selected and installed:
+Frontend Feature 02 establishes a repeatable unit and integration suite with:
 
-* Component rendering, interaction, loading, empty, and error states
-* Custom hook state transitions and cleanup
-* Integration across routes, providers, forms, and shared UI
-* Router index, wildcard, error-boundary, and protected-route behavior
-* API-client configuration, request mapping, cancellation, and error mapping
-* Login, current-user restoration, refresh, expiry, and logout behavior
-* Permission-aware UI and role-aware navigation, while retaining backend enforcement
-* Keyboard, focus, semantic, contrast, and accessible-name checks
-* End-to-end critical user and editorial workflows against a controlled backend
+* Vitest 4 as the test runner
+* jsdom as the browser-like test environment
+* React Testing Library and `@testing-library/jest-dom` for rendered behavior and DOM assertions
+* `@testing-library/user-event` for user interactions
+* Axios Mock Adapter for deterministic API-client and interceptor behavior
 
-Vitest, React Testing Library, Playwright, and Cypress are not installed. This section does not select or claim any of them.
+The final Frontend Feature 02 suite contains 12 test files and 135 passing tests. It covers:
+
+* Memory-only access-token storage, refresh-token persistence, cleanup, and unavailable-storage failure handling
+* Exact authentication request/response adaptation for login, `/me`, logout, and rotating refresh
+* Trusted-origin and API-path Authorization-header attachment without overwriting an explicit header
+* Single-flight refresh for concurrent eligible `401` responses, one-retry limits, endpoint exclusions, and session invalidation
+* Startup restoration, including refresh followed by authoritative `/me`, failure settlement, and React Strict Mode remount behavior
+* `AuthProvider` login, logout, role helpers, state transitions, lifecycle cleanup, and absence of token values from context
+* Normalized validation, invalid-credential, token, network, timeout, storage, and server errors
+* Safe return paths, authentication guards, role-aware guards, login form behavior, and authentication-aware navigation
+* Root layout integration with the authentication provider and navigation
+
+These tests isolate frontend behavior with mocks; they do not claim to replace real backend integration testing. Playwright and Cypress are not installed. Broader end-to-end editorial workflows remain a future testing layer.
+
+## Frontend Feature 02 Real-Stack Verification
+
+The completed implementation was also exercised against the running Django backend and Vite frontend through Microsoft Edge controlled with the Chrome DevTools Protocol. The sanitized browser run passed 35 of 35 checks across login, `/me` identity and managed roles, protected navigation, refresh rotation, concurrent-request recovery, reload restoration, invalid-session handling, logout, and post-logout behavior.
+
+Targeted backend integration checks additionally confirmed:
+
+* CORS headers are returned for the allowed `http://localhost:5173` origin on `/api/` requests.
+* A non-allowlisted origin does not receive an `Access-Control-Allow-Origin` header.
+* Credentialed CORS is disabled and no wildcard origin is configured.
+* A successful login advances `User.last_login`; rejected credentials do not perform a successful-login update.
+
+The real-stack checks complement the mocked suite by validating browser-to-backend interoperability, while the automated Vitest suite supplies deterministic regression coverage for edge cases and concurrency.
+
+## Final Verification Result
+
+The final repository verification completed successfully:
+
+* Frontend tests: 12 of 12 files and 135 of 135 tests passed.
+* Frontend ESLint checks passed.
+* The Vite production build passed.
+* Django's system check passed.
+* Django's dry-run migration check reported no model/migration drift.
+* Python dependency consistency (`pip check`) passed.
 
 ---
 
 # Tools
 
-The project will primarily use:
+Backend verification uses:
 
 - Django Test Framework
 - Django REST Framework APITestCase
 - Python unittest (via Django)
 - Django Test Client
+
+Frontend Feature 02 verification uses:
+
+- Vitest 4
+- jsdom
+- React Testing Library
+- `@testing-library/jest-dom`
+- `@testing-library/user-event`
+- Axios Mock Adapter
+- Microsoft Edge with the Chrome DevTools Protocol for the real-stack browser run
 
 Additional tools may be introduced later if project requirements evolve.
 
@@ -971,12 +1018,19 @@ Additional tools may be introduced later if project requirements evolve.
 - ✅ Feature 09 — Post–Tag Relationship
 - ✅ Feature 10 — Comments
 - ✅ Feature 11 — User Profiles
+- ✅ Feature 12 — Search
+- ✅ Feature 13 — Media Uploads
+- ✅ Feature 14 — Permissions & Authorization
+- ✅ Feature 15 — User Administration & Role Management
+- ✅ Feature 16 — Performance Optimization
+- ✅ Frontend Feature 01 — React Foundation
+- ✅ Frontend Feature 02 — Authentication & Session Architecture
 
-All ownership and permissions will rely on the authenticated user (`request.user`) established in Feature 03.
+All ownership and permissions rely on the authenticated user (`request.user`) established in Feature 03.
 
 ## Testing Progress
 
-Automated testing has not yet been implemented.
+Automated frontend authentication testing is implemented: the Frontend Feature 02 suite has 12 test files and 135 passing tests. The 35-of-35 real-stack Edge run and targeted CORS and `last_login` checks provide integration evidence. A broader automated backend test phase remains planned.
 
 Authentication, Posts, Categories, Tags, Comments, Profiles, and all implemented cross-domain relationships have been comprehensively verified through manual API testing.
 
@@ -993,12 +1047,12 @@ The project currently has validated:
 - Request validation
 - Backend workflow validation
 - Category CRUD operations
-- Staff-only category management
+- Editor-only category management
 - Automatic slug generation
 - Duplicate category name validation
 - Active category filtering
 * Tag CRUD operations
-* Staff-only tag management
+* Editor-only tag management
 * Automatic tag slug generation
 * Duplicate tag name validation
 * Active tag filtering
@@ -1038,13 +1092,13 @@ The project currently has validated:
 - User–Profile cascade deletion
 - Profile query optimization
 
-The testing strategy is defined, and automated testing will be introduced incrementally as the project evolves.
+The testing strategy is defined, and automated coverage is being introduced incrementally as the project evolves.
 
 ## Historical Next Testing Milestone
 
-Feature 12 subsequently introduced Search. The current next frontend milestone is Frontend Feature 02 — Authentication & Session Architecture; automated frontend tooling has not yet been selected or installed.
+Feature 12 subsequently introduced Search. At the time this historical milestone was written, Frontend Feature 02 — Authentication & Session Architecture was next and its testing tools had not yet been selected. Frontend Feature 02 is now complete with the Vitest-based suite and real-stack verification documented above.
 
-The next testing scope is expected to include:
+The historical next testing scope was expected to include:
 
 * Search query validation
 * Empty search query behavior

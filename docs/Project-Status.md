@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+**Current Milestone:** ✅ Frontend Feature 02 — Authentication & Session Architecture
 
 ---
 
@@ -43,6 +43,9 @@ The project is designed to follow real-world software engineering practices, emp
 - Tailwind CSS 4
 - Axios
 - ESLint
+- Vitest 4
+- React Testing Library
+- jsdom
 
 ---
 
@@ -1060,7 +1063,32 @@ Establish a validated, maintainable React application foundation without prematu
 * Successful lint, production build, environment-failure, routing, navigation, and ignore verification
 * ADR-021, Feature Completion Report, and synchronized project documentation
 
-Authentication, token storage, protected routes, and real API requests are not implemented.
+At the completion of Frontend Feature 01, authentication, token storage, protected routes, and real API requests had not yet been implemented. Frontend Feature 02 supersedes that historical state.
+
+---
+
+## ✅ Frontend Feature 02 — Authentication & Session Architecture
+
+### Objective
+
+Integrate the React application with the existing Django REST Framework and Simple JWT authentication APIs without weakening backend authority.
+
+### Completed
+
+* Backend prerequisites: managed Django Group roles on `/api/auth/me/`, development CORS for `http://localhost:5173`, and successful-login `last_login` updates
+* Central `checking`, `authenticated`, and `unauthenticated` AuthProvider state machine
+* Module-memory access token and namespaced localStorage refresh token (`blog-platform.auth.refresh-token`)
+* Startup restoration through one rotating refresh followed by authoritative `/me/`
+* Shared Axios bearer attachment, one in-tab refresh promise, one retry per request, authentication-endpoint exclusions, and provider invalidation
+* Login form, safe return paths, protected and anonymous-only guards, role guard foundation, controlled 403 page, and responsive role-aware navigation
+* Local-first logout that clears browser state even when server revocation fails
+* Safe authentication-specific error normalization with no raw Axios objects, stack traces, or token values exposed to UI code
+* Vitest, jsdom, React Testing Library, jest-dom, user-event, and Axios Mock Adapter testing foundation
+* 12 automated test files with 135 tests covering storage, APIs, restoration, interceptors, guards, login, navigation, and security-sensitive negative paths
+* 35/35 real-stack browser checks against live Vite and Django, including rotation, blacklisting, concurrent refresh, five role combinations, backend permission enforcement, CORS, logout failure, and restoration outage
+* ADR-022, Feature Completion Report, and synchronized project documentation
+
+Frontend role visibility is a user-experience control only. Django REST Framework permissions remain authoritative.
 
 ---
 
@@ -1069,13 +1097,16 @@ Authentication, token storage, protected routes, and real API requests are not i
 | Area | Current status |
 | --- | --- |
 | Application foundation | `index.html` mounts `main.jsx`; React Strict Mode renders `App`. |
-| Routing | Central Data Mode router with `/`, `*`, nesting, and an error boundary. |
-| Layout | Shared responsive header, main `Outlet`, and footer. |
-| Pages | Home, Not Found, and safe Route Error pages. |
+| Routing | Central Data Mode router with `/`, `/login`, protected `/unauthorized`, `*`, pathless authentication guards, safe return paths, and an error boundary. |
+| Layout | Shared responsive header, authentication-aware navigation, main `Outlet`, and footer. |
+| Authentication state | AuthProvider exposes authoritative current-user state, three lifecycle states, login/logout actions, safe errors, and independent role helpers. |
+| Token storage | Access token in module memory only; rotating refresh token under one namespaced localStorage key; no persisted user data. |
+| Pages | Home, Login, controlled Unauthorized, Not Found, and safe Route Error pages. |
 | Configuration | Build-time and browser-runtime validation of the public API URL. |
-| API client | Shared Axios instance configured; no requests or JWT interceptors yet. |
+| API integration | Login, `/me`, refresh, and logout functions plus a shared Axios client with bearer attachment, retry-once behavior, and single-flight refresh. |
+| Route and role UX | Protected, anonymous-only, and any-role guard foundations; `/me` roles drive independent badges while backend permissions remain authoritative. |
 | Styling | Tailwind CSS 4 utilities with minimal global base CSS. |
-| Tooling | npm lockfile, Vite, ESLint browser/Node separation, lint/build/preview scripts. |
+| Tooling | npm lockfile, Vite, ESLint, Vitest, jsdom, React Testing Library, Axios Mock Adapter, and lint/build/test scripts. |
 
 ---
 
@@ -1105,6 +1136,8 @@ Implemented
 - POST `/api/auth/logout/`
 - POST `/api/auth/token/refresh/`
 - POST `/api/auth/token/verify/`
+
+Public registration is closed; `/api/auth/register/` was removed in Feature 15. Login returns JSON access/refresh tokens, `/me/` returns the authoritative filtered application roles, refresh rotates and blacklists the previous refresh token, and logout requires both the bearer access token and submitted refresh token.
 
 ---
 
@@ -1383,7 +1416,7 @@ No speculative cache, stored search vector, or additional database index was int
 
 ## Planned Tables
 
-No additional database table was introduced by Frontend Feature 01. Future schema changes remain requirement-driven.
+No additional database table was introduced by Frontend Features 01 or 02. Frontend Feature 02 uses Simple JWT's existing outstanding-token and blacklist tables; it introduced no business-schema migration.
 
 # Authentication Status
 
@@ -1405,8 +1438,16 @@ Implemented
 - JWT Authentication
 - JWT Access Token
 - JWT Refresh Token
-- Refresh Token Blacklisting
-- Current User Endpoint
+- Seven-day refresh lifetime with rotation and old-token blacklisting
+- Database-backed outstanding-token and blacklist state
+- Current User Endpoint with filtered `Author`, `Editor`, and `Administrator` Group roles
+- Successful-login `last_login` update
+- React AuthProvider state machine and startup restoration
+- Memory-only access token and namespaced localStorage refresh token
+- Shared Axios bearer attachment, single-flight refresh, and retry-once coordination
+- Local-first logout and safe authentication error normalization
+- Protected/anonymous route guards and independent role-aware UX
+- Development CORS for `http://localhost:5173` with credentials disabled
 
 ## Planned
 
@@ -1424,13 +1465,13 @@ Implemented
 | Document | Status | Coverage |
 | -------- | ------ | -------- |
 | README | ✅ Current | Project overview |
-| Architecture | ✅ Current | Features 01–16 |
+| Architecture | ✅ Current | Backend Features 01–16 and Frontend Features 01–02 |
 | Database Design | ✅ Current | Features 01–16 |
-| API Specification | ✅ Current | Implemented APIs through Feature 16 |
-| Authentication Flow | ✅ Current | JWT, closed registration, ownership, RBAC, and pagination through Feature 16 |
-| Testing Strategy | ✅ Current | Current testing strategy |
-| Project Status | ✅ Current | Frontend Feature 01 complete; Frontend Feature 02 next |
-| Frontend README | ✅ Current | Frontend Feature 01 developer guide |
+| API Specification | ✅ Current | Exact authentication contracts, rotated refresh, `/me` roles, and implemented APIs through Feature 16 |
+| Authentication Flow | ✅ Current | Backend JWT lifecycle and implemented React session architecture |
+| Testing Strategy | ✅ Current | Backend manual strategy and Frontend Feature 02 automated/manual coverage |
+| Project Status | ✅ Current | Frontend Feature 02 complete; next milestone awaits roadmap selection |
+| Frontend README | ✅ Current | Frontend foundation and authentication developer guide |
 
 ---
 
@@ -1456,6 +1497,7 @@ Completed Feature Reports:
 - ✅ Feature 15 — User Administration & Role Management
 - ✅ Feature 16 — Performance Optimization
 - ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+- ✅ Frontend Feature 02 — Authentication & Session Architecture
 
 ---
 
@@ -1484,6 +1526,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-019 — User Administration and Role Management
 - ✅ ADR-020 — Collection Pagination and Stable Ordering Architecture
 - ✅ ADR-021 — Frontend Foundation and Architecture
+- ✅ ADR-022 — Frontend Authentication and Session Architecture
 
 ---
 
@@ -1694,15 +1737,28 @@ Verified:
 * Client-side Return home navigation manually verified
 * `.env.local`, `node_modules`, and `dist` confirmed ignored
 
-No automated frontend tests have been written.
+No automated frontend tests were written during Frontend Feature 01 itself; the testing foundation arrived with Frontend Feature 02.
+
+---
+
+### Frontend Feature 02 Verification
+
+* Vitest 4 with jsdom, React Testing Library, jest-dom, user-event, and Axios Mock Adapter
+* 12 deterministic test files and 135 tests covering token storage, authentication APIs, error normalization, session restoration, AuthProvider behavior, Axios refresh coordination, invalidation, route guards, safe return paths, login, and navigation
+* Strict Mode restoration and concurrent `401` single-flight coverage
+* Negative security coverage for unavailable storage, external request origins, unsafe redirects, invalid/blacklisted refresh tokens, retry loops, and token exposure
+* Real Vite frontend at `http://localhost:5173` against the live Django API at `http://127.0.0.1:8000/api`
+* 35/35 sanitized headless Chromium checks across clean startup, validation, login, reload/rotation, controlled expired access, three concurrent protected requests, invalid and blacklisted refresh tokens, logout, failure recovery, roles, backend permission enforcement, responsive layout, and security inspection
+* Development CORS preflight allowed the Vite origin, allowed authorization/content-type headers, omitted credential support, and omitted `Access-Control-Allow-Origin` for an unapproved origin
+* Successful temporary-account logins updated `last_login`; the inactive account remained unchanged
+* One real-stack defect corrected: the anonymous-only guard now preserves a safe attempted path when authentication completes; two route regression tests cover safe and unsafe state
+* Temporary accounts, outstanding tokens, blacklisted tokens, browser profile, and verification processes were removed after the run
 
 ---
 
 ## Automated Testing
 
-Not yet implemented.
-
-Automated pagination, query-count, ordering, visibility, and performance regression tests are deferred to the planned backend testing and quality-assurance phase.
+Frontend authentication automation is implemented: 12 files and 135 tests. Backend pagination, query-count, ordering, visibility, and performance regression automation remains deferred to the planned backend quality-assurance phase.
 
 ---
 
@@ -1710,7 +1766,6 @@ Automated pagination, query-count, ordering, visibility, and performance regress
 
 ## Frontend and Delivery Work
 
-* Frontend Feature 02 — Authentication & Session Architecture
 * Remaining frontend features
 * Backend automated testing and quality-assurance phase
 * Deployment and CI/CD
@@ -1721,43 +1776,41 @@ Deployment & CI/CD is intentionally deferred until backend and frontend developm
 
 # Current Milestone
 
-✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+✅ Frontend Feature 02 — Authentication & Session Architecture
 
-Status: Architecture, implementation, linting, production-build verification, manual routing verification, environment-validation verification, ADR, Feature Completion Report, and Project Status update completed.
+Status: Backend prerequisites, browser authentication architecture, UI integration, linting, production build, 135 automated tests, dependency audit, 35/35 real-stack browser checks, CORS verification, ADR, Feature Completion Report, and synchronized documentation completed.
 
-Frontend Feature 01 is complete. Authentication and real API requests are not implemented. Automated frontend and backend regression testing remains pending.
+Frontend Feature 02 is complete. Backend automated regression testing and the remaining product frontend remain pending.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
 ---
 
+# Current Project Status
+
+The backend domain/API foundation through Feature 16 is complete. Frontend Features 01 and 02 now provide the React/Vite foundation and a verified authentication/session layer. The application can authenticate against the real Django API, restore and rotate a browser session, load managed roles from `/me/`, guard routes, and clear local state safely on logout or session invalidation.
+
+No business frontend module beyond authentication is claimed. Backend automated regression coverage, the remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
+
+---
+
 # Next Milestone
 
-## Frontend Feature 02 — Authentication & Session Architecture
+## Pending roadmap selection
 
 ### Objective
 
-Introduce browser authentication and session behavior while preserving the backend as the authority for identity, permissions, and data access.
+Select the next frontend feature from the project roadmap after review of Frontend Feature 02. No Frontend Feature 03 scope is assumed by this status document.
 
 ### Planned Areas
 
-* Login UI
-* Authentication context
-* Current-user state
-* JWT access token strategy
-* Refresh token strategy
-* Token storage decision
-* Axios authentication integration
-* Logout
-* Protected routes
-* Role-aware frontend navigation
-* Authentication error handling
-* Security review
-* Manual and automated testing strategy
+* Review the completed authentication/session architecture and known limitations
+* Choose the next user-facing module from the maintained frontend roadmap
+* Define its backend contract, authorization boundary, loading/error behavior, and testing scope before implementation
 
 ### Engineering Rule
 
-None of these areas is implemented yet. Token handling requires an explicit security decision before authentication integration.
+Do not infer a business feature or add speculative routes until the roadmap selection and API contract are explicit.
 
 ---
 
@@ -1893,9 +1946,22 @@ Frontend Feature 01 additionally accepts:
 * One shared Axios instance with environment base URL, 10-second timeout, and no global `Content-Type`
 * Required build-time and runtime validation of public `VITE_API_BASE_URL` configuration
 * No Redux, TanStack Query, or global state before demonstrated requirements
-* Authentication Context, JWT interceptors, and token storage deferred to Frontend Feature 02
+* Authentication Context, JWT interceptors, and token storage were intentionally deferred to Frontend Feature 02 at that milestone
 * Backend-authoritative security; frontend route visibility is never authorization
 * Small responsibility-based folders now, with feature modules introduced only for real behavior
+
+Frontend Feature 02 additionally accepts:
+
+* Access tokens remain in module memory; only the rotating refresh token uses the namespaced `blog-platform.auth.refresh-token` localStorage key
+* `/api/auth/me/` is the sole frontend authority for current identity and application roles; JWT role claims are not used
+* One Strict Mode-safe restoration promise and one in-tab interceptor refresh promise coordinate rotation without duplicate use
+* Login, logout, refresh, and verify requests, explicit Authorization requests, and retried requests are excluded from automatic refresh as appropriate
+* A framework-independent invalidation bridge keeps Axios infrastructure free of React and navigation behavior
+* Local logout is authoritative for browser state even when backend blacklisting cannot be confirmed
+* Protected and role-aware frontend controls improve UX only; backend permissions remain authoritative
+* Development CORS permits only `http://localhost:5173`, scopes headers to `/api/`, and keeps credentials disabled
+* The accepted storage split fits the current JSON-token backend but retains localStorage XSS exposure; HttpOnly refresh cookies would be stronger if the backend contract changes
+* Cross-tab refresh rotation, lost refresh-response ambiguity, and failed revocation while the backend is unavailable or the access token is expired remain documented limitations
 
 ---
 
@@ -1919,4 +1985,4 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Frontend Feature 02 — Authentication & Session Architecture
+**Starting Point:** Review the completed Frontend Feature 02 report and select the next item from the maintained frontend roadmap. No next feature is assumed here.

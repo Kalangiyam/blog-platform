@@ -16,8 +16,8 @@ The project demonstrates real-world software engineering practices, including sc
 * JWT Authentication (Simple JWT)
 * Custom User Model
 * Email-based Authentication
-* Role-Based Permissions (Planned)
-* django-guardian (Planned)
+* Django Group-Based Application Roles
+* Backend-Enforced Role and Ownership Permissions
 
 ## Frontend
 
@@ -27,6 +27,8 @@ The project demonstrates real-world software engineering practices, including sc
 * Tailwind CSS 4
 * Axios
 * ESLint
+* Vitest
+* React Testing Library
 
 ---
 
@@ -69,6 +71,11 @@ The project currently includes:
 * Protected API Endpoints
 * Refresh Token Blacklisting
 * Current User Endpoint (`/api/auth/me/`)
+* Application roles from Django Groups through `/api/auth/me/`
+* Frontend session restoration and automatic access-token refresh
+* Frontend route guards and role-aware user experience
+
+The React client keeps the access token in module memory and persists only the refresh token under the namespaced localStorage key `blog-platform.auth.refresh-token`. The backend remains the final authority for authentication and authorization; frontend guards and role visibility are user-experience controls only.
 
 # Current Capabilities
 
@@ -76,6 +83,11 @@ The platform currently supports:
 
 * JWT-based authentication
 * Email-based login
+* Three-state frontend authentication (`checking`, `authenticated`, and `unauthenticated`)
+* Login, browser-session restoration, logout, and safe authentication errors
+* Single-flight refresh-token rotation and one-time Axios interceptor installation
+* Safe protected, anonymous-only, and role-aware route guards
+* Current-user and independent application-role navigation
 * Draft post creation
 * Public listing of published posts
 * Slug-based post retrieval
@@ -147,6 +159,13 @@ The platform currently supports:
 * ✅ Feature 09 — Post–Tag Relationship
 * ✅ Feature 10 — Comments
 * ✅ Feature 11 — User Profiles
+* ✅ Feature 12 — Search
+* ✅ Feature 13 — Media Uploads
+* ✅ Feature 14 — Permissions & Authorization
+* ✅ Feature 15 — User Administration & Role Management
+* ✅ Feature 16 — Performance Optimization
+* ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+* ✅ Frontend Feature 02 — Authentication & Session Architecture
 
 ---
 
@@ -183,8 +202,8 @@ blog-platform/
 ├── frontend/
 │
 ├── docs/
-│   ├── adr/
-│   ├── features/
+│   ├── ADR/
+│   ├── feature/
 │   ├── API-Specification.md
 │   ├── Authentication-Flow.md
 │   ├── Testing-Strategy.md
@@ -203,10 +222,21 @@ The frontend lives in `frontend/`. Its current source structure is:
 frontend/
 ├── src/
 │   ├── config/
+│   ├── features/
+│   │   └── auth/
+│   │       ├── api/
+│   │       ├── components/
+│   │       ├── context/
+│   │       ├── events/
+│   │       ├── hooks/
+│   │       ├── pages/
+│   │       ├── storage/
+│   │       └── utils/
 │   ├── layouts/
 │   ├── lib/
 │   ├── pages/
-│   └── routes/
+│   ├── routes/
+│   └── test/
 ├── .env.example
 ├── package.json
 └── vite.config.js
@@ -226,10 +256,29 @@ Copy-Item .env.example .env.local
 npm run dev      Start the Vite development server
 npm run lint     Run ESLint
 npm run build    Create the production bundle
+npm run test     Run the Vitest suite once
+npm run test:watch  Run Vitest in watch mode
 npm run preview  Preview the production bundle locally
 ```
 
-The current frontend provides the root layout, Home page, wildcard Not Found page, route error boundary, Tailwind styling, environment validation, and a shared Axios client. Authentication and real API requests are not implemented yet.
+The current frontend preserves the Feature 01 foundation and adds the completed Frontend Feature 02 authentication architecture: AuthProvider state, browser-session restoration, centralized token storage, normalized errors, one-time Axios interceptors, single-flight refresh coordination, session invalidation, safe route guards, login, logout, and role-aware account navigation.
+
+Authentication follows these flows:
+
+```text
+Login:   POST /auth/login/ -> store access in memory and refresh in localStorage -> GET /auth/me/
+Reload:  read refresh -> POST /auth/token/refresh/ -> replace both rotated tokens -> GET /auth/me/
+Request: attach in-memory bearer token -> eligible 401 -> one shared refresh -> retry once
+Logout:  POST /auth/logout/ with bearer and refresh -> always clear local authentication state
+```
+
+`/auth/me/` is authoritative for the current user and the independent `Author`, `Editor`, and `Administrator` roles. The nested login user is not used for role decisions, and roles are not decoded from JWT claims.
+
+Development CORS permits only `http://localhost:5173` for `/api/` requests. Credentials remain disabled, no wildcard origin is enabled, and production inherits an empty CORS origin allowlist.
+
+The frontend suite currently contains 12 test files with 135 passing tests. A real frontend/backend authentication matrix also passed 35 of 35 checks.
+
+Known limitations include localStorage refresh-token exposure if script execution is compromised, no cross-tab refresh-rotation coordination, ambiguity when a rotated refresh response is lost, and incomplete server revocation when logout cannot reach the backend or lacks a usable access token. The role guard and role helpers are implemented, but no business-domain role-protected route is mounted yet.
 
 ---
 
@@ -240,13 +289,16 @@ Implemented APIs:
 ### Authentication
 
 ```text
-POST   /api/auth/register/
 POST   /api/auth/login/
 GET    /api/auth/me/
 POST   /api/auth/logout/
 POST   /api/auth/token/refresh/
 POST   /api/auth/token/verify/
 ```
+
+`POST /api/auth/register/` was removed. User creation is administrator-controlled.
+
+Login accepts only `email` and `password`, returns `access`, `refresh`, and a nested basic user, and updates `last_login`. `/api/auth/me/` returns the authoritative current-user fields plus application-managed role names. Refresh accepts the current `refresh` token and returns both a replacement `access` and rotated `refresh` token. Logout requires the bearer access token and the current refresh token, then blacklists that refresh token when the backend request succeeds.
 ### Posts
 
 ```text
@@ -355,7 +407,7 @@ Documentation is updated incrementally as each feature is completed.
 
 # Roadmap
 
-The next milestone is **Frontend Feature 02 — Authentication & Session Architecture**. Remaining frontend development follows it. Backend automated testing and quality assurance remain pending.
+Frontend Feature 02 — Authentication & Session Architecture is complete. The next frontend milestone is pending roadmap selection.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
@@ -389,11 +441,11 @@ This project emphasizes:
 
 # Current Status
 
-**Authoritative Current Milestone:** ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+**Authoritative Current Milestone:** ✅ Frontend Feature 02 — Authentication & Session Architecture
 
-The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 adds the verified React/Vite foundation, centralized routing, shared layout and pages, validated public environment configuration, Tailwind styling, and a shared Axios client.
+The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 established the verified React/Vite foundation, centralized routing, shared layout and pages, validated public environment configuration, Tailwind styling, and shared Axios boundary.
 
-Frontend authentication and real API requests are not implemented. The next milestone is **Frontend Feature 02 — Authentication & Session Architecture**. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
+Frontend Feature 02 now implements login, current-user and role loading, memory-only access tokens, persistent rotated refresh tokens, session restoration, coordinated Axios refresh, protected and anonymous-only routing, safe return paths, logout, role-aware navigation, normalized authentication errors, and automated frontend tests. The next milestone remains pending roadmap selection. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
 
 The older milestone narrative retained below is historical backend feature context and is superseded by this update.
 
