@@ -5,6 +5,8 @@
 **Status:** ✅ Completed
 **Technology Stack:** Django, Django REST Framework, PostgreSQL
 
+> **Historical scope note (2026-08-06):** This report records what Feature 03 originally delivered. Feature 15 later removed public `/api/auth/register/`. The current refresh endpoint rotates both `access` and `refresh`, blacklists the previous refresh token, and tracks refresh state in Simple JWT's database tables. Frontend Feature 02 now consumes these contracts and uses `/api/auth/me/` for managed Django Group roles.
+
 ---
 
 # Feature Summary

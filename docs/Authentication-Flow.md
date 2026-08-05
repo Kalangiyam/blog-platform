@@ -24,7 +24,9 @@ Feature 11 extends the authentication and authorization architecture through the
 
 ---
 
-# Current Status (Feature 16)
+# Backend Authentication Status Through Feature 16
+
+This section preserves the backend feature-history milestone. Frontend Feature 02 now integrates this authentication foundation as described later in this document.
 
 ## Completed
 
@@ -174,10 +176,11 @@ Protected API Requests
 Access Token Expires
         │
         ▼
-Refresh Token
+Submit Current Refresh Token
         │
         ▼
-New Access Token
+New Access Token + Rotated Refresh Token
+Submitted Refresh Token Blacklisted
         │
         ▼
 Logout
@@ -212,6 +215,7 @@ EmailBackend
    │
    ▼
 Generate JWT Tokens
+Update User.last_login
    │
    ▼
 JSON Response
@@ -233,19 +237,85 @@ Login Request
 JWT Tokens Generated
    │
    ▼
-Access Token
-Refresh Token
-User Information
+Access Token → module memory only
+Refresh Token → localStorage
+Nested Login User → transitional only
    │
    ▼
-React Stores Tokens
+GET /api/auth/me/
+Authoritative Current User + Roles → AuthProvider
 ```
+
+---
+
+# Frontend Feature 02 Authentication and Session Flow
+
+Frontend Feature 02 implements the browser session layer without changing the backend API, JWT payload, permission model, or token lifecycle. The React application uses three explicit authentication states: `checking`, `authenticated`, and `unauthenticated`. It does not use cookies or Django session authentication.
+
+Its backend prerequisites add application-managed roles to `/api/auth/me/`, permit the Vite development origin through a narrow CORS allowlist, and make successful custom login update `User.last_login` through Django's standard helper. These changes preserve the existing login, refresh, verify, logout, JWT, and permission contracts.
+
+## Token Storage
+
+* The access token is held only in module memory and is never written to browser storage.
+* The refresh token is stored in `localStorage` under `blog-platform.auth.refresh-token` so a page reload can attempt session restoration.
+* The `AuthProvider` exposes authentication state and current-user data, not raw token values.
+* Because roles can change independently of token issuance, `/api/auth/me/` is the authoritative source for the current user and their application-managed roles. Roles are not JWT custom claims.
+
+Persisting the refresh token permits restoration across reloads but makes it reachable by JavaScript. Content Security Policy, dependency hygiene, output encoding, and prevention of script injection therefore remain important controls. Session state is tab-local; concurrent refreshes from separate tabs can race because the backend rotates and blacklists refresh tokens.
+
+## Startup Restoration
+
+```text
+Application mounts
+      │
+      ▼
+Auth status = checking
+      │
+      ▼
+Stored refresh token present?
+   ├── No ──▶ clear transient state ──▶ unauthenticated
+   └── Yes
+          │
+          ▼
+POST /api/auth/token/refresh/
+          │
+          ▼
+Persist rotated refresh + hold access in memory
+          │
+          ▼
+GET /api/auth/me/
+          │
+          ▼
+Store authoritative user + roles ──▶ authenticated
+```
+
+A module-level single-flight restoration promise prevents React Strict Mode's development remount from consuming the same rotating refresh token twice. Definitive token or storage failures clear local authentication material and settle unauthenticated. Transient network or server failures also settle the UI out of `checking` while retaining a normalized error for retry messaging.
+
+## Authenticated Requests and Refresh
+
+The Axios client attaches `Authorization: Bearer <access_token>` only to trusted backend API requests. It does not attach credentials to another origin, outside the configured API path, or when a caller supplied an explicit Authorization header.
+
+On an eligible `401 Unauthorized`, one shared refresh promise rotates the refresh token once for all concurrent failed requests. Each original request is retried at most once with the new access token. Login, logout, token-refresh, and token-verify requests are excluded from automatic refresh, as are explicitly authorized requests and requests marked to skip authentication. A refresh failure clears tokens and signals the `AuthProvider` through a framework-neutral session-invalidation bridge.
+
+The frontend cannot remove ambiguity if the server rotates a refresh token but the corresponding response is lost. In that case, retrying the old token correctly fails because it has already been blacklisted.
+
+## Login, Navigation, Guards, and Logout
+
+Login submits only `email` and `password`. After the backend returns tokens, the frontend stores them according to the policy above and calls `/api/auth/me/`; the smaller nested `user` object in the login response is not treated as authoritative. Safe same-origin return paths are preserved, while external or malformed destinations fall back to the application root.
+
+Protected routes wait while authentication is `checking`, redirect unauthenticated users to login, and preserve an approved return path. The role-aware guard uses independent any-role matching and shows a controlled unauthorized state when the authenticated user lacks a required role. These guards improve navigation and user experience only; every permission decision remains backend-enforced.
+
+Logout sends both the current access token and stored refresh token. The `AuthProvider` transitions its user state to unauthenticated immediately; the API layer clears both tokens in guaranteed cleanup after the backend attempt settles, whether that attempt succeeds or fails. A successful logout blacklists the submitted refresh token, but the access token remains valid until its configured 15-minute expiry.
+
+## Development CORS
+
+The development backend explicitly permits `http://localhost:5173` for `/api/` requests. Credentials are disabled, wildcard origins are not allowed, and the base/production settings default to an empty origin allowlist. This supports the separate Vite origin without introducing cookies or weakening the production default.
 
 ---
 
 # Security Principles
 
-The authentication system will follow these security practices:
+The authentication system follows these security practices:
 
 * Backend authentication only
 * Password hashing using Django
@@ -258,6 +328,9 @@ The authentication system will follow these security practices:
 * Action-based permission enforcement
 * Never trust frontend validation
 * Refresh token blacklisting
+* Refresh-token rotation with database-backed outstanding and blacklist state
+* Memory-only access-token storage in the React application
+* Explicit-origin, credential-free CORS for the development frontend
 * Generic authentication error messages
 * Custom email authentication backend
 * Editor-only authorization for category management
@@ -353,7 +426,7 @@ Current authorization capabilities include:
 * Profile ownership fields cannot be reassigned through serializers.
 
 
-The implemented application roles are Author, Editor, and Administrator. Future APIs will provide safe Administrator-only user and role management.
+The implemented application roles are Author, Editor, and Administrator. Feature 15 provides safe Administrator-only user provisioning, account-state management, and application-role replacement APIs.
 
 ## Role-Based Authorization Flow
 
@@ -386,7 +459,7 @@ The roles are independent:
 
 * `Author` creates Posts and manages only owned Posts.
 * `Editor` creates Posts, manages any active Post, and manages Categories and Tags.
-* `Administrator` is reserved for future user administration and does not inherit Editor access.
+* `Administrator` manages users and application roles and does not inherit Editor access.
 
 A user may belong to multiple groups. Roles may be assigned only through the Administrator user-management API; normal authentication and Profile APIs cannot modify Group membership.
 
@@ -668,7 +741,8 @@ Access Token Expires
 Token Refresh
     │
     ▼
-New Access Token
+New Access Token + Rotated Refresh Token
+Submitted Refresh Token Blacklisted
     │
     ▼
 Logout
@@ -676,7 +750,7 @@ Logout
     ▼
 Refresh Token Blacklisted
 ```
-Profile APIs reuse the existing JWT authentication foundation. Feature 11 does not introduce new token types or modify the access-token, refresh-token, or logout workflows.
+Access tokens have a 15-minute lifetime and refresh tokens have a 7-day lifetime. Refresh rotation and blacklist-after-rotation are enabled. Outstanding and blacklisted refresh-token records are database-backed through Simple JWT's blacklist application; token refresh and logout are therefore stateful lifecycle operations. Profile APIs reuse this JWT foundation. Feature 11 did not introduce new token types or modify these workflows.
 
 ## Pagination and Authorization Flow
 
@@ -700,6 +774,6 @@ Pagination does not broaden visibility or replace backend security controls. Pos
 
 Create, retrieve, update, delete, workflow, featured-image, and Profile detail responses remain unpaginated.
 
-## Next Feature
+## Current Frontend Milestone
 
-Feature 17 will focus on Deployment & CI/CD while retaining the current closed-registration, JWT, ownership, role-based authorization, and endpoint-scoped pagination architecture.
+Frontend Feature 02 now supplies the React authentication and session architecture for this backend contract. The earlier backend roadmap identified Deployment & CI/CD as Feature 17; that remains a future backend milestone rather than the current authentication task.

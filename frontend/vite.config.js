@@ -36,5 +36,18 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    test: {
+      environment: "jsdom",
+      environmentOptions: {
+        jsdom: {
+          url: "http://localhost:5173/",
+        },
+      },
+      setupFiles: "./src/test/setup.js",
+      clearMocks: true,
+      restoreMocks: true,
+      unstubEnvs: true,
+      unstubGlobals: true,
+    },
   };
 });

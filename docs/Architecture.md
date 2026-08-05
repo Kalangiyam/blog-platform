@@ -17,6 +17,8 @@ This project emphasizes production-ready software engineering practices, includi
 - Tailwind CSS
 - React Router 8
 - Axios
+- Vitest
+- React Testing Library
 
 ### Backend
 
@@ -111,13 +113,13 @@ The project follows these engineering principles:
 - Manage authentication state.
 - Display server responses and validation errors.
 
-The frontend is responsible only for presentation and user interaction. It never contains business rules or permission enforcement.
+The frontend is responsible for presentation, user interaction, session coordination, and user-experience route visibility. It never replaces backend business rules or permission enforcement.
 
 ---
 
-# Frontend Feature 01 Architecture Detail
+# Frontend Feature 01 Architecture Detail (Historical Foundation)
 
-The browser application is an independent npm project under `frontend/`. React 19 renders the UI, Vite 8 supplies development and production builds, React Router 8 provides Data Mode routing, Tailwind CSS 4 supplies utility styling through its first-party Vite plugin, and Axios defines the future HTTP boundary.
+At the completion of Frontend Feature 01, the browser application was established as an independent npm project under `frontend/`. React 19 rendered the UI, Vite 8 supplied development and production builds, React Router 8 provided Data Mode routing, Tailwind CSS 4 supplied utility styling through its first-party Vite plugin, and Axios defined the then-future HTTP boundary.
 
 ## Application Startup and Route Composition
 
@@ -154,7 +156,7 @@ Django REST API (future requests; none in Feature 01)
 
 Both validation boundaries require an absolute HTTP(S) URL and reject embedded credentials. Runtime normalization removes trailing slashes. Vite variables are public browser configuration and must never contain secrets.
 
-The Axios instance centralizes the base URL, 10-second timeout, and `Accept: application/json`. It omits global `Content-Type`, preserving automatic multipart boundaries for future image uploads. JWT interceptors are deferred to Frontend Feature 02.
+The Feature 01 Axios instance centralized the base URL, 10-second timeout, and `Accept: application/json`. It omitted global `Content-Type`, preserving automatic multipart boundaries for future image uploads. JWT interceptors were intentionally deferred to Frontend Feature 02 and are documented in the current architecture below.
 
 ## Styling and Folder Responsibilities
 
@@ -168,13 +170,173 @@ src/pages/    Route-level screens
 src/routes/   Central route objects
 ```
 
-Feature-oriented folders will be introduced only when they own real behavior. No Redux, TanStack Query, or global application state exists. Authentication Context and server-state tooling decisions remain deferred.
+Feature-oriented folders were deferred until they owned real behavior. Feature 01 introduced no Redux, TanStack Query, or global application state; Frontend Feature 02 later introduced only the focused authentication Context described below.
 
 ## Frontend and Backend Security Responsibilities
 
-Frontend code owns presentation, navigation, and controlled error output. The backend remains authoritative for authentication, authorization, validation, visibility, and business rules. Frontend route visibility is not authorization, raw internal route errors are not displayed, and token storage requires a Frontend Feature 02 security decision.
+Frontend code owns presentation, navigation, and controlled error output. The backend remains authoritative for authentication, authorization, validation, visibility, and business rules. Frontend route visibility is not authorization and raw internal route errors are not displayed. At the Feature 01 boundary, token storage still required the Frontend Feature 02 decision now documented below.
 
 Browser-history routing will require deployment-time SPA fallback to `index.html`. Deployment remains intentionally deferred until backend and frontend development are complete.
+
+---
+
+# Frontend Feature 02 Authentication Architecture
+
+Frontend Feature 02 builds on the Feature 01 browser foundation without redesigning the Django authentication contract. The backend returns JWTs in JSON and accepts bearer authentication, so the client uses an in-memory access token and a persistent refresh token rather than introducing cookies or session authentication.
+
+## Authentication Module Boundaries
+
+```text
+frontend/src/features/auth/
+├── api/
+│   ├── authApi.js
+│   └── tokenRefresh.js
+├── components/
+│   ├── AnonymousOnlyRoute.jsx
+│   ├── AuthLoadingScreen.jsx
+│   ├── AuthNavigation.jsx
+│   ├── ProtectedRoute.jsx
+│   └── RoleProtectedRoute.jsx
+├── context/
+│   ├── AuthContext.js
+│   ├── AuthProvider.jsx
+│   └── sessionRestoration.js
+├── events/
+│   └── sessionInvalidation.js
+├── hooks/
+│   └── useAuth.js
+├── pages/
+│   ├── LoginPage.jsx
+│   └── UnauthorizedPage.jsx
+├── storage/
+│   └── tokenStorage.js
+└── utils/
+    ├── authErrors.js
+    ├── loginForm.js
+    └── safeReturnPath.js
+```
+
+`AuthProvider` is mounted above `RouterProvider`. It owns authentication state and orchestration, not form values, general server state, or token persistence. `useAuth()` exposes the Context safely to components. API modules preserve the backend contracts, the storage module is the only direct localStorage boundary, utilities normalize untrusted input and errors, and Axios infrastructure remains framework-independent.
+
+## Authentication State Model
+
+The provider uses three explicit states:
+
+```text
+checking        Startup restoration has not settled
+authenticated   The authoritative /auth/me/ user is loaded
+unauthenticated No current user is trusted
+```
+
+The initial state is `user = null`, `status = checking`, and `authError = null`. The public Context contract contains `user`, `status`, `isAuthenticated`, `authError`, `login`, `logout`, `clearAuthError`, `hasRole`, and `hasAnyRole`. Token values are never exposed through Context.
+
+React Strict Mode may replay startup effects. A module-level restoration promise makes concurrent consumers share one refresh-and-current-user operation and clears itself in `finally`, preventing duplicate use of the same rotating refresh token without permanently caching a session result.
+
+## Token Storage and Backend Contract
+
+```text
+Access token
+    -> module memory only
+
+Refresh token
+    -> localStorage key blog-platform.auth.refresh-token
+
+Current user and roles
+    -> React state from GET /auth/me/
+```
+
+No access token is written to localStorage or sessionStorage, and user data is not persisted by token storage. Storage reads, writes, and removal fail closed when browser storage is missing or restricted. Successful login and refresh update access and refresh together; failed persistence does not leave an access token active.
+
+The backend access-token lifetime is 15 minutes and the refresh-token lifetime is seven days. Refresh rotation and blacklist-after-rotation are enabled, so every successful refresh response contains a new `access` and a replacement `refresh`; the client must replace the old stored refresh token.
+
+## Login and Session Restoration
+
+```text
+POST /auth/login/ { email, password }
+        ↓
+Receive { access, refresh, user }
+        ↓
+Store access in memory and refresh in localStorage
+        ↓
+GET /auth/me/ with bearer access
+        ↓
+Set authenticated state from the authoritative /me/ response
+```
+
+The nested login user is not used for roles. `/auth/me/` supplies `id`, `username`, `email`, `first_name`, `last_name`, and application-managed `roles`. A successful backend login also updates `User.last_login` through Django's `update_last_login()` helper.
+
+On browser reload, no backend request is made when no refresh token exists. When a refresh token exists, restoration calls `POST /auth/token/refresh/`, replaces both rotated tokens, and then calls `/auth/me/`. Temporary network, timeout, and server failures clear the unusable access token while preserving the refresh token for a later attempt. Definitive rejection or unavailable persistent storage clears both tokens. Every outcome exits `checking`.
+
+## Axios Authentication and Refresh Coordination
+
+The shared Axios module installs its request and response interceptors once during module evaluation. The request interceptor reads the access token at request time, attaches it only to the configured API origin and path, and preserves explicitly supplied Authorization headers. No global `Content-Type` is set, so Axios retains control of JSON headers and multipart boundaries.
+
+The response interceptor handles only eligible `401` responses. It excludes login, logout, refresh, and verify endpoints; requests with an explicit Authorization header; untrusted destinations; requests marked to skip refresh; and requests already retried. One module-level refresh promise coordinates concurrent failures:
+
+```text
+Protected requests A, B, and C receive 401
+        ↓
+One dedicated refresh request is started
+        ↓
+A, B, and C await the same promise
+        ↓
+Rotated access and refresh tokens replace the old pair
+        ↓
+Each original request retries once with the new access token
+```
+
+Refresh uses a dedicated Axios instance, avoiding both a circular `apiClient`/`authApi` dependency and recursive response interception. The shared promise is cleared in `finally`. A framework-independent publisher notifies AuthProvider when refresh failure invalidates the frontend session; Axios never imports React, navigates, or displays UI.
+
+## Logout
+
+```text
+POST /auth/logout/ { refresh }
+Authorization: Bearer <access>
+        ↓
+Backend blacklists the submitted refresh token when reachable
+        ↓
+Frontend clears tokens, current user, and authenticated status in all cases
+        ↓
+Navigate to the public Home route
+```
+
+Local logout is authoritative for browser state. Concurrent logout callers share one operation, the UI prevents duplicate submission, and logout is excluded from automatic refresh. A backend failure remains observable through a normalized rejection and a safe warning that distinguishes local sign-out from uncertain server revocation.
+
+## Routes, Login, and Role-Aware User Experience
+
+The root router retains the Feature 01 Home, Not Found, layout, and error-boundary architecture and adds `/login` and `/unauthorized`. Protected and anonymous-only guards render a controlled loading screen during `checking`; protected redirects preserve only pathname, query, and fragment. The safe-return utility accepts internal paths beginning with one `/` and rejects absolute URLs, protocol-relative URLs, backslashes, malformed values, and non-string input.
+
+The login page accepts email and password only. It keeps form values in component state, performs client-side required and reasonable email-format validation, prevents same-tick duplicate submission, provides accessible labels and error associations, maps normalized errors to controlled messages, and uses replacement navigation after validating the attempted return path.
+
+Authenticated navigation displays a safe first name or username and exact independent application-role badges. It does not display email addresses, Django staff or superuser flags, permissions, group identifiers, or token claims. `Author`, `Editor`, and `Administrator` are independent; no role implies another. Hidden links and route guards are user-experience controls only, while Django permissions remain authoritative.
+
+`RoleProtectedRoute` is implemented and tested with any-role matching, but no business-domain role-protected route or role-specific business navigation link is mounted yet. The current `/unauthorized` page provides a controlled protected 403 experience.
+
+## Development CORS
+
+`django-cors-headers` is installed before Django CommonMiddleware. Base and production settings use an empty origin allowlist, `CORS_ALLOW_CREDENTIALS = False`, and an `/api/` URL restriction. Development adds only:
+
+```text
+http://localhost:5173
+```
+
+No wildcard, authentication cookie, session authentication, or CSRF trusted-origin expansion was introduced. Frontend API requests use the configured `http://127.0.0.1:8000/api` development base URL while the browser application is served from the allowed localhost origin.
+
+## Authentication Testing
+
+Vitest, jsdom, React Testing Library, user-event, and focused Axios mocks provide deterministic frontend coverage without real network requests. The completed suite contains 12 test files and 135 passing tests across token storage, authentication API contracts, error normalization, restoration, AuthProvider, invalidation events, interceptors, refresh concurrency, guards, safe return paths, login, logout, and navigation.
+
+The real Vite and Django stack separately passed a 35-of-35 authentication verification matrix covering startup, login, roles, reload rotation, concurrent `401` refresh, invalid and blacklisted refresh tokens, logout, logout failure, CORS, storage, and secret non-disclosure.
+
+## Security Boundaries and Known Limitations
+
+- The backend remains the final authentication and authorization authority.
+- Frontend role checks never decode JWT claims and never substitute for backend permission checks.
+- Persisting a refresh token in localStorage exposes it if malicious script executes in the application origin. An HttpOnly refresh-cookie design would reduce this exposure but requires a different backend contract.
+- Refresh coordination is single-flight within one tab only; simultaneous cross-tab rotation is not coordinated.
+- A lost successful refresh response is ambiguous because the backend may blacklist the old refresh before the browser stores the replacement.
+- Local logout succeeds from the user's perspective even when backend revocation is unavailable. A server-side refresh may remain valid until expiry, and an access token already issued remains valid until its 15-minute expiry unless backend state independently rejects it.
+- Deployment still requires SPA history fallback and production-specific origin configuration.
 
 ---
 
@@ -237,6 +399,29 @@ backend/
 ├── requirements/
 │
 └── manage.py
+```
+
+```text
+frontend/
+├── src/
+│   ├── config/
+│   ├── features/
+│   │   └── auth/
+│   │       ├── api/
+│   │       ├── components/
+│   │       ├── context/
+│   │       ├── events/
+│   │       ├── hooks/
+│   │       ├── pages/
+│   │       ├── storage/
+│   │       └── utils/
+│   ├── layouts/
+│   ├── lib/
+│   ├── pages/
+│   ├── routes/
+│   └── test/
+├── package.json
+└── vite.config.js
 ```
 
 ### apps/
@@ -309,7 +494,7 @@ The project adopts a **custom Django User model** from the beginning of developm
 
 Choosing a custom user model before the first database migration prevents costly schema migrations later and provides flexibility for future authentication requirements.
 
-## Current Status (Feature 16)
+## Current Status (Backend Feature 16 and Frontend Feature 02)
 
 ### Implemented:
 
@@ -324,6 +509,12 @@ Choosing a custom user model before the first database migration prevents costly
 - Refresh Token API
 - Token Verification API
 - Refresh Token Blacklisting
+- Application-managed roles in the Current User response
+- Django-standard `last_login` updates after successful login
+- Development CORS for `http://localhost:5173` with credentials disabled
+- React AuthProvider, token lifecycle, restoration, and normalized errors
+- Axios bearer attachment, single-flight refresh, and session invalidation
+- Safe frontend route guards, login, logout, and role-aware navigation
 
 ### Planned:
 
@@ -349,7 +540,16 @@ Current request flow:
 React Frontend
         │
         ▼
-HTTP Request
+Authentication Context and Route UX
+        │
+        ▼
+Shared Axios Client
+        │
+        ├── Trusted request: attach current bearer access token
+        └── Eligible 401: single-flight refresh and one retry
+        │
+        ▼
+HTTP / JSON Request
         │
         ▼
 Django URL Router
@@ -376,7 +576,7 @@ Django ORM
 PostgreSQL
 ```
 
-Each request is validated before reaching the database.
+Each request is validated before reaching the database. Frontend visibility and role checks do not bypass Django authentication, permissions, serializer validation, or authorization-scoped querysets.
 
 ---
 
@@ -402,6 +602,7 @@ React Frontend
 ```
 
 Responses are serialized into JSON before being returned to the client.
+Authentication responses pass through the focused API and error-normalization modules before AuthProvider updates trusted user state. The client never derives authorization from token payloads.
 
 ---
 
@@ -1317,6 +1518,8 @@ The Profiles domain serves as the reference implementation for future User-adjac
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
 - ✅ Feature 16 — Performance Optimization
+- ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
+- ✅ Frontend Feature 02 — Authentication & Session Architecture
 
 ## In Progress
 
@@ -1324,7 +1527,7 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 ## Next Feature
 
-- Frontend Feature 02 — Authentication & Session Architecture
+- Pending frontend roadmap selection.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
@@ -1341,6 +1544,8 @@ Future applications will reuse:
 * The PostgreSQL search architecture introduced in Feature 12
 * The storage-safe featured-image architecture introduced in Feature 13
 * The role-based authorization architecture introduced in Feature 14
+* The frontend foundation introduced in Frontend Feature 01
+* The session, refresh, guard, and authentication testing architecture introduced in Frontend Feature 02
 
 The Posts, Categories, Tags, and Comments applications now demonstrate cross-domain integration without merging domain responsibilities.
 
@@ -1362,11 +1567,7 @@ These modules serve as reference implementations for future domains by demonstra
 * Shared serializer mixins
 * Secure parent-child domain relationships
 
-As development progresses, the architecture will expand with:
-
-* User administration and safe role management
-* Shared endpoint-level pagination and stable collection ordering
-* Deployment and CI/CD
+The next frontend milestone remains pending roadmap selection. Deployment and CI/CD remain deferred until backend and frontend development are complete.
 
 Each application will remain independently responsible for its own models, serializers, permissions, views, and routes while integrating through explicit database relationships and REST APIs.
 

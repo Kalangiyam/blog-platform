@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
 
     # Third Party Apps
+    "corsheaders",
     'rest_framework',
     "rest_framework_simplejwt.token_blacklist",
 
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,6 +59,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+
+CORS_ALLOWED_ORIGINS = []
+CORS_ALLOW_CREDENTIALS = False
+CORS_URLS_REGEX = r"^/api/.*$"
 
 TEMPLATES = [
     {

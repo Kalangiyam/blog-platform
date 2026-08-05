@@ -12,7 +12,7 @@ The Blog Platform requires a secure authentication mechanism that supports a dec
 
 The authentication system should:
 
-- Be stateless
+- Keep access-token verification stateless while supporting database-backed refresh-token revocation
 - Scale horizontally
 - Support mobile and web clients
 - Integrate naturally with REST APIs
@@ -92,8 +92,11 @@ The authentication system issues:
 When the access token expires:
 
 1. React sends the refresh token.
-2. A new access token is issued.
-3. The user remains authenticated without logging in again.
+2. Simple JWT issues a new access token and a rotated refresh token.
+3. The previous refresh token is blacklisted in the database.
+4. The user remains authenticated without logging in again.
+
+Access-token verification does not require server-side session state. Refresh rotation, outstanding-token tracking, blacklisting, and logout revocation are intentionally database-backed; the complete authentication lifecycle is therefore not purely stateless.
 
 ---
 
@@ -113,7 +116,7 @@ Benefits:
 
 ## Advantages
 
-- Stateless authentication
+- Stateless access-token verification
 - Scalable architecture
 - Suitable for SPA applications
 - Secure token lifecycle

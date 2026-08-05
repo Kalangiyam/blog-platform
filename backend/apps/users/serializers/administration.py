@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from apps.users.constants import APPLICATION_GROUPS
+from apps.users.serializers.mixins import ApplicationRoleListMixin
 from apps.users.services import (
     ApplicationRoleConfigurationError,
     LastActiveAdministratorError,
@@ -12,23 +13,6 @@ from apps.users.services import (
 )
 
 User = get_user_model()
-
-
-class ApplicationRoleListMixin:
-    """
-    Provide consistent application-role serialization.
-
-    Only application-managed Groups are exposed. Unrelated Django Groups
-    remain private and are not included in API responses.
-    """
-
-    def get_roles(self, obj):
-        """
-        Return application role names assigned to the user.
-        """
-        return [
-            group.name for group in obj.groups.all() if group.name in APPLICATION_GROUPS
-        ]
 
 
 class EmptyRequestSerializerMixin:

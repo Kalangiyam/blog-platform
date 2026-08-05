@@ -1,7 +1,11 @@
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from apps.users.serializers.mixins import ApplicationRoleListMixin
 
 User = get_user_model()
 
@@ -29,13 +33,21 @@ class LoginSerializer(serializers.Serializer):
     def get_tokens(self, user):
         refresh = RefreshToken.for_user(user)
 
+        if api_settings.UPDATE_LAST_LOGIN:
+            update_last_login(None, user)
+
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(
+    ApplicationRoleListMixin,
+    serializers.ModelSerializer,
+):
+
+    roles = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -45,6 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "roles",
         )
 
 

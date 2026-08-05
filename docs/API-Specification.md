@@ -36,7 +36,7 @@ The project follows these API design principles:
 
 - RESTful API design
 - JSON request and response format
-- Stateless communication
+- Self-contained access-token authentication for protected requests
 - Backend validation
 - Backend authorization
 - Consistent response structure
@@ -82,16 +82,57 @@ The authentication module provides login, logout, current-user retrieval, token 
 
 ---
 
-## Authentication Request Examples
+## Authentication Contracts
 
 ### Login
 
 POST `/api/auth/login/`
 
+Request:
+
 ```json
 {
   "email": "john@example.com",
   "password": "StrongPassword@123"
+}
+```
+
+Successful response — `200 OK`:
+
+```json
+{
+  "access": "<access_token>",
+  "refresh": "<refresh_token>",
+  "user": {
+    "id": 1,
+    "username": "john",
+    "email": "john@example.com"
+  }
+}
+```
+
+The login response is intentionally unchanged and does not include roles. A successful login also updates Django's `User.last_login` field through Django's `update_last_login` helper because Simple JWT's `UPDATE_LAST_LOGIN` setting is enabled.
+
+Validation failures return `400 Bad Request` using Django REST Framework serializer errors. Examples include:
+
+```json
+{
+  "email": ["This field is required."],
+  "password": ["This field is required."]
+}
+```
+
+```json
+{
+  "email": ["Enter a valid email address."]
+}
+```
+
+Unknown credentials, an incorrect password, and inactive users share the same generic response:
+
+```json
+{
+  "non_field_errors": ["Invalid email or password."]
 }
 ```
 
@@ -107,17 +148,99 @@ Authorization Header:
 Authorization: Bearer <access_token>
 ```
 
+Successful response — `200 OK`:
+
+```json
+{
+  "id": 1,
+  "username": "john",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "roles": ["Author", "Editor"]
+}
+```
+
+`roles` is derived from Django Group membership and is limited to the application-managed role names `Author`, `Editor`, and `Administrator`, in that order. Unrelated Django Groups are omitted. The response does not expose Group IDs, staff or superuser flags, direct permissions, or arbitrary Groups. Roles are not added to JWT claims; this endpoint is the frontend's authoritative source for current role state.
+
+A missing, malformed, expired, or otherwise invalid access token returns Simple JWT's standard `401 Unauthorized` authentication response.
+
 ---
 
 ### Logout
 
 POST `/api/auth/logout/`
 
+Authorization Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+Request:
+
 ```json
 {
   "refresh": "<refresh_token>"
 }
 ```
+
+Successful response — `200 OK`:
+
+```json
+{
+  "detail": "Successfully logged out."
+}
+```
+
+The endpoint requires both a valid bearer access token and a refresh token in the request body. A missing `refresh` field returns `400 Bad Request` with `{"refresh":["This field is required."]}`. An invalid, expired, or already-blacklisted refresh token returns `400 Bad Request` with `{"refresh":"Invalid or expired refresh token."}`. The supplied refresh token is blacklisted on success; already-issued access tokens are not revoked and remain usable until their 15-minute expiry.
+
+---
+
+### Token Refresh
+
+POST `/api/auth/token/refresh/`
+
+Request:
+
+```json
+{
+  "refresh": "<refresh_token>"
+}
+```
+
+Successful response — `200 OK`:
+
+```json
+{
+  "access": "<new_access_token>",
+  "refresh": "<new_refresh_token>"
+}
+```
+
+Refresh rotation is enabled. A successful request returns both rotated tokens and blacklists the submitted refresh token. The client must persist the new refresh token before using it for another refresh. A missing `refresh` field returns `400 Bad Request` with `{"refresh":["This field is required."]}`. Malformed, expired, or blacklisted refresh tokens return Simple JWT's `401 Unauthorized` token error with `code` set to `token_not_valid`; the `detail` text identifies the token error.
+
+---
+
+### Token Verify
+
+POST `/api/auth/token/verify/`
+
+Request:
+
+```json
+{
+  "token": "<access_or_refresh_token>"
+}
+```
+
+Successful response — `200 OK`:
+
+```json
+{}
+```
+
+A missing `token` field returns `400 Bad Request` with `{"token":["This field is required."]}`. An invalid or expired token returns Simple JWT's `401 Unauthorized` token error with `code` set to `token_not_valid`.
 
 ---
 
@@ -1449,11 +1572,14 @@ Authentication is based on:
 - JWT Access Token
 - JWT Refresh Token
 - Authorization Header
+- Refresh token rotation
 - Refresh token blacklisting
 
 Access tokens authenticate protected API requests.
 
-Refresh tokens are used to obtain new access tokens and support secure logout through token blacklisting.
+Access tokens expire after 15 minutes. Refresh tokens expire after 7 days. Refresh tokens are rotated on every successful refresh, the submitted refresh token is blacklisted after rotation, and logout blacklists the submitted refresh token. The `rest_framework_simplejwt.token_blacklist` application stores outstanding and blacklisted refresh-token state in the database, so the refresh and logout lifecycle is intentionally stateful even though protected requests carry their access-token credentials in the Authorization header.
+
+Application roles are resolved from current Django Group membership after authentication. They are returned by `/api/auth/me/` and are not embedded as JWT custom claims.
 
 Example:
 
@@ -1590,6 +1716,11 @@ The platform currently supports:
 
 - Closed account provisioning and user authentication
 - JWT authentication
+- Fifteen-minute access tokens and seven-day refresh tokens
+- Refresh-token rotation with database-backed blacklisting
+- Authoritative current-user application roles through `/api/auth/me/`
+- Successful-login `last_login` tracking
+- Credential-free development CORS for `http://localhost:5173` on `/api/`
 - Author-or-Editor Post creation
 - Public listing of published posts
 - Published post retrieval by slug
@@ -1654,7 +1785,7 @@ Future features will extend the platform with performance improvements and deplo
 | POST /api/auth/login/         | Authenticate a user and receive JWT tokens |
 | GET /api/auth/me/             | Retrieve the authenticated user's account information |
 | POST /api/auth/logout/        | Blacklist the supplied refresh token       |
-| POST /api/auth/token/refresh/ | Obtain a new access token                  |
+| POST /api/auth/token/refresh/ | Rotate a refresh token and receive new access and refresh tokens |
 | POST /api/auth/token/verify/  | Verify the validity of a JWT               |
 
 ---
@@ -1765,4 +1896,4 @@ The Post, Post Comment, Category, and Tag collection endpoints use `StandardPage
 
 No global DRF pagination policy is configured. Pagination is adopted explicitly by each collection endpoint, and non-list responses remain unpaginated.
 
-The next planned API milestone is Feature 17 — Deployment & CI/CD. It does not yet define new business endpoints.
+The backend roadmap after Feature 16 identified Feature 17 — Deployment & CI/CD. That historical roadmap item does not define new business endpoints or alter the current authentication contracts.
