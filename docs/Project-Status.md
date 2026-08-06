@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 06 — Search Module
+**Current Milestone:** ✅ Frontend Feature 07 — Media Uploads Module
 
 ---
 
@@ -1985,33 +1985,32 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Review the completed Frontend Feature 06 report and select the next item from the maintained frontend roadmap (e.g. Frontend Feature 07 — Post Creation/Authoring or Dashboard). Deployment and CI/CD remain deferred.
+**Starting Point:** Review the completed Frontend Feature 07 report and select the next item from the maintained frontend roadmap (e.g. Frontend Feature 08 — Post Authoring / Dashboard). Deployment and CI/CD remain deferred.
 
 ---
 
-# Current Frontend Update — Frontend Feature 06
+# Current Frontend Update — Frontend Feature 07
 
-Frontend Feature 06 — Search Module (Public Post Search and Search Experience) is complete.
+Frontend Feature 07 — Media Uploads Module (Post Featured Image Upload & Management) is complete.
 
 Implements:
 
-* public `/search` route in the centralized router with URL-owned query parameters (`/search?q=django&page=2`);
-* API integration for `GET /api/posts/search/?q=<query>&page=<page>`;
-* responsive header search form (`GlobalSearchForm`) with accessible input labeling, Enter submission, and client validation;
-* explicit form submission strategy (no search-as-you-type live polling) to maintain clean URL navigation and performance;
-* AbortController request cancellation and stale-response protection;
-* canonical URL normalization for malformed or out-of-range pages;
-* accessible loading skeletons (`SearchSkeleton`), empty state prompts (`SearchEmptyState`), zero-results feedback (`SearchNoResults`), retryable error handlers (`SearchRequestError`), and result listings (`SearchResultsList`);
-* query-preserving pagination (`SearchPagination`);
-* ADR-026 and Frontend Feature 06 completion report.
+* dedicated feature module under `src/features/media/` (`api/`, `components/`, `hooks/`, `utils/`);
+* API integration for `PUT /api/posts/{slug}/featured-image/` (multipart upload) and `DELETE /api/posts/{slug}/featured-image/` (image removal);
+* progress tracking (`onUploadProgress`) and request cancellation via `AbortController`;
+* client-side validation (`mediaValidation.js`) enforcing 5 MB max size, allowed extensions (`.jpg`, `.jpeg`, `.png`, `.webp`), MIME types (`image/jpeg`, `image/png`, `image/webp`), and resolution bounds;
+* normalized error handling (`normalizeMediaError.js`) mapping DRF validation arrays, 401 unauthenticated, 403 forbidden, 404 missing post, and network connection errors;
+* Object URL preview management (`URL.createObjectURL()`) with automatic revocation (`URL.revokeObjectURL()`) to prevent memory leaks;
+* accessible UI components (`FeaturedImageUploader`, `FeaturedImagePreview`, `ImageDropZone`, `UploadProgress`, `UploadError`, `RemoveImageButton`);
+* conditional author integration on `PostDetailPage` rendering uploader controls exclusively when the authenticated user matches the post author;
+* ADR-027 and Frontend Feature 07 completion report.
 
 Verification:
-
-* live manual browser verification (Playwright Chromium): passed 72/72 scenarios (100% PASS rate across all 14 test groups, 5 viewports, and core module regression checks);
-* focused Search test suite: 6 files, 41 tests passed;
-* full frontend regression suite: 41 files, 307 tests passed;
+* media test suite: 5 files, 27 tests passed;
+* full frontend regression suite: 46 files, 334 tests passed;
 * ESLint: passed cleanly (0 errors, 0 warnings);
-* Vite production build: passed cleanly in 1.26s.
+* Vite production build: passed cleanly.
 
-No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 06 changes.
+No backend file, database model, migration, authentication contract, or permission rule was modified.
+
 
