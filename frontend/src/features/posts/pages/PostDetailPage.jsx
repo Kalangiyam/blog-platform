@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 
+import { useAuth } from '../../auth/hooks/useAuth.js'
+import { FeaturedImageUploader } from '../../media/index.js'
 import CommentsSection from '../../comments/components/CommentsSection.jsx'
 import { getPublishedPost } from '../api/postsApi.js'
 import PostImage from '../components/PostImage.jsx'
@@ -26,6 +28,7 @@ export function PostNotFound() {
 
 function PostDetailPage() {
   const { postSlug } = useParams()
+  const { user, isAuthenticated, hasRole } = useAuth()
   const [retryKey, setRetryKey] = useState(0)
   const [state, setState] = useState({
     requestKey: null,
@@ -87,13 +90,32 @@ function PostDetailPage() {
   }
 
   const post = state.post
+  const canManageImage = Boolean(
+    isAuthenticated &&
+      ((user?.username && post?.author?.username && user.username === post.author.username) ||
+        hasRole('Editor')),
+  )
+
+  const handleImageUploaded = (newUrl) => {
+    setState((prev) => ({
+      ...prev,
+      post: prev.post ? { ...prev.post, featured_image_url: newUrl } : prev.post,
+    }))
+  }
+
+  const handleImageRemoved = () => {
+    setState((prev) => ({
+      ...prev,
+      post: prev.post ? { ...prev.post, featured_image_url: null } : prev.post,
+    }))
+  }
 
   return (
     <article className="w-full px-4 py-12 sm:px-6">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-4xl space-y-10">
         <Link className="text-sm font-semibold text-indigo-700 hover:text-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" to="/posts">Back to all posts</Link>
 
-        <header className="mt-8">
+        <header>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">{post.title}</h1>
           <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
             <span>
@@ -116,9 +138,20 @@ function PostDetailPage() {
           <div className="mt-6"><PostTaxonomy categories={post.categories} tags={post.tags} /></div>
         </header>
 
-        <PostImage className="mt-10 aspect-[16/9] w-full rounded-2xl" title={post.title} url={post.featured_image_url} />
+        {canManageImage && (
+          <section aria-label="Author featured image management">
+            <FeaturedImageUploader
+              initialImageUrl={post.featured_image_url}
+              onRemoveSuccess={handleImageRemoved}
+              onUploadSuccess={handleImageUploaded}
+              postSlug={post.slug}
+            />
+          </section>
+        )}
 
-        <div className="mt-10 whitespace-pre-wrap text-lg leading-8 text-slate-700">{post.content}</div>
+        <PostImage className="aspect-[16/9] w-full rounded-2xl" title={post.title} url={post.featured_image_url} />
+
+        <div className="whitespace-pre-wrap text-lg leading-8 text-slate-700">{post.content}</div>
 
         <CommentsSection postSlug={post.slug} />
       </div>
@@ -127,3 +160,4 @@ function PostDetailPage() {
 }
 
 export default PostDetailPage
+
