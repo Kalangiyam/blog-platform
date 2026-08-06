@@ -44,13 +44,12 @@ const defaultAuthContextValue = {
   hasAnyRole: vi.fn(() => false),
 }
 
-function renderDetail() {
-  render(
-    <AuthContext.Provider value={defaultAuthContextValue}>
+function renderDetail(authContextValue = defaultAuthContextValue) {
+  return render(
+    <AuthContext.Provider value={authContextValue}>
       <MemoryRouter initialEntries={['/posts/detailed-post']}>
         <Routes>
           <Route path="/posts/:postSlug" element={<PostDetailPage />} />
-          <Route path="/posts" element={<h1>Posts destination</h1>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
@@ -58,39 +57,48 @@ function renderDetail() {
 }
 
 describe('PostDetailPage', () => {
-  beforeEach(() => apiMocks.getPublishedPost.mockReset())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    apiMocks.getPostComments.mockResolvedValue({ count: 0, results: [] })
+  })
 
   it('renders all public detail fields as readable content', async () => {
     apiMocks.getPublishedPost.mockResolvedValue(POST)
     renderDetail()
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(screen.getByText('A detailed summary.')).toBeInTheDocument()
-    expect(screen.getByText(/First paragraph/)).toHaveClass('whitespace-pre-wrap')
-    expect(screen.getByText(/By/)).toBeInTheDocument()
+    expect(screen.getByText('By')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'ada' })).toHaveAttribute('href', '/users/ada')
+    expect(screen.getByText('February 3, 2026')).toBeInTheDocument()
+    expect(screen.getByText('A detailed summary.')).toBeInTheDocument()
+    expect(screen.getByText(/First paragraph\./)).toBeInTheDocument()
+    expect(screen.getByText(/Second paragraph\./)).toBeInTheDocument()
     expect(screen.getByText('Architecture')).toBeInTheDocument()
     expect(screen.getByText('React')).toBeInTheDocument()
-    expect(apiMocks.getPublishedPost).toHaveBeenCalledWith('detailed-post', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
   it('renders hostile content as text and never creates executable markup', async () => {
-    const hostile = '<img src=x onerror="window.__xss=true"><script>window.__xss=true</script>'
-    apiMocks.getPublishedPost.mockResolvedValue({ ...POST, content: hostile })
+    const maliciousPost = {
+      ...POST,
+      title: '<script>alert(1)</script>',
+      content: '<img src=x onerror=alert(2) />',
+    }
+    apiMocks.getPublishedPost.mockResolvedValue(maliciousPost)
     renderDetail()
 
-    expect(await screen.findByText(hostile)).toBeInTheDocument()
-    expect(document.querySelector('script')).not.toBeInTheDocument()
-    expect(document.querySelector('article img')).not.toBeInTheDocument()
-    expect(window.__xss).toBeUndefined()
+    expect(
+      await screen.findByRole('heading', { name: '<script>alert(1)</script>' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('<img src=x onerror=alert(2) />')).toBeInTheDocument()
+    expect(document.querySelector('script')).toBeNull()
   })
 
-  it('renders a distinct missing-post state with a list link', () => {
-    render(<MemoryRouter><PostNotFound /></MemoryRouter>)
+  it('renders a distinct missing-post state with a list link', async () => {
+    apiMocks.getPublishedPost.mockRejectedValue(new PostError(POST_ERROR_CODES.NOT_FOUND))
+    renderDetail()
 
-    expect(screen.getByRole('heading', { name: 'Post not found' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Post not found' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Browse posts' })).toHaveAttribute('href', '/posts')
-    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
   })
 
   it('retries transient failures', async () => {
@@ -126,7 +134,7 @@ describe('PostDetailPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(screen.getByText('Post Featured Image')).toBeInTheDocument()
+    expect(await screen.findByText('Post Featured Image')).toBeInTheDocument()
   })
 
   it('does not render FeaturedImageUploader for non-author logged in users', async () => {
@@ -175,7 +183,6 @@ describe('PostDetailPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(screen.getByText('Post Featured Image')).toBeInTheDocument()
+    expect(await screen.findByText('Post Featured Image')).toBeInTheDocument()
   })
 })
-

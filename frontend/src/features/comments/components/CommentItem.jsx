@@ -1,8 +1,7 @@
 import { useState } from 'react'
 
-import { useAuth } from '../../auth/hooks/useAuth.js'
 import { formatPostDate } from '../../posts/utils/postDates.js'
-import { isCommentAuthor } from '../utils/commentOwnership.js'
+import { useAuthorization } from '../../permissions/index.js'
 
 const MAX_COMMENT_LENGTH = 2000
 
@@ -11,8 +10,8 @@ export default function CommentItem({
   onUpdateComment,
   onDeleteComment,
 }) {
-  const { user } = useAuth()
-  const isOwner = isCommentAuthor(user, comment)
+  const { canEditComment, canDeleteComment } = useAuthorization()
+  const isOwner = canEditComment(comment) || canDeleteComment(comment)
 
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
