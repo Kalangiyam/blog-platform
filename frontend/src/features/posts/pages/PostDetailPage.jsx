@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 
-import { useAuth } from '../../auth/hooks/useAuth.js'
-import { FeaturedImageUploader } from '../../media/index.js'
 import CommentsSection from '../../comments/components/CommentsSection.jsx'
+import { FeaturedImageUploader } from '../../media/index.js'
+import { useAuthorization } from '../../permissions/index.js'
 import { getPublishedPost } from '../api/postsApi.js'
 import PostImage from '../components/PostImage.jsx'
 import PostRequestError from '../components/PostRequestError.jsx'
@@ -28,7 +28,7 @@ export function PostNotFound() {
 
 function PostDetailPage() {
   const { postSlug } = useParams()
-  const { user, isAuthenticated, hasRole } = useAuth()
+  const { canEditPost, canDeletePost, canManageFeaturedImage } = useAuthorization()
   const [retryKey, setRetryKey] = useState(0)
   const [state, setState] = useState({
     requestKey: null,
@@ -90,11 +90,9 @@ function PostDetailPage() {
   }
 
   const post = state.post
-  const canManageImage = Boolean(
-    isAuthenticated &&
-      ((user?.username && post?.author?.username && user.username === post.author.username) ||
-        hasRole('Editor')),
-  )
+  const isEditable = canEditPost(post)
+  const isDeletable = canDeletePost(post)
+  const canManageImage = canManageFeaturedImage(post)
 
   const handleImageUploaded = (newUrl) => {
     setState((prev) => ({
@@ -113,7 +111,24 @@ function PostDetailPage() {
   return (
     <article className="w-full px-4 py-12 sm:px-6">
       <div className="mx-auto max-w-4xl space-y-10">
-        <Link className="text-sm font-semibold text-indigo-700 hover:text-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" to="/posts">Back to all posts</Link>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link className="text-sm font-semibold text-indigo-700 hover:text-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" to="/posts">Back to all posts</Link>
+
+          {(isEditable || isDeletable || canManageImage) && (
+            <div aria-label="Post management actions" className="flex flex-wrap items-center gap-2" role="group">
+              {isEditable && (
+                <button className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="button">
+                  Edit Post
+                </button>
+              )}
+              {isDeletable && (
+                <button className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600" type="button">
+                  Delete Post
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <header>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">{post.title}</h1>
@@ -160,4 +175,3 @@ function PostDetailPage() {
 }
 
 export default PostDetailPage
-

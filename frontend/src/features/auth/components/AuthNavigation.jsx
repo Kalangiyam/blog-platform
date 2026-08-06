@@ -4,12 +4,9 @@ import { Link, useNavigate } from 'react-router'
 import { AUTH_STATUS } from '../context/AuthContext.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { AUTH_ERROR_CODES } from '../utils/authErrors.js'
+import { APPLICATION_ROLES } from '../../permissions/index.js'
 
-const APPLICATION_ROLES = Object.freeze([
-  'Author',
-  'Editor',
-  'Administrator',
-])
+const ROLE_LIST = Object.values(APPLICATION_ROLES)
 
 function getDisplayName(user) {
   if (typeof user?.first_name === 'string' && user.first_name.trim()) {
@@ -114,7 +111,7 @@ export default function AuthNavigation() {
     )
   }
 
-  const assignedRoles = APPLICATION_ROLES.filter(hasRole)
+  const assignedRoles = ROLE_LIST.filter(hasRole)
 
   return (
     <nav
