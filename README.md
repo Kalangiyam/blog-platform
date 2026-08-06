@@ -91,6 +91,10 @@ The platform currently supports:
 * Draft post creation
 * Public listing of published posts
 * Slug-based post retrieval
+* React public post listing and detail routes
+* URL-backed public-post pagination with canonical page handling
+* Abortable public-post requests, controlled retry states, and stale-response protection
+* Safe plain-text post rendering and validated HTTP(S) featured-image URLs
 * Author-only post updates
 * Author-only soft deletion
 * Publish and unpublish workflows
@@ -166,6 +170,7 @@ The platform currently supports:
 * ✅ Feature 16 — Performance Optimization
 * ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 * ✅ Frontend Feature 02 — Authentication & Session Architecture
+* ✅ Frontend Feature 03 — Public Posts Module
 
 ---
 
@@ -223,14 +228,11 @@ frontend/
 ├── src/
 │   ├── config/
 │   ├── features/
-│   │   └── auth/
+│   │   ├── auth/
+│   │   └── posts/
 │   │       ├── api/
 │   │       ├── components/
-│   │       ├── context/
-│   │       ├── events/
-│   │       ├── hooks/
 │   │       ├── pages/
-│   │       ├── storage/
 │   │       └── utils/
 │   ├── layouts/
 │   ├── lib/
@@ -261,7 +263,7 @@ npm run test:watch  Run Vitest in watch mode
 npm run preview  Preview the production bundle locally
 ```
 
-The current frontend preserves the Feature 01 foundation and adds the completed Frontend Feature 02 authentication architecture: AuthProvider state, browser-session restoration, centralized token storage, normalized errors, one-time Axios interceptors, single-flight refresh coordination, session invalidation, safe route guards, login, logout, and role-aware account navigation.
+The current frontend preserves the Feature 01 foundation and Feature 02 authentication architecture, then adds Frontend Feature 03 public post browsing. `/posts` and `/posts/:postSlug` use the shared Axios client, URL-owned page state, abortable requests, controlled loading/empty/error/not-found states, and plain-text content rendering. No new global state or server-state dependency was introduced.
 
 Authentication follows these flows:
 
@@ -276,7 +278,7 @@ Logout:  POST /auth/logout/ with bearer and refresh -> always clear local authen
 
 Development CORS permits only `http://localhost:5173` for `/api/` requests. Credentials remain disabled, no wildcard origin is enabled, and production inherits an empty CORS origin allowlist.
 
-The frontend suite currently contains 12 test files with 135 passing tests. A real frontend/backend authentication matrix also passed 35 of 35 checks.
+The frontend suite currently contains 18 test files with 166 passing tests. The earlier real frontend/backend authentication matrix also passed 35 of 35 checks. Feature 03 browser verification remains a documented manual follow-up where an interactive browser and seeded backend are available.
 
 Known limitations include localStorage refresh-token exposure if script execution is compromised, no cross-tab refresh-rotation coordination, ambiguity when a rotated refresh response is lost, and incomplete server revocation when logout cannot reach the backend or lacks a usable access token. The role guard and role helpers are implemented, but no business-domain role-protected route is mounted yet.
 
@@ -407,7 +409,7 @@ Documentation is updated incrementally as each feature is completed.
 
 # Roadmap
 
-Frontend Feature 02 — Authentication & Session Architecture is complete. The next frontend milestone is pending roadmap selection.
+Frontend Feature 03 — Public Posts Module is complete. The next frontend milestone is pending roadmap selection.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
@@ -441,11 +443,11 @@ This project emphasizes:
 
 # Current Status
 
-**Authoritative Current Milestone:** ✅ Frontend Feature 02 — Authentication & Session Architecture
+**Authoritative Current Milestone:** ✅ Frontend Feature 03 — Public Posts Module
 
 The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 established the verified React/Vite foundation, centralized routing, shared layout and pages, validated public environment configuration, Tailwind styling, and shared Axios boundary.
 
-Frontend Feature 02 now implements login, current-user and role loading, memory-only access tokens, persistent rotated refresh tokens, session restoration, coordinated Axios refresh, protected and anonymous-only routing, safe return paths, logout, role-aware navigation, normalized authentication errors, and automated frontend tests. The next milestone remains pending roadmap selection. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
+Frontend Feature 02 implements login, current-user and role loading, memory-only access tokens, persistent rotated refresh tokens, session restoration, coordinated Axios refresh, protected and anonymous-only routing, safe return paths, logout, role-aware navigation, and normalized authentication errors. Frontend Feature 03 adds public list/detail routes, backend-contract adapters, URL-canonical pagination, accessible request states, safe image handling, plain-text content rendering, and focused regression tests. The next milestone remains pending roadmap selection. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
 
 The older milestone narrative retained below is historical backend feature context and is superseded by this update.
 

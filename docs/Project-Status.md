@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 02 — Authentication & Session Architecture
+**Current Milestone:** ✅ Frontend Feature 03 — Public Posts Module
 
 ---
 
@@ -1470,7 +1470,7 @@ Implemented
 | API Specification | ✅ Current | Exact authentication contracts, rotated refresh, `/me` roles, and implemented APIs through Feature 16 |
 | Authentication Flow | ✅ Current | Backend JWT lifecycle and implemented React session architecture |
 | Testing Strategy | ✅ Current | Backend manual strategy and Frontend Feature 02 automated/manual coverage |
-| Project Status | ✅ Current | Frontend Feature 02 complete; next milestone awaits roadmap selection |
+| Project Status | ✅ Current | Frontend Feature 03 complete; next milestone awaits roadmap selection |
 | Frontend README | ✅ Current | Frontend foundation and authentication developer guide |
 
 ---
@@ -1776,11 +1776,11 @@ Deployment & CI/CD is intentionally deferred until backend and frontend developm
 
 # Current Milestone
 
-✅ Frontend Feature 02 — Authentication & Session Architecture
+✅ Frontend Feature 03 — Public Posts Module
 
-Status: Backend prerequisites, browser authentication architecture, UI integration, linting, production build, 135 automated tests, dependency audit, 35/35 real-stack browser checks, CORS verification, ADR, Feature Completion Report, and synchronized documentation completed.
+Status: Public list/detail integration, URL-backed pagination, safe presentation, linting, production build, 166 automated tests, ADR-023, Feature Completion Report, and synchronized documentation completed. Interactive Feature 03 browser verification remains pending and is not claimed.
 
-Frontend Feature 02 is complete. Backend automated regression testing and the remaining product frontend remain pending.
+Frontend Feature 03 is complete. Backend automated regression testing and later roadmap-selected frontend work remain pending.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
@@ -1788,9 +1788,9 @@ Deployment and CI/CD are intentionally deferred until backend and frontend devel
 
 # Current Project Status
 
-The backend domain/API foundation through Feature 16 is complete. Frontend Features 01 and 02 now provide the React/Vite foundation and a verified authentication/session layer. The application can authenticate against the real Django API, restore and rotate a browser session, load managed roles from `/me/`, guard routes, and clear local state safely on logout or session invalidation.
+The backend domain/API foundation through Feature 16 is complete. Frontend Features 01–03 now provide the React/Vite foundation, a verified authentication/session layer, and a public post list/detail module. The application can authenticate against the real Django API and browse published content anonymously through canonical paginated routes.
 
-No business frontend module beyond authentication is claimed. Backend automated regression coverage, the remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
+The public Posts module is the first completed business frontend module. Backend automated regression coverage, remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
 
 ---
 
@@ -1800,7 +1800,7 @@ No business frontend module beyond authentication is claimed. Backend automated 
 
 ### Objective
 
-Select the next frontend feature from the project roadmap after review of Frontend Feature 02. No Frontend Feature 03 scope is assumed by this status document.
+Select the next frontend feature from the project roadmap after review of Frontend Feature 03. No later feature scope is assumed by this status document.
 
 ### Planned Areas
 
@@ -1985,4 +1985,32 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Review the completed Frontend Feature 02 report and select the next item from the maintained frontend roadmap. No next feature is assumed here.
+**Starting Point:** Review the completed Frontend Feature 03 report and select the next item from the maintained frontend roadmap. No next feature is assumed here. Deployment and CI/CD remain deferred.
+
+---
+
+# Current Frontend Update — Frontend Feature 03
+
+Frontend Feature 03 — Public Posts Module is complete.
+
+Implemented:
+
+* public `/posts` and `/posts/:postSlug` routes in the centralized router;
+* exact shared-client adapters for `GET /api/posts/` and `GET /api/posts/{slug}/`;
+* URL-owned, canonical page-number navigation using the backend's 20-item standard pagination;
+* loading, success, empty, retryable error, invalid-page recovery, and detail-not-found states;
+* abortable request effects and stale-response protection;
+* post cards, metadata, taxonomy, featured-image fallback, and readable detail presentation;
+* plain-text content rendering and credential-free absolute HTTP(S) image URL validation;
+* primary-navigation access for anonymous and authenticated visitors;
+* ADR-023 and the Frontend Feature 03 completion report.
+
+Verification:
+
+* focused Feature 03 suite: 6 files, 31 tests passed;
+* full frontend regression: 18 files, 166 tests passed;
+* ESLint: passed;
+* Vite production build: passed, 168 modules transformed;
+* interactive browser/manual matrix: pending because a browser session with a seeded running backend was unavailable; no manual result is claimed.
+
+No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 03 changes. The next frontend milestone awaits roadmap selection; deployment remains deferred.
