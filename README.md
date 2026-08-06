@@ -171,6 +171,7 @@ The platform currently supports:
 * ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 * ✅ Frontend Feature 02 — Authentication & Session Architecture
 * ✅ Frontend Feature 03 — Public Posts Module
+* ✅ Frontend Feature 04 — Comments Module
 
 ---
 
@@ -443,11 +444,9 @@ This project emphasizes:
 
 # Current Status
 
-**Authoritative Current Milestone:** ✅ Frontend Feature 03 — Public Posts Module
+**Authoritative Current Milestone:** ✅ Frontend Feature 04 — Comments Module
 
-The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 established the verified React/Vite foundation, centralized routing, shared layout and pages, validated public environment configuration, Tailwind styling, and shared Axios boundary.
-
-Frontend Feature 02 implements login, current-user and role loading, memory-only access tokens, persistent rotated refresh tokens, session restoration, coordinated Axios refresh, protected and anonymous-only routing, safe return paths, logout, role-aware navigation, and normalized authentication errors. Frontend Feature 03 adds public list/detail routes, backend-contract adapters, URL-canonical pagination, accessible request states, safe image handling, plain-text content rendering, and focused regression tests. The next milestone remains pending roadmap selection. Deployment and CI/CD remain intentionally deferred until backend and frontend development are complete.
+The backend is complete through Feature 16 — Performance Optimization. Frontend Feature 01 established the verified React/Vite foundation. Frontend Feature 02 implements login, auth context, session restoration, and token refresh. Frontend Feature 03 adds public post browsing. Frontend Feature 04 adds public comment listing on post detail pages, URL-backed comments pagination, authenticated comment creation, owner comment editing and deletion, permission-aware UI controls, XSS safety, and isolated request error boundaries.
 
 The older milestone narrative retained below is historical backend feature context and is superseded by this update.
 

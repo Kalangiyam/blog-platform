@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 03 — Public Posts Module
+**Current Milestone:** ✅ Frontend Feature 04 — Comments Module
 
 ---
 

@@ -3,9 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const apiMocks = vi.hoisted(() => ({ getPublishedPost: vi.fn() }))
+const apiMocks = vi.hoisted(() => ({
+  getPublishedPost: vi.fn(),
+  getPostComments: vi.fn().mockResolvedValue({ count: 0, results: [] }),
+}))
 vi.mock('../api/postsApi.js', () => ({ getPublishedPost: apiMocks.getPublishedPost }))
+vi.mock('../../comments/api/commentsApi.js', () => ({
+  getPostComments: apiMocks.getPostComments,
+  createPostComment: vi.fn(),
+  updateComment: vi.fn(),
+  deleteComment: vi.fn(),
+}))
 
+import { AuthContext, AUTH_STATUS } from '../../auth/context/AuthContext.js'
 import { PostError, POST_ERROR_CODES } from '../utils/postErrors.js'
 import PostDetailPage, { PostNotFound } from './PostDetailPage.jsx'
 
@@ -22,14 +32,28 @@ const POST = {
   tags: [{ name: 'React', slug: 'react' }],
 }
 
+const defaultAuthContextValue = {
+  user: null,
+  status: AUTH_STATUS.UNAUTHENTICATED,
+  isAuthenticated: false,
+  authError: null,
+  login: vi.fn(),
+  logout: vi.fn(),
+  clearAuthError: vi.fn(),
+  hasRole: vi.fn(() => false),
+  hasAnyRole: vi.fn(() => false),
+}
+
 function renderDetail() {
   render(
-    <MemoryRouter initialEntries={['/posts/detailed-post']}>
-      <Routes>
-        <Route path="/posts/:postSlug" element={<PostDetailPage />} />
-        <Route path="/posts" element={<h1>Posts destination</h1>} />
-      </Routes>
-    </MemoryRouter>,
+    <AuthContext.Provider value={defaultAuthContextValue}>
+      <MemoryRouter initialEntries={['/posts/detailed-post']}>
+        <Routes>
+          <Route path="/posts/:postSlug" element={<PostDetailPage />} />
+          <Route path="/posts" element={<h1>Posts destination</h1>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>,
   )
 }
 
