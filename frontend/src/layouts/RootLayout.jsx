@@ -15,12 +15,18 @@ function RootLayout() {
           </Link>
 
           <div className="ml-auto flex flex-wrap items-center justify-end gap-4">
-            <nav aria-label="Primary navigation">
+            <nav aria-label="Primary navigation" className="flex items-center gap-4">
               <Link
                 className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 to="/"
               >
                 Home
+              </Link>
+              <Link
+                className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                to="/posts"
+              >
+                Posts
               </Link>
             </nav>
 

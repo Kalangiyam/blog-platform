@@ -395,6 +395,24 @@ Ordering: -published_at, -created_at, -pk
 
 Successful responses use the standard `count`, `next`, `previous`, and `results` envelope.
 
+Each list result exposes exactly:
+
+```json
+{
+  "id": 1,
+  "title": "Architecture First",
+  "slug": "architecture-first",
+  "excerpt": "A summary.",
+  "featured_image_url": "http://localhost:8000/media/posts/featured/example.webp",
+  "author": { "id": 2, "username": "author" },
+  "published_at": "2026-08-06T10:00:00Z",
+  "categories": [{ "name": "Engineering", "slug": "engineering" }],
+  "tags": [{ "name": "React", "slug": "react" }]
+}
+```
+
+The React client sends only the `page` parameter and relies on the standard 20-item page size. Its canonical listing URLs are `/posts` for page one and `/posts?page=N` for later positive integer pages. Invalid local page values normalize to page one; a backend `404` for an out-of-range list page also navigates back to canonical page one.
+
 ---
 
 ## Retrieve Single Post
@@ -410,6 +428,10 @@ Public.
 ### Behavior
 
 Returns a published, non-deleted post identified by its slug.
+
+The detail representation preserves all list fields and additionally exposes `content`, `status`, `created_at`, and `updated_at`. A missing, draft, soft-deleted, or otherwise non-public slug returns `404` through the public queryset boundary.
+
+The React client consumes this endpoint at `/posts/:postSlug`. It renders `content` as plain text rather than HTML, treats detail `404` separately from transient failures, and validates featured-image URLs before placing them in an image source.
 
 ---
 

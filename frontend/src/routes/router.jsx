@@ -4,6 +4,8 @@ import AnonymousOnlyRoute from '../features/auth/components/AnonymousOnlyRoute.j
 import ProtectedRoute from '../features/auth/components/ProtectedRoute.jsx'
 import LoginPage from '../features/auth/pages/LoginPage.jsx'
 import UnauthorizedPage from '../features/auth/pages/UnauthorizedPage.jsx'
+import PostDetailPage from '../features/posts/pages/PostDetailPage.jsx'
+import PostListPage from '../features/posts/pages/PostListPage.jsx'
 import RootLayout from '../layouts/RootLayout.jsx'
 import HomePage from '../pages/HomePage.jsx'
 import NotFoundPage from '../pages/NotFoundPage.jsx'
@@ -18,6 +20,14 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: HomePage,
+      },
+      {
+        path: 'posts',
+        Component: PostListPage,
+      },
+      {
+        path: 'posts/:postSlug',
+        Component: PostDetailPage,
       },
       {
         Component: AnonymousOnlyRoute,

@@ -1098,6 +1098,29 @@ The testing strategy is defined, and automated coverage is being introduced incr
 
 Feature 12 subsequently introduced Search. At the time this historical milestone was written, Frontend Feature 02 — Authentication & Session Architecture was next and its testing tools had not yet been selected. Frontend Feature 02 is now complete with the Vitest-based suite and real-stack verification documented above.
 
+---
+
+## Frontend Feature 03 Automated Testing
+
+Frontend Feature 03 extends the Vitest, jsdom, React Testing Library, user-event, and isolated Axios-mock strategy. Six new test files add 31 tests for:
+
+* exact list and slug-detail API paths, page parameters, response-body returns, abort signals, slug encoding, and normalized `404` behavior;
+* positive-integer page parsing, canonical query generation, noise/repetition removal, bounded direct-page navigation, stable date formatting, and image URL allowlisting;
+* safe card rendering for list serializer fields and controlled unsafe-image fallback;
+* list loading, success, empty, retry, pagination, invalid/out-of-range page recovery, and stale-response suppression;
+* detail field rendering, retry behavior, dedicated not-found presentation, and hostile HTML/script content remaining inert text;
+* centralized `/posts` and `/posts/:postSlug` route matching.
+
+Final automated results on 2026-08-06:
+
+```text
+npm run test   18 files, 166 tests passed
+npm run lint   passed
+npm run build  passed (168 modules transformed)
+```
+
+The browser-only manual checklist covers anonymous list/detail access, next/previous/direct-page navigation, back/forward behavior, refresh on a paginated URL, missing and broken images, empty results, invalid and out-of-range page values, detail `404`, transient retry, responsive layouts, keyboard focus, and console/network inspection. Those checks are marked pending rather than passed because no interactive browser with a seeded running backend was available in this execution environment.
+
 The historical next testing scope was expected to include:
 
 * Search query validation

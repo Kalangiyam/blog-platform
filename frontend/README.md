@@ -1,6 +1,6 @@
 # Blog Platform Frontend
 
-The React single-page application for the Production-Grade Blog Platform. Frontend Feature 01 established the browser foundation, and Frontend Feature 02 adds the implemented authentication and session architecture.
+The React single-page application for the Production-Grade Blog Platform. Frontend Feature 01 established the browser foundation, Frontend Feature 02 added authentication and session architecture, and Frontend Feature 03 adds public post browsing.
 
 ## Technology Stack
 
@@ -35,7 +35,7 @@ Folder responsibilities:
 
 ```text
 src/config/   Validated public runtime configuration
-src/features/ Feature-owned behavior; authentication is under features/auth/
+src/features/ Feature-owned behavior; authentication and public posts are isolated modules
 src/layouts/  Shared route shells
 src/lib/      Shared infrastructure such as Axios
 src/pages/    Route-level screens
@@ -55,6 +55,14 @@ src/features/auth/
 ├── pages/        Login and controlled unauthorized screens
 ├── storage/      Memory access token and localStorage refresh token
 └── utils/        Error, form, and safe-return-path normalization
+```
+
+```text
+src/features/posts/
+├── api/          Public list/detail requests through the shared Axios client
+├── components/   Cards, images, taxonomy, pagination, and request feedback
+├── pages/        Public list and slug-detail route screens
+└── utils/        Date, page, image-URL, and post-error normalization
 ```
 
 ## Prerequisites
@@ -110,7 +118,7 @@ npm run test
 npm run test:watch
 ```
 
-Vitest runs in jsdom with React Testing Library and isolated Axios mocks. The completed Frontend Feature 02 suite contains 12 test files and 135 passing tests. It covers token storage, authentication APIs and errors, AuthProvider restoration, session invalidation, Axios bearer and refresh coordination, guards, safe return paths, login, logout, and authentication navigation.
+Vitest runs in jsdom with React Testing Library and isolated Axios mocks. The completed suite contains 18 test files and 166 passing tests. It covers the Feature 02 authentication behavior plus public-post API contracts, URL/page utilities, safe media handling, cards, list/detail states, stale-request suppression, XSS regression, pagination, and centralized route matching.
 
 The real frontend and Django stack also passed a 35-of-35 authentication verification matrix. This evidence is separate from the deterministic automated suite.
 
@@ -134,11 +142,17 @@ Preview serves the built output for local verification; it is not the production
 
 Frontend Feature 01 introduced one Data Mode browser router at module scope, the root layout, Home and Not Found pages, and the root error boundary. Frontend Feature 02 preserves that composition and adds focused authentication guards.
 
+Frontend Feature 03 adds public `/posts` and `/posts/:postSlug` routes beneath the same root layout. The listing treats the URL as pagination authority: page one is canonical at `/posts`, valid later pages use `?page=<positive integer>`, malformed/noisy/repeated values normalize to page one, and an out-of-range backend page replaces the URL with page one. Public requests are aborted on cleanup and older responses cannot overwrite a newer route state.
+
+Post detail content is rendered as plain text with preserved whitespace. Featured images accept only credential-free absolute HTTP(S) URLs; missing, malformed, relative, `data:`, and `javascript:` values use a controlled fallback. The backend’s request-aware serializer normally supplies absolute media URLs.
+
 `ProtectedRoute` renders a controlled checking screen, redirects anonymous users to `/login` while preserving only the attempted pathname, query, and fragment, and renders its outlet after authentication. `AnonymousOnlyRoute` keeps authenticated users away from `/login`. `RoleProtectedRoute` supports explicit any-role matching and fails closed for malformed configuration. The safe-return utility accepts only internal paths beginning with one `/` and rejects absolute, protocol-relative, backslash-containing, and malformed values.
 
 | Path | Page |
 | --- | --- |
 | `/` | Home |
+| `/posts` | Public paginated post list |
+| `/posts/:postSlug` | Public post detail |
 | `/login` | Anonymous-only login page |
 | `/unauthorized` | Protected controlled 403 page |
 | `*` | Not Found |
@@ -214,4 +228,4 @@ The Django backend remains authoritative for authentication, authorization, vali
 
 ## Next Frontend Milestone
 
-Frontend Feature 02 — Authentication & Session Architecture is complete. The next frontend milestone is pending roadmap selection.
+Frontend Feature 03 — Public Posts Module is complete. The next frontend milestone is pending roadmap selection. Deployment remains deferred.

@@ -1525,6 +1525,8 @@ The Profiles domain serves as the reference implementation for future User-adjac
 
 - None
 
+Frontend Feature 03 — Public Posts Module is also complete; see the current architecture update below and ADR-023.
+
 ## Next Feature
 
 - Pending frontend roadmap selection.
@@ -1546,6 +1548,7 @@ Future applications will reuse:
 * The role-based authorization architecture introduced in Feature 14
 * The frontend foundation introduced in Frontend Feature 01
 * The session, refresh, guard, and authentication testing architecture introduced in Frontend Feature 02
+* The URL-owned pagination, abortable request, and safe post-presentation architecture introduced in Frontend Feature 03
 
 The Posts, Categories, Tags, and Comments applications now demonstrate cross-domain integration without merging domain responsibilities.
 
@@ -1568,6 +1571,36 @@ These modules serve as reference implementations for future domains by demonstra
 * Secure parent-child domain relationships
 
 The next frontend milestone remains pending roadmap selection. Deployment and CI/CD remain deferred until backend and frontend development are complete.
+
+---
+
+# Frontend Feature 03 Public Posts Architecture
+
+Frontend Feature 03 adds the first public business-domain screens without changing the backend, authentication architecture, or shared Axios infrastructure. The feature is isolated under `frontend/src/features/posts/` with API, component, page, and utility boundaries.
+
+## Data and State Boundaries
+
+`postsApi.js` is a small adapter over the existing shared `apiClient`. It owns only `GET /posts/` and `GET /posts/{slug}/`, returns response bodies rather than Axios responses, accepts `AbortSignal`, encodes slugs, and maps failures to a posts-specific safe error contract. It does not attach tokens, inspect authentication Context, configure headers, or cache server state.
+
+The list and detail pages keep request state locally. No Redux, Context, or server-state library was added because these public screens do not yet demonstrate cross-route caching or synchronization requirements. Effects abort superseded requests and use active-request guards, preventing unmounted or older requests from updating the current screen under route changes or React Strict Mode replay.
+
+## URL-Owned Pagination
+
+The list route treats the browser URL as the source of truth. Page one is `/posts`; later pages are `/posts?page=N`. Missing, zero, negative, fractional, repeated, unsafe-integer, or nonnumeric values normalize to page one. Unsupported query noise is removed with replace navigation. A valid but out-of-range page that receives the backend list `404` also replace-navigates to page one. Pagination links are ordinary internal links, so back/forward navigation remains native.
+
+The frontend uses the backend standard page size of 20 to derive total page count from `count`. It never requests a custom `page_size`, preserving the established API policy.
+
+## Presentation and Security
+
+Post cards and detail screens consume the exact serializer fields. Taxonomy display is shared, dates use an explicit locale and UTC date boundary, and missing author/image/date values have controlled fallbacks. Request states distinguish loading, empty, retryable operational failure, and detail not-found behavior.
+
+Post `content` is treated as untrusted plain text and rendered through React text interpolation with `white-space: pre-wrap`; `dangerouslySetInnerHTML` and HTML parsing are not used. Featured-image sources accept only credential-free absolute HTTP(S) URLs. The backend normally provides absolute URLs because the DRF serializer receives request context. Unsafe schemes, credentials, malformed values, relative values, and failed image loads render a fallback instead.
+
+Authentication remains orthogonal. Public post calls use the shared client and may carry an already-present bearer token through existing interceptors, but the routes are not guarded and the module contains no token or role logic. Backend queryset visibility remains authoritative for publication and soft-deletion rules.
+
+## Routes and Verification
+
+The central router owns `/posts` and `/posts/:postSlug`; the root navigation exposes Posts to anonymous and authenticated visitors. The automated frontend suite now contains 18 files and 166 passing tests. Feature 03 adds 31 tests across API contracts, safe error categories, URL/page/date/media utilities, card output, list/detail states, pagination, stale-response handling, route matching, and hostile-content regression. ESLint and the Vite production build pass. Interactive browser verification remains pending because this execution environment did not provide a browser session with a seeded backend.
 
 Each application will remain independently responsible for its own models, serializers, permissions, views, and routes while integrating through explicit database relationships and REST APIs.
 
