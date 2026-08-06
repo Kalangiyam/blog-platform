@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 04 — Comments Module
+**Current Milestone:** ✅ Frontend Feature 05 — User Profiles Module
 
 ---
 
@@ -1985,32 +1985,35 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Review the completed Frontend Feature 03 report and select the next item from the maintained frontend roadmap. No next feature is assumed here. Deployment and CI/CD remain deferred.
+**Starting Point:** Review the completed Frontend Feature 05 report and select the next item from the maintained frontend roadmap. Deployment and CI/CD remain deferred.
 
 ---
 
-# Current Frontend Update — Frontend Feature 03
+# Current Frontend Update — Frontend Feature 05
 
-Frontend Feature 03 — Public Posts Module is complete.
+Frontend Feature 05 — User Profiles Module (Public Profiles and Authenticated Profile Management) is complete.
 
 Implemented:
 
-* public `/posts` and `/posts/:postSlug` routes in the centralized router;
-* exact shared-client adapters for `GET /api/posts/` and `GET /api/posts/{slug}/`;
-* URL-owned, canonical page-number navigation using the backend's 20-item standard pagination;
-* loading, success, empty, retryable error, invalid-page recovery, and detail-not-found states;
+* public `/users/:username` and protected `/profile` routes in the centralized router;
+* API integration for `GET /api/users/{username}/profile/`, `GET /api/profile/`, and `PATCH /api/profile/`;
+* public-safe data presentation excluding email and date of birth from public routes;
+* deterministic, accessible initials-based visual placeholder (`ProfileAvatarPlaceholder`);
+* plain-text biography rendering preventing executable HTML injection;
+* safe URL validation for external website links (`getSafeProfileUrl`);
+* client-side usability validation alongside backend authoritative validation mapping;
+* form dirty tracking and changed-field allowlisting for partial `PATCH` requests;
+* accessible loading skeletons, empty states for incomplete profiles, controlled 404 pages, and retryable error handlers;
 * abortable request effects and stale-response protection;
-* post cards, metadata, taxonomy, featured-image fallback, and readable detail presentation;
-* plain-text content rendering and credential-free absolute HTTP(S) image URL validation;
-* primary-navigation access for anonymous and authenticated visitors;
-* ADR-023 and the Frontend Feature 03 completion report.
+* ADR-025 and Frontend Feature 05 completion report.
 
 Verification:
 
-* focused Feature 03 suite: 6 files, 31 tests passed;
-* full frontend regression: 18 files, 166 tests passed;
-* ESLint: passed;
-* Vite production build: passed, 168 modules transformed;
-* interactive browser/manual matrix: pending because a browser session with a seeded running backend was unavailable; no manual result is claimed.
+* focused Profiles test suite: 9 files, 34 tests passed;
+* full frontend regression suite: 30 files, 252 tests passed;
+* ESLint: passed cleanly;
+* Vite production build: passed;
+* manual browser testing matrix prepared for execution against running Django and Vite dev servers.
 
-No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 03 changes. The next frontend milestone awaits roadmap selection; deployment remains deferred.
+No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 05 changes.
+
