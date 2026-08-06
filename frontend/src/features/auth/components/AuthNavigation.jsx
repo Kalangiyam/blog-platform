@@ -122,9 +122,12 @@ export default function AuthNavigation() {
       className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
     >
       <div className="flex flex-wrap items-center justify-end gap-1.5">
-        <span className="text-sm font-semibold text-slate-700">
+        <Link
+          className="text-sm font-semibold text-slate-700 hover:text-indigo-600 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          to="/profile"
+        >
           {getDisplayName(user)}
-        </span>
+        </Link>
         {assignedRoles.map((role) => (
           <span
             className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700"
@@ -134,6 +137,13 @@ export default function AuthNavigation() {
           </span>
         ))}
       </div>
+
+      <Link
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        to="/profile"
+      >
+        My Profile
+      </Link>
 
       <button
         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:text-slate-400"

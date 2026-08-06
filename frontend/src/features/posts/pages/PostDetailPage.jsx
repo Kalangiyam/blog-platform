@@ -96,7 +96,19 @@ function PostDetailPage() {
         <header className="mt-8">
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">{post.title}</h1>
           <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-            <span>By {post.author?.username || 'Unknown author'}</span>
+            <span>
+              By{' '}
+              {post.author?.username ? (
+                <Link
+                  className="font-semibold text-indigo-700 hover:underline hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  to={`/users/${post.author.username}`}
+                >
+                  {post.author.username}
+                </Link>
+              ) : (
+                'Unknown author'
+              )}
+            </span>
             <span aria-hidden="true">/</span>
             <time dateTime={post.published_at || undefined}>{formatPostDate(post.published_at)}</time>
           </div>
