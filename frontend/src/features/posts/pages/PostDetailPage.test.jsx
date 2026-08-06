@@ -104,4 +104,78 @@ describe('PostDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
     expect(apiMocks.getPublishedPost).toHaveBeenCalledTimes(2)
   })
+
+  it('renders FeaturedImageUploader for authenticated author only', async () => {
+    apiMocks.getPublishedPost.mockResolvedValue(POST)
+
+    const authorAuthContext = {
+      ...defaultAuthContextValue,
+      user: { id: 2, username: 'ada' },
+      status: AUTH_STATUS.AUTHENTICATED,
+      isAuthenticated: true,
+    }
+
+    render(
+      <AuthContext.Provider value={authorAuthContext}>
+        <MemoryRouter initialEntries={['/posts/detailed-post']}>
+          <Routes>
+            <Route path="/posts/:postSlug" element={<PostDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
+    expect(screen.getByText('Post Featured Image')).toBeInTheDocument()
+  })
+
+  it('does not render FeaturedImageUploader for non-author logged in users', async () => {
+    apiMocks.getPublishedPost.mockResolvedValue(POST)
+
+    const otherUserAuthContext = {
+      ...defaultAuthContextValue,
+      user: { id: 99, username: 'other' },
+      status: AUTH_STATUS.AUTHENTICATED,
+      isAuthenticated: true,
+    }
+
+    render(
+      <AuthContext.Provider value={otherUserAuthContext}>
+        <MemoryRouter initialEntries={['/posts/detailed-post']}>
+          <Routes>
+            <Route path="/posts/:postSlug" element={<PostDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
+    expect(screen.queryByText('Post Featured Image')).not.toBeInTheDocument()
+  })
+
+  it('renders FeaturedImageUploader for Editor users even if not author', async () => {
+    apiMocks.getPublishedPost.mockResolvedValue(POST)
+
+    const editorAuthContext = {
+      ...defaultAuthContextValue,
+      user: { id: 99, username: 'editor_user' },
+      status: AUTH_STATUS.AUTHENTICATED,
+      isAuthenticated: true,
+      hasRole: vi.fn((role) => role === 'Editor'),
+    }
+
+    render(
+      <AuthContext.Provider value={editorAuthContext}>
+        <MemoryRouter initialEntries={['/posts/detailed-post']}>
+          <Routes>
+            <Route path="/posts/:postSlug" element={<PostDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
+    expect(screen.getByText('Post Featured Image')).toBeInTheDocument()
+  })
 })
+
