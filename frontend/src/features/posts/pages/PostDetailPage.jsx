@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 
+import CommentsSection from '../../comments/components/CommentsSection.jsx'
 import { getPublishedPost } from '../api/postsApi.js'
 import PostImage from '../components/PostImage.jsx'
 import PostRequestError from '../components/PostRequestError.jsx'
@@ -106,6 +107,8 @@ function PostDetailPage() {
         <PostImage className="mt-10 aspect-[16/9] w-full rounded-2xl" title={post.title} url={post.featured_image_url} />
 
         <div className="mt-10 whitespace-pre-wrap text-lg leading-8 text-slate-700">{post.content}</div>
+
+        <CommentsSection postSlug={post.slug} />
       </div>
     </article>
   )
