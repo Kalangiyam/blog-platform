@@ -6,6 +6,8 @@ import LoginPage from '../features/auth/pages/LoginPage.jsx'
 import UnauthorizedPage from '../features/auth/pages/UnauthorizedPage.jsx'
 import PostDetailPage from '../features/posts/pages/PostDetailPage.jsx'
 import PostListPage from '../features/posts/pages/PostListPage.jsx'
+import MyProfilePage from '../features/profiles/pages/MyProfilePage.jsx'
+import PublicProfilePage from '../features/profiles/pages/PublicProfilePage.jsx'
 import RootLayout from '../layouts/RootLayout.jsx'
 import HomePage from '../pages/HomePage.jsx'
 import NotFoundPage from '../pages/NotFoundPage.jsx'
@@ -30,6 +32,10 @@ export const router = createBrowserRouter([
         Component: PostDetailPage,
       },
       {
+        path: 'users/:username',
+        Component: PublicProfilePage,
+      },
+      {
         Component: AnonymousOnlyRoute,
         children: [
           {
@@ -41,6 +47,10 @@ export const router = createBrowserRouter([
       {
         Component: ProtectedRoute,
         children: [
+          {
+            path: 'profile',
+            Component: MyProfilePage,
+          },
           {
             path: 'unauthorized',
             Component: UnauthorizedPage,
@@ -54,3 +64,4 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+
