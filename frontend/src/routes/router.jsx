@@ -8,6 +8,7 @@ import PostDetailPage from '../features/posts/pages/PostDetailPage.jsx'
 import PostListPage from '../features/posts/pages/PostListPage.jsx'
 import MyProfilePage from '../features/profiles/pages/MyProfilePage.jsx'
 import PublicProfilePage from '../features/profiles/pages/PublicProfilePage.jsx'
+import SearchResultsPage from '../features/search/pages/SearchResultsPage.jsx'
 import RootLayout from '../layouts/RootLayout.jsx'
 import HomePage from '../pages/HomePage.jsx'
 import NotFoundPage from '../pages/NotFoundPage.jsx'
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         Component: HomePage,
+      },
+      {
+        path: 'search',
+        Component: SearchResultsPage,
       },
       {
         path: 'posts',

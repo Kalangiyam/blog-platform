@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-**Current Milestone:** ✅ Frontend Feature 05 — User Profiles Module
+**Current Milestone:** ✅ Frontend Feature 06 — Search Module
 
 ---
 
@@ -1985,35 +1985,33 @@ Every feature follows the same engineering workflow:
 
 # Next Feature
 
-**Starting Point:** Review the completed Frontend Feature 05 report and select the next item from the maintained frontend roadmap. Deployment and CI/CD remain deferred.
+**Starting Point:** Review the completed Frontend Feature 06 report and select the next item from the maintained frontend roadmap (e.g. Frontend Feature 07 — Post Creation/Authoring or Dashboard). Deployment and CI/CD remain deferred.
 
 ---
 
-# Current Frontend Update — Frontend Feature 05
+# Current Frontend Update — Frontend Feature 06
 
-Frontend Feature 05 — User Profiles Module (Public Profiles and Authenticated Profile Management) is complete.
+Frontend Feature 06 — Search Module (Public Post Search and Search Experience) is complete.
 
-Implemented:
+Implements:
 
-* public `/users/:username` and protected `/profile` routes in the centralized router;
-* API integration for `GET /api/users/{username}/profile/`, `GET /api/profile/`, and `PATCH /api/profile/`;
-* public-safe data presentation excluding email and date of birth from public routes;
-* deterministic, accessible initials-based visual placeholder (`ProfileAvatarPlaceholder`);
-* plain-text biography rendering preventing executable HTML injection;
-* safe URL validation for external website links (`getSafeProfileUrl`);
-* client-side usability validation alongside backend authoritative validation mapping;
-* form dirty tracking and changed-field allowlisting for partial `PATCH` requests;
-* accessible loading skeletons, empty states for incomplete profiles, controlled 404 pages, and retryable error handlers;
-* abortable request effects and stale-response protection;
-* ADR-025 and Frontend Feature 05 completion report.
+* public `/search` route in the centralized router with URL-owned query parameters (`/search?q=django&page=2`);
+* API integration for `GET /api/posts/search/?q=<query>&page=<page>`;
+* responsive header search form (`GlobalSearchForm`) with accessible input labeling, Enter submission, and client validation;
+* explicit form submission strategy (no search-as-you-type live polling) to maintain clean URL navigation and performance;
+* AbortController request cancellation and stale-response protection;
+* canonical URL normalization for malformed or out-of-range pages;
+* accessible loading skeletons (`SearchSkeleton`), empty state prompts (`SearchEmptyState`), zero-results feedback (`SearchNoResults`), retryable error handlers (`SearchRequestError`), and result listings (`SearchResultsList`);
+* query-preserving pagination (`SearchPagination`);
+* ADR-026 and Frontend Feature 06 completion report.
 
 Verification:
 
-* focused Profiles test suite: 9 files, 34 tests passed;
-* full frontend regression suite: 30 files, 252 tests passed;
-* ESLint: passed cleanly;
-* Vite production build: passed;
-* manual browser testing matrix prepared for execution against running Django and Vite dev servers.
+* live manual browser verification (Playwright Chromium): passed 72/72 scenarios (100% PASS rate across all 14 test groups, 5 viewports, and core module regression checks);
+* focused Search test suite: 6 files, 41 tests passed;
+* full frontend regression suite: 41 files, 307 tests passed;
+* ESLint: passed cleanly (0 errors, 0 warnings);
+* Vite production build: passed cleanly in 1.26s.
 
-No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 05 changes.
+No backend file, database model, migration, authentication contract, route guard, token lifecycle, or permission rule changed. `docs/Database-Design.md` and `docs/Authentication-Flow.md` were reviewed and require no Feature 06 changes.
 
