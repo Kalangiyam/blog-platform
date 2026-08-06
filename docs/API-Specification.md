@@ -934,7 +934,7 @@ Status:
 200 OK
 ```
 
-The list uses standard page-number pagination with a default of 20, the `page_size` query parameter, and a maximum of 100.
+The list uses standard page-number pagination with a default of 20, the `page_size` query parameter, and a maximum of 100. The React client maps its Post detail URL search parameter `commentsPage` (e.g. `/posts/:postSlug?commentsPage=2`) to the backend `page` parameter. Page 1 is canonical at `/posts/:postSlug` without `commentsPage`.
 
 Example:
 

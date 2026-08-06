@@ -35,7 +35,7 @@ Folder responsibilities:
 
 ```text
 src/config/   Validated public runtime configuration
-src/features/ Feature-owned behavior; authentication and public posts are isolated modules
+src/features/ Feature-owned behavior; authentication, public posts, and comments are isolated modules
 src/layouts/  Shared route shells
 src/lib/      Shared infrastructure such as Axios
 src/pages/    Route-level screens
@@ -63,6 +63,13 @@ src/features/posts/
 ├── components/   Cards, images, taxonomy, pagination, and request feedback
 ├── pages/        Public list and slug-detail route screens
 └── utils/        Date, page, image-URL, and post-error normalization
+```
+
+```text
+src/features/comments/
+├── api/          Comments CRUD requests through shared Axios client
+├── components/   CommentsSection, CommentCreateForm, CommentItem, CommentList, CommentPagination, CommentRequestError
+└── utils/        Comment errors, ownership comparison, and URL-pagination helpers
 ```
 
 ## Prerequisites

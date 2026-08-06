@@ -1520,6 +1520,8 @@ The Profiles domain serves as the reference implementation for future User-adjac
 - ✅ Feature 16 — Performance Optimization
 - ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 - ✅ Frontend Feature 02 — Authentication & Session Architecture
+- ✅ Frontend Feature 03 — Public Posts Module
+- ✅ Frontend Feature 04 — Comments Module
 
 ## In Progress
 
