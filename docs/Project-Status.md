@@ -4,7 +4,11 @@
 
 **Last Updated:** 2026-08-06
 
+<<<<<<< Updated upstream
 **Current Milestone:** ✅ Frontend Feature 07 — Media Uploads Module
+=======
+**Current Milestone:** ✅ Frontend Feature 08 — Permissions & Authorization UX Module
+>>>>>>> Stashed changes
 
 ---
 
