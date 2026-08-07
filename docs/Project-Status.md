@@ -4,11 +4,7 @@
 
 **Last Updated:** 2026-08-06
 
-<<<<<<< Updated upstream
-**Current Milestone:** ✅ Frontend Feature 07 — Media Uploads Module
-=======
-**Current Milestone:** ✅ Frontend Feature 08 — Permissions & Authorization UX Module
->>>>>>> Stashed changes
+**Current Milestone:** ✅ Frontend Feature 09 — User Administration & Role Management UX Module
 
 ---
 
@@ -1993,26 +1989,24 @@ Every feature follows the same engineering workflow:
 
 ---
 
-# Current Frontend Update — Frontend Feature 07
+# Current Frontend Update — Frontend Feature 09
 
-Frontend Feature 07 — Media Uploads Module (Post Featured Image Upload & Management) is complete.
+Frontend Feature 09 — User Administration & Role Management UX Module is complete.
 
 Implements:
-
-* dedicated feature module under `src/features/media/` (`api/`, `components/`, `hooks/`, `utils/`);
-* API integration for `PUT /api/posts/{slug}/featured-image/` (multipart upload) and `DELETE /api/posts/{slug}/featured-image/` (image removal);
-* progress tracking (`onUploadProgress`) and request cancellation via `AbortController`;
-* client-side validation (`mediaValidation.js`) enforcing 5 MB max size, allowed extensions (`.jpg`, `.jpeg`, `.png`, `.webp`), MIME types (`image/jpeg`, `image/png`, `image/webp`), and resolution bounds;
-* normalized error handling (`normalizeMediaError.js`) mapping DRF validation arrays, 401 unauthenticated, 403 forbidden, 404 missing post, and network connection errors;
-* Object URL preview management (`URL.createObjectURL()`) with automatic revocation (`URL.revokeObjectURL()`) to prevent memory leaks;
-* accessible UI components (`FeaturedImageUploader`, `FeaturedImagePreview`, `ImageDropZone`, `UploadProgress`, `UploadError`, `RemoveImageButton`);
-* conditional author integration on `PostDetailPage` rendering uploader controls exclusively when the authenticated user matches the post author;
-* ADR-027 and Frontend Feature 07 completion report.
+* dedicated feature module under `src/features/admin/` (`api/`, `components/`, `hooks/`, `pages/`, `utils/`);
+* API integration for `GET /api/admin/users/` (paginated list), `GET /api/admin/users/{id}/` (user detail), `POST /api/admin/users/` (provision user), `POST /api/admin/users/{id}/activate/` (empty body `{}`), `POST /api/admin/users/{id}/deactivate/` (empty body `{}`), and `PUT /api/admin/users/{id}/roles/` (role replacement);
+* custom hooks `useAdminUsers(page)` and `useAdminUserDetail(userId)` supporting request cancellation (`AbortController`) and clean state management;
+* error normalizer `normalizeAdminUserError.js` converting DRF backend responses, 400 validation field errors, 401 unauthenticated, 403 forbidden, and 404 missing user errors into safe, structured UI error objects;
+* client-side user creation validation `adminUserValidation.js`;
+* accessible, responsive UI components (`AdminUserList`, `AdminUserListItem`, `AdminPagination`, `UserCreateForm`, `UserRoleEditor`, `UserActivationControls`, `UserSummary`, `UserStatusBadge`, `UserRoleBadge`, `AdminUserError`);
+* page views (`AdminUsersPage`, `AdminUserCreatePage`, `AdminUserDetailPage`) integrated into `router.jsx` guarded by `RoleProtectedRoute` requiring `Administrator` role;
+* top navigation bar integration in `AuthNavigation.jsx` conditionally exposing the "User Administration" link for Administrators;
+* completion report in `docs/feature/Frontend-Feature-09-User-Administration-and-Role-Management-UX-Module.md`.
 
 Verification:
-* media test suite: 5 files, 27 tests passed;
-* full frontend regression suite: 46 files, 334 tests passed;
-* ESLint: passed cleanly (0 errors, 0 warnings);
+* Vitest test suite: 63 test files passed, 423 tests passed (100% pass rate);
+* ESLint: 0 errors, 0 warnings;
 * Vite production build: passed cleanly.
 
 No backend file, database model, migration, authentication contract, or permission rule was modified.
