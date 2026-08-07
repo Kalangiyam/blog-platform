@@ -135,6 +135,15 @@ export default function AuthNavigation() {
         ))}
       </div>
 
+      {hasRole(APPLICATION_ROLES.ADMINISTRATOR) ? (
+        <Link
+          className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 hover:text-indigo-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          to="/admin/users"
+        >
+          User Administration
+        </Link>
+      ) : null}
+
       <Link
         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         to="/profile"

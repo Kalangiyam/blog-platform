@@ -17,7 +17,7 @@ vi.mock('../../comments/api/commentsApi.js', () => ({
 
 import { AuthContext, AUTH_STATUS } from '../../auth/context/AuthContext.js'
 import { PostError, POST_ERROR_CODES } from '../utils/postErrors.js'
-import PostDetailPage, { PostNotFound } from './PostDetailPage.jsx'
+import PostDetailPage from './PostDetailPage.jsx'
 
 const POST = {
   id: 1,
