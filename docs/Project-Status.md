@@ -2,9 +2,9 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
 
-**Current Milestone:** ✅ Frontend Feature 09 — User Administration & Role Management UX Module
+**Current Milestone:** ✅ Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module
 
 ---
 
@@ -1470,7 +1470,7 @@ Implemented
 | API Specification | ✅ Current | Exact authentication contracts, rotated refresh, `/me` roles, and implemented APIs through Feature 16 |
 | Authentication Flow | ✅ Current | Backend JWT lifecycle and implemented React session architecture |
 | Testing Strategy | ✅ Current | Backend manual strategy and Frontend Feature 02 automated/manual coverage |
-| Project Status | ✅ Current | Frontend Feature 03 complete; next milestone awaits roadmap selection |
+| Project Status | ✅ Current | Frontend Feature 10 complete; next milestone awaits roadmap selection |
 | Frontend README | ✅ Current | Frontend foundation and authentication developer guide |
 
 ---
@@ -1776,11 +1776,11 @@ Deployment & CI/CD is intentionally deferred until backend and frontend developm
 
 # Current Milestone
 
-✅ Frontend Feature 03 — Public Posts Module
+✅ Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module
 
-Status: Public list/detail integration, URL-backed pagination, safe presentation, linting, production build, 166 automated tests, ADR-023, Feature Completion Report, and synchronized documentation completed. Interactive Feature 03 browser verification remains pending and is not claimed.
+Status: Post authoring, editing, and publishing workflow implemented as a dedicated feature module under `src/features/posts/`. Includes 11 API functions, 6 UI components, 2 custom hooks, 2 protected route pages, client-side form validation, DRF error normalization, and taxonomy picker integration. Routes guarded by `ProtectedRoute` and `RoleProtectedRoute` (Author, Editor). ESLint: 0 errors. Vite build: clean. Django system check: 0 issues. Vitest: 73 test files, 443 tests, 0 failures. Feature Completion Report at `docs/feature/Frontend-Feature-10-Post-Authoring-Editing-and-Publishing-Workflow-UX-Module.md`.
 
-Frontend Feature 03 is complete. Backend automated regression testing and later roadmap-selected frontend work remain pending.
+Frontend Feature 10 is complete. Backend automated regression testing and later roadmap-selected frontend work remain pending.
 
 Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
 
@@ -1788,9 +1788,9 @@ Deployment and CI/CD are intentionally deferred until backend and frontend devel
 
 # Current Project Status
 
-The backend domain/API foundation through Feature 16 is complete. Frontend Features 01–03 now provide the React/Vite foundation, a verified authentication/session layer, and a public post list/detail module. The application can authenticate against the real Django API and browse published content anonymously through canonical paginated routes.
+The backend domain/API foundation through Feature 16 is complete. Frontend Features 01–10 now provide the React/Vite foundation, a verified authentication/session layer, a public post list/detail module, full permissions and authorization infrastructure, user administration, comments, profiles, search, media uploads, and a complete post authoring, editing, and publishing workflow. Authors and Editors can create, edit, publish, unpublish, soft-delete, and manage featured images for posts through the authenticated UI.
 
-The public Posts module is the first completed business frontend module. Backend automated regression coverage, remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
+Backend automated regression coverage, remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
 
 ---
 
@@ -1800,11 +1800,11 @@ The public Posts module is the first completed business frontend module. Backend
 
 ### Objective
 
-Select the next frontend feature from the project roadmap after review of Frontend Feature 03. No later feature scope is assumed by this status document.
+Select the next frontend feature from the project roadmap after review of Frontend Feature 10. No later feature scope is assumed by this status document.
 
 ### Planned Areas
 
-* Review the completed authentication/session architecture and known limitations
+* Review the completed post authoring workflow and known limitations
 * Choose the next user-facing module from the maintained frontend roadmap
 * Define its backend contract, authorization boundary, loading/error behavior, and testing scope before implementation
 
@@ -1989,25 +1989,26 @@ Every feature follows the same engineering workflow:
 
 ---
 
-# Current Frontend Update — Frontend Feature 09
+# Current Frontend Update — Frontend Feature 10
 
-Frontend Feature 09 — User Administration & Role Management UX Module is complete.
+Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module is complete.
 
 Implements:
-* dedicated feature module under `src/features/admin/` (`api/`, `components/`, `hooks/`, `pages/`, `utils/`);
-* API integration for `GET /api/admin/users/` (paginated list), `GET /api/admin/users/{id}/` (user detail), `POST /api/admin/users/` (provision user), `POST /api/admin/users/{id}/activate/` (empty body `{}`), `POST /api/admin/users/{id}/deactivate/` (empty body `{}`), and `PUT /api/admin/users/{id}/roles/` (role replacement);
-* custom hooks `useAdminUsers(page)` and `useAdminUserDetail(userId)` supporting request cancellation (`AbortController`) and clean state management;
-* error normalizer `normalizeAdminUserError.js` converting DRF backend responses, 400 validation field errors, 401 unauthenticated, 403 forbidden, and 404 missing user errors into safe, structured UI error objects;
-* client-side user creation validation `adminUserValidation.js`;
-* accessible, responsive UI components (`AdminUserList`, `AdminUserListItem`, `AdminPagination`, `UserCreateForm`, `UserRoleEditor`, `UserActivationControls`, `UserSummary`, `UserStatusBadge`, `UserRoleBadge`, `AdminUserError`);
-* page views (`AdminUsersPage`, `AdminUserCreatePage`, `AdminUserDetailPage`) integrated into `router.jsx` guarded by `RoleProtectedRoute` requiring `Administrator` role;
-* top navigation bar integration in `AuthNavigation.jsx` conditionally exposing the "User Administration" link for Administrators;
-* completion report in `docs/feature/Frontend-Feature-09-User-Administration-and-Role-Management-UX-Module.md`.
+* dedicated feature module under `src/features/posts/` (`api/`, `components/`, `hooks/`, `pages/`, `utils/`);
+* API integration for `POST /api/posts/` (create draft), `PATCH /api/posts/{slug}/` (update post), `POST /api/posts/{slug}/publish/` (publish post), `POST /api/posts/{slug}/unpublish/` (unpublish post), `PUT /api/posts/{slug}/featured-image/` (upload image), `DELETE /api/posts/{slug}/featured-image/` (remove image), `DELETE /api/posts/{slug}/` (soft delete post), `GET /api/categories/`, and `GET /api/tags/`;
+* custom hooks `usePostMutations()` and `useTaxonomies()` supporting concurrent taxonomy loading and mutation state management with request cancellation (`AbortController`);
+* error normalizer `postErrors.js` converting DRF backend error payloads, field-specific validation errors, 401 unauthenticated, 403 forbidden, and 404 errors into safe, structured `PostError` UI objects;
+* client-side form validation `postValidation.js`;
+* accessible, responsive UI components (`CategoryTagPicker`, `FeaturedImageUploader`, `PostPublishControl`, `PostDeleteControl`, `PostStatusBadge`, `PostForm`);
+* protected route pages (`PostCreatePage` for `/posts/new`, `PostEditPage` for `/posts/:postSlug/edit`) integrated into `router.jsx` guarded by `RoleProtectedRoute` requiring `Author` or `Editor` role;
+* top navigation header link in `AuthNavigation.jsx` conditionally exposing "Create Post" for Authors and Editors;
+* completion report in `docs/feature/Frontend-Feature-10-Post-Authoring-Editing-and-Publishing-Workflow-UX-Module.md`.
 
 Verification:
-* Vitest test suite: 63 test files passed, 423 tests passed (100% pass rate);
+* Vitest test suite: 73 test files passed, 443 tests passed (100% pass rate);
 * ESLint: 0 errors, 0 warnings;
-* Vite production build: passed cleanly.
+* Vite production build: passed cleanly;
+* Django system check: passed cleanly (0 silenced).
 
 No backend file, database model, migration, authentication contract, or permission rule was modified.
 
