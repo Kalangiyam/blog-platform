@@ -117,9 +117,12 @@ function PostDetailPage() {
           {(isEditable || isDeletable || canManageImage) && (
             <div aria-label="Post management actions" className="flex flex-wrap items-center gap-2" role="group">
               {isEditable && (
-                <button className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" type="button">
+                <Link
+                  to={`/posts/${post.slug}/edit`}
+                  className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
                   Edit Post
-                </button>
+                </Link>
               )}
               {isDeletable && (
                 <button className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600" type="button">

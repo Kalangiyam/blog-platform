@@ -8,7 +8,9 @@ import ProtectedRoute from '../features/auth/components/ProtectedRoute.jsx'
 import RoleProtectedRoute from '../features/auth/components/RoleProtectedRoute.jsx'
 import LoginPage from '../features/auth/pages/LoginPage.jsx'
 import UnauthorizedPage from '../features/auth/pages/UnauthorizedPage.jsx'
+import PostCreatePage from '../features/posts/pages/PostCreatePage.jsx'
 import PostDetailPage from '../features/posts/pages/PostDetailPage.jsx'
+import PostEditPage from '../features/posts/pages/PostEditPage.jsx'
 import PostListPage from '../features/posts/pages/PostListPage.jsx'
 import MyProfilePage from '../features/profiles/pages/MyProfilePage.jsx'
 import PublicProfilePage from '../features/profiles/pages/PublicProfilePage.jsx'
@@ -56,6 +58,22 @@ export const router = createBrowserRouter([
       {
         Component: ProtectedRoute,
         children: [
+          {
+            path: 'posts/new',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Author', 'Editor']}>
+                <PostCreatePage />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: 'posts/:postSlug/edit',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Author', 'Editor']}>
+                <PostEditPage />
+              </RoleProtectedRoute>
+            ),
+          },
           {
             path: 'profile',
             Component: MyProfilePage,
