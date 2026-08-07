@@ -160,11 +160,23 @@ Post detail content is rendered as plain text with preserved whitespace. Feature
 | `/` | Home |
 | `/posts` | Public paginated post list |
 | `/posts/:postSlug` | Public post detail |
+| `/dashboard/posts` | Editorial Post Management (Author/Editor) |
+| `/dashboard/categories` | Editorial Category Management (Editor) |
+| `/dashboard/tags` | Editorial Tag Management (Editor) |
+| `/dashboard/comments` | Editorial Comment Moderation (Editor) |
+| `/account/security/password` | Authenticated Password Change |
+| `/account/security/email` | Authenticated Email Verification Status & Resend |
+| `/forgot-password` | Anonymous Password Reset Request |
+| `/reset-password/:uid/:token` | Public Password Reset Confirmation |
+| `/verify-email/:uid/:token` | Public Email Verification Link Confirmation |
 | `/login` | Anonymous-only login page |
 | `/unauthorized` | Protected controlled 403 page |
 | `*` | Not Found |
 
-Hosts will eventually need SPA history fallback so direct browser requests reach `index.html`.
+## Current Milestone
+
+Frontend Feature 11 — Editorial CMS Management & Account Workflows is complete.
+
 
 ## API Client Architecture
 

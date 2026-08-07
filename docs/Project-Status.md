@@ -4,7 +4,7 @@
 
 **Last Updated:** 2026-08-07
 
-**Current Milestone:** ✅ Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module
+**Current Milestone:** ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
 
 ---
 
