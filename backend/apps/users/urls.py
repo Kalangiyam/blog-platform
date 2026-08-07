@@ -9,6 +9,13 @@ from apps.users.views import (
     LogoutAPIView,
     UserAPIView,
 )
+from apps.users.views.account_security import (
+    EmailVerifyConfirmAPIView,
+    EmailVerifySendAPIView,
+    PasswordChangeAPIView,
+    PasswordResetConfirmAPIView,
+    PasswordResetRequestAPIView,
+)
 
 app_name = "users"
 
@@ -37,5 +44,30 @@ urlpatterns = [
         "token/verify/",
         TokenVerifyView.as_view(),
         name="token_verify",
+    ),
+    path(
+        "password/change/",
+        PasswordChangeAPIView.as_view(),
+        name="password_change",
+    ),
+    path(
+        "password/reset/",
+        PasswordResetRequestAPIView.as_view(),
+        name="password_reset_request",
+    ),
+    path(
+        "password/reset/confirm/",
+        PasswordResetConfirmAPIView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
+        "email/verify/send/",
+        EmailVerifySendAPIView.as_view(),
+        name="email_verify_send",
+    ),
+    path(
+        "email/verify/confirm/",
+        EmailVerifyConfirmAPIView.as_view(),
+        name="email_verify_confirm",
     ),
 ]

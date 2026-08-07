@@ -137,6 +137,15 @@ export default function AuthNavigation() {
 
       {hasRole(APPLICATION_ROLES.AUTHOR) || hasRole(APPLICATION_ROLES.EDITOR) ? (
         <Link
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          to="/dashboard"
+        >
+          Dashboard
+        </Link>
+      ) : null}
+
+      {hasRole(APPLICATION_ROLES.AUTHOR) || hasRole(APPLICATION_ROLES.EDITOR) ? (
+        <Link
           className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 hover:text-sky-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
           to="/posts/new"
         >
@@ -152,6 +161,13 @@ export default function AuthNavigation() {
           User Administration
         </Link>
       ) : null}
+
+      <Link
+        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        to="/account/security/password"
+      >
+        Security
+      </Link>
 
       <Link
         className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"

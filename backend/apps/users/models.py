@@ -17,6 +17,12 @@ class User(AbstractUser):
         help_text="User's unique email address.",
     )
 
+    is_email_verified = models.BooleanField(
+        default=False,
+        verbose_name="Email Verified Status",
+        help_text="Designates whether the user's email address is verified.",
+    )
+
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"

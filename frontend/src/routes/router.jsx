@@ -1,4 +1,15 @@
-import { createBrowserRouter } from 'react-router'
+import { Navigate, createBrowserRouter } from 'react-router'
+
+import CategoryManagementPage from '../features/taxonomies/pages/CategoryManagementPage.jsx'
+import CommentModerationPage from '../features/moderation/pages/CommentModerationPage.jsx'
+import DashboardLayout from '../features/dashboard/layouts/DashboardLayout.jsx'
+import EditorialPostsPage from '../features/dashboard/pages/EditorialPostsPage.jsx'
+import EmailVerificationPage from '../features/account/pages/EmailVerificationPage.jsx'
+import EmailVerifyConfirmPage from '../features/account/pages/EmailVerifyConfirmPage.jsx'
+import ForgotPasswordPage from '../features/account/pages/ForgotPasswordPage.jsx'
+import PasswordChangePage from '../features/account/pages/PasswordChangePage.jsx'
+import PasswordResetPage from '../features/account/pages/PasswordResetPage.jsx'
+import TagManagementPage from '../features/taxonomies/pages/TagManagementPage.jsx'
 
 import AdminUserCreatePage from '../features/admin/pages/AdminUserCreatePage.jsx'
 import AdminUserDetailPage from '../features/admin/pages/AdminUserDetailPage.jsx'
@@ -47,11 +58,23 @@ export const router = createBrowserRouter([
         Component: PublicProfilePage,
       },
       {
+        path: 'verify-email/:uid/:token',
+        Component: EmailVerifyConfirmPage,
+      },
+      {
         Component: AnonymousOnlyRoute,
         children: [
           {
             path: 'login',
             Component: LoginPage,
+          },
+          {
+            path: 'forgot-password',
+            Component: ForgotPasswordPage,
+          },
+          {
+            path: 'reset-password/:uid/:token',
+            Component: PasswordResetPage,
           },
         ],
       },
@@ -73,6 +96,56 @@ export const router = createBrowserRouter([
                 <PostEditPage />
               </RoleProtectedRoute>
             ),
+          },
+          {
+            path: 'dashboard',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Author', 'Editor']}>
+                <DashboardLayout />
+              </RoleProtectedRoute>
+            ),
+            children: [
+              {
+                index: true,
+                element: <Navigate replace to="/dashboard/posts" />,
+              },
+              {
+                path: 'posts',
+                Component: EditorialPostsPage,
+              },
+              {
+                path: 'categories',
+                element: (
+                  <RoleProtectedRoute requiredRoles={['Editor']}>
+                    <CategoryManagementPage />
+                  </RoleProtectedRoute>
+                ),
+              },
+              {
+                path: 'tags',
+                element: (
+                  <RoleProtectedRoute requiredRoles={['Editor']}>
+                    <TagManagementPage />
+                  </RoleProtectedRoute>
+                ),
+              },
+              {
+                path: 'comments',
+                element: (
+                  <RoleProtectedRoute requiredRoles={['Editor']}>
+                    <CommentModerationPage />
+                  </RoleProtectedRoute>
+                ),
+              },
+            ],
+          },
+          {
+            path: 'account/security/password',
+            Component: PasswordChangePage,
+          },
+          {
+            path: 'account/security/email',
+            Component: EmailVerificationPage,
           },
           {
             path: 'profile',

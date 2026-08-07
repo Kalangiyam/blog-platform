@@ -44,6 +44,10 @@ urlpatterns = [
             namespace="user_administration",
         ),
     ),
+    path(
+        "api/editorial/",
+        include("apps.editorial.urls"),
+    ),
 ]
 
 if settings.DEBUG:
