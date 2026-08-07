@@ -1,7 +1,11 @@
 import { createBrowserRouter } from 'react-router'
 
+import AdminUserCreatePage from '../features/admin/pages/AdminUserCreatePage.jsx'
+import AdminUserDetailPage from '../features/admin/pages/AdminUserDetailPage.jsx'
+import AdminUsersPage from '../features/admin/pages/AdminUsersPage.jsx'
 import AnonymousOnlyRoute from '../features/auth/components/AnonymousOnlyRoute.jsx'
 import ProtectedRoute from '../features/auth/components/ProtectedRoute.jsx'
+import RoleProtectedRoute from '../features/auth/components/RoleProtectedRoute.jsx'
 import LoginPage from '../features/auth/pages/LoginPage.jsx'
 import UnauthorizedPage from '../features/auth/pages/UnauthorizedPage.jsx'
 import PostDetailPage from '../features/posts/pages/PostDetailPage.jsx'
@@ -60,6 +64,30 @@ export const router = createBrowserRouter([
             path: 'unauthorized',
             Component: UnauthorizedPage,
           },
+          {
+            path: 'admin/users',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Administrator']}>
+                <AdminUsersPage />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: 'admin/users/new',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Administrator']}>
+                <AdminUserCreatePage />
+              </RoleProtectedRoute>
+            ),
+          },
+          {
+            path: 'admin/users/:userId',
+            element: (
+              <RoleProtectedRoute requiredRoles={['Administrator']}>
+                <AdminUserDetailPage />
+              </RoleProtectedRoute>
+            ),
+          },
         ],
       },
       {
@@ -69,4 +97,3 @@ export const router = createBrowserRouter([
     ],
   },
 ])
-
