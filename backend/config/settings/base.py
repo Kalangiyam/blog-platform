@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+# pyrefly: ignore [missing-import]
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'apps.tags.apps.TagsConfig',
     'apps.comments.apps.CommentsConfig',
     "apps.profiles.apps.ProfilesConfig",
+    "apps.editorial.apps.EditorialConfig",
 ]
 
 MIDDLEWARE = [
@@ -127,6 +129,10 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_THROTTLE_RATES": {
+        "password_reset": "5/hour",
+        "email_verify_send": "5/hour",
+    },
 }
 
 SIMPLE_JWT = {
@@ -138,6 +144,10 @@ SIMPLE_JWT = {
 
     "UPDATE_LAST_LOGIN": True,
 }
+
+FRONTEND_BASE_URL = env.str("FRONTEND_BASE_URL", default="http://localhost:5173")
+PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds
+EMAIL_VERIFICATION_TIMEOUT = 86400  # 24 hours in seconds
 
 
 # Internationalization

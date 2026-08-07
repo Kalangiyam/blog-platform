@@ -58,7 +58,9 @@ class UserSerializer(
             "first_name",
             "last_name",
             "roles",
+            "is_email_verified",
         )
+        read_only_fields = fields
 
 
 class LogoutSerializer(serializers.Serializer):
