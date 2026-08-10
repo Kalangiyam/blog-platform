@@ -1,16 +1,25 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import UserCreateForm from './UserCreateForm.jsx'
 
 describe('UserCreateForm', () => {
+  function renderForm(props = {}) {
+    return render(
+      <MemoryRouter>
+        <UserCreateForm onSubmit={vi.fn()} {...props} />
+      </MemoryRouter>,
+    )
+  }
+
   it('renders required form controls and role options', () => {
-    render(<UserCreateForm onSubmit={vi.fn()} />)
+    renderForm()
 
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Password \*$/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Confirm Password/i)).toBeInTheDocument()
     expect(screen.getByText('Author')).toBeInTheDocument()
     expect(screen.getByText('Editor')).toBeInTheDocument()
@@ -20,7 +29,7 @@ describe('UserCreateForm', () => {
   it('performs client-side validation on empty submit', async () => {
     const user = userEvent.setup()
     const onSubmitMock = vi.fn()
-    render(<UserCreateForm onSubmit={onSubmitMock} />)
+    renderForm({ onSubmit: onSubmitMock })
 
     await user.click(screen.getByRole('button', { name: /Create User Account/i }))
 
@@ -32,13 +41,13 @@ describe('UserCreateForm', () => {
   it('submits valid data including selected roles', async () => {
     const user = userEvent.setup()
     const onSubmitMock = vi.fn()
-    render(<UserCreateForm onSubmit={onSubmitMock} />)
+    renderForm({ onSubmit: onSubmitMock })
 
-    await user.type(screen.getByLabelText(/Username/i), 'writer_user')
-    await user.type(screen.getByLabelText(/Email Address/i), 'writer@example.com')
-    await user.type(screen.getByLabelText(/^Password/i), 'Password123!')
-    await user.type(screen.getByLabelText(/Confirm Password/i), 'Password123!')
-    await user.click(screen.getByLabelText('Author'))
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'writer_user' } })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'writer@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^Password \*$/i), { target: { value: 'Password123!' } })
+    fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } })
+    await user.click(screen.getByRole('checkbox', { name: /Author/ }))
 
     await user.click(screen.getByRole('button', { name: /Create User Account/i }))
 
@@ -54,7 +63,7 @@ describe('UserCreateForm', () => {
   })
 
   it('disables submit button and updates text during submission', () => {
-    render(<UserCreateForm isSubmitting={true} onSubmit={vi.fn()} />)
+    renderForm({ isSubmitting: true })
     const button = screen.getByRole('button', { name: /Creating User…/i })
     expect(button).toBeDisabled()
   })

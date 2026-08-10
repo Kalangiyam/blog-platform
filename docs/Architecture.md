@@ -1738,3 +1738,22 @@ Administrator Users: -date_joined, -pk
 Measurements showed eager loading already prevented N+1 growth. Pagination addressed unbounded serialization, rendering, payload, memory, and client-processing costs. PostgreSQL plans confirmed `post_search_vector_gin` for selective and missing searches; broad searches may correctly use a sequential scan.
 
 No speculative cache, stored search vector, or new database index was introduced.
+
+---
+
+# Post Detail Page Editorial Refactor Architecture
+
+The public Post Detail page (`PostDetailPage.jsx`) uses a 2-column desktop editorial layout (`lg:grid-cols-12`) with a responsive single-column mobile fallback.
+
+Sub-components under `src/features/posts/components/detail/`:
+
+```text
+src/features/posts/components/detail/
+├── PostBreadcrumbs.jsx       # Accessible breadcrumb trail (Home > Category > Title)
+├── PostHeader.jsx            # Category badge, H1 title, lead excerpt, author link, date, tags, & permission-aware Edit button
+├── PostFeaturedImage.jsx     # Optional hero image (collapses gracefully with 0 layout shift when absent/broken)
+├── PostArticleBody.jsx       # Plain-text typography container with preserved whitespace and word breaking
+└── PostSidebar.jsx           # Desktop sidebar (Article Info card, Share card, Related Posts card)
+```
+
+The orchestration component (`PostDetailPage.jsx`) retains local state for the main post request, error normalization, comments integration, and permission-aware edit navigation (`canEditPost`). Featured-image management remains in the create and edit authoring interfaces. Category and tag navigation links directly to site-wide filtering query parameters (`/?category=...` and `/?tag=...`).

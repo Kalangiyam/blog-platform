@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import ProfileDetails from './ProfileDetails.jsx'
+import ProfileUserInfoCard from './ProfileUserInfoCard.jsx'
 
 describe('ProfileDetails', () => {
   const publicProfile = {
@@ -48,7 +49,7 @@ describe('ProfileDetails', () => {
       email: 'john@secret.com',
       date_of_birth: '1990-01-01',
     }
-    render(<ProfileDetails isPrivate={true} profile={privatePayload} />)
+    render(<ProfileUserInfoCard isPrivate={true} profile={privatePayload} />)
 
     expect(screen.getByText('john@secret.com')).toBeInTheDocument()
     expect(screen.getByText('1990-01-01')).toBeInTheDocument()
@@ -56,7 +57,7 @@ describe('ProfileDetails', () => {
 
   it('renders respectful empty state for incomplete profiles', () => {
     render(<ProfileDetails profile={incompleteProfile} />)
-    expect(screen.getByText('This user has not added profile details yet.')).toBeInTheDocument()
+    expect(screen.getByText('No biography provided.')).toBeInTheDocument()
   })
 
   it('does not render unsafe website schemes as clickable links', () => {

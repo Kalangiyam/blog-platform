@@ -1,9 +1,22 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import MockAdapter from 'axios-mock-adapter'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { apiClient } from '../../../lib/apiClient.js'
+import { AuthContext, AUTH_STATUS } from '../../auth/context/AuthContext.js'
 import PublicProfilePage from './PublicProfilePage.jsx'
+
+const anonymousAuthValue = {
+  user: null,
+  status: AUTH_STATUS.UNAUTHENTICATED,
+  isAuthenticated: false,
+  authError: null,
+  login: () => {},
+  logout: () => {},
+  clearAuthError: () => {},
+  hasRole: () => false,
+  hasAnyRole: () => false,
+}
 
 describe('PublicProfilePage', () => {
   let mockAxios
@@ -16,13 +29,15 @@ describe('PublicProfilePage', () => {
     mockAxios.restore()
   })
 
-  function renderPage(username = 'johndoe') {
+  function renderPage(username = 'johndoe', authValue = anonymousAuthValue) {
     return render(
-      <MemoryRouter initialEntries={[`/users/${username}`]}>
-        <Routes>
-          <Route element={<PublicProfilePage />} path="/users/:username" />
-        </Routes>
-      </MemoryRouter>
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter initialEntries={[`/users/${username}`]}>
+          <Routes>
+            <Route element={<PublicProfilePage />} path="/users/:username" />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
     )
   }
 
@@ -32,6 +47,8 @@ describe('PublicProfilePage', () => {
       bio: 'Public developer bio',
       website: 'https://johndoe.com',
       location: 'San Francisco',
+      email: 'must-not-render@example.com',
+      date_of_birth: '1990-01-01',
     }
 
     mockAxios.onGet('/users/johndoe/profile/').reply(200, publicProfileData)
@@ -45,7 +62,32 @@ describe('PublicProfilePage', () => {
     })
 
     expect(screen.getByText('Public developer bio')).toBeInTheDocument()
-    expect(screen.getByText('San Francisco')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('region', { name: 'User Information' })).getByText('San Francisco'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('must-not-render@example.com')).not.toBeInTheDocument()
+    expect(screen.queryByText('1990-01-01')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Manage My Private Profile' })).not.toBeInTheDocument()
+  })
+
+  it('shows own-profile controls only to the authenticated profile owner', async () => {
+    mockAxios.onGet('/users/johndoe/profile/').reply(200, {
+      username: 'johndoe',
+      bio: 'Public developer bio',
+      website: '',
+      location: '',
+    })
+
+    renderPage('johndoe', {
+      ...anonymousAuthValue,
+      user: { id: 2, username: 'JohnDoe', roles: [] },
+      status: AUTH_STATUS.AUTHENTICATED,
+      isAuthenticated: true,
+    })
+
+    expect(
+      await screen.findByRole('link', { name: 'Manage My Private Profile' }),
+    ).toHaveAttribute('href', '/profile')
   })
 
   it('renders 404 state when username is unknown', async () => {

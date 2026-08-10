@@ -16,14 +16,34 @@ export function useTaxonomies() {
         setLoading(true)
         setError(null)
 
+        const fetchAll = async (fetchFn) => {
+          let results = []
+          let page = 1
+          let hasNext = true
+          while (hasNext && isSubscribed) {
+            const data = await fetchFn(page, { signal: controller.signal })
+            if (data && data.results) {
+              results = results.concat(data.results)
+              hasNext = !!data.next
+              page++
+            } else if (Array.isArray(data)) {
+              results = results.concat(data)
+              hasNext = false
+            } else {
+              hasNext = false
+            }
+          }
+          return results
+        }
+
         const [catData, tagData] = await Promise.all([
-          getCategories({ signal: controller.signal }),
-          getTags({ signal: controller.signal }),
+          fetchAll(getCategories),
+          fetchAll(getTags),
         ])
 
         if (isSubscribed) {
-          setCategories(Array.isArray(catData?.results) ? catData.results : Array.isArray(catData) ? catData : [])
-          setTags(Array.isArray(tagData?.results) ? tagData.results : Array.isArray(tagData) ? tagData : [])
+          setCategories(catData)
+          setTags(tagData)
         }
       } catch (err) {
         if (isSubscribed && err?.code !== 'cancelled') {

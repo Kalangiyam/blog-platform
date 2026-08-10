@@ -15,7 +15,16 @@ function PostCard({ post }) {
 
       <div className="space-y-4 p-6">
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
-          <span>By {post.author?.username || 'Unknown author'}</span>
+          {post.author?.username ? (
+            <Link
+              className="font-semibold text-slate-700 hover:text-indigo-600 transition"
+              to={`/users/${encodeURIComponent(post.author.username)}`}
+            >
+              By {post.author.first_name ? `${post.author.first_name} ${post.author.last_name || ''}`.trim() : post.author.username}
+            </Link>
+          ) : (
+            <span>By Unknown author</span>
+          )}
           <span aria-hidden="true">/</span>
           <time dateTime={post.published_at || undefined}>
             {formatPostDate(post.published_at)}

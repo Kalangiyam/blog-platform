@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 
 import CommentsSection from '../../comments/components/CommentsSection.jsx'
-import { FeaturedImageUploader } from '../../media/index.js'
 import { useAuthorization } from '../../permissions/index.js'
 import { getPublishedPost } from '../api/postsApi.js'
-import PostImage from '../components/PostImage.jsx'
 import PostRequestError from '../components/PostRequestError.jsx'
-import PostTaxonomy from '../components/PostTaxonomy.jsx'
-import { formatPostDate } from '../utils/postDates.js'
+import PostArticleBody from '../components/detail/PostArticleBody.jsx'
+import PostBreadcrumbs from '../components/detail/PostBreadcrumbs.jsx'
+import PostFeaturedImage from '../components/detail/PostFeaturedImage.jsx'
+import PostHeader from '../components/detail/PostHeader.jsx'
+import PostSidebar from '../components/detail/PostSidebar.jsx'
 import { POST_ERROR_CODES } from '../utils/postErrors.js'
 
 export function PostNotFound() {
@@ -28,7 +29,7 @@ export function PostNotFound() {
 
 function PostDetailPage() {
   const { postSlug } = useParams()
-  const { canEditPost, canDeletePost, canManageFeaturedImage } = useAuthorization()
+  const { canEditPost } = useAuthorization()
   const [retryKey, setRetryKey] = useState(0)
   const [state, setState] = useState({
     requestKey: null,
@@ -69,8 +70,8 @@ function PostDetailPage() {
 
   if (status === 'loading') {
     return (
-      <section aria-live="polite" className="grid w-full place-items-center px-6 py-16" role="status">
-        Loading post...
+      <section aria-live="polite" className="grid w-full place-items-center px-6 py-24 text-slate-600 font-medium" role="status">
+        Loading article...
       </section>
     )
   }
@@ -91,87 +92,38 @@ function PostDetailPage() {
 
   const post = state.post
   const isEditable = canEditPost(post)
-  const isDeletable = canDeletePost(post)
-  const canManageImage = canManageFeaturedImage(post)
-
-  const handleImageUploaded = (newUrl) => {
-    setState((prev) => ({
-      ...prev,
-      post: prev.post ? { ...prev.post, featured_image_url: newUrl } : prev.post,
-    }))
-  }
-
-  const handleImageRemoved = () => {
-    setState((prev) => ({
-      ...prev,
-      post: prev.post ? { ...prev.post, featured_image_url: null } : prev.post,
-    }))
-  }
+  const primaryCategory = Array.isArray(post?.categories) && post.categories.length > 0 ? post.categories[0] : null
 
   return (
-    <article className="w-full px-4 py-12 sm:px-6">
-      <div className="mx-auto max-w-4xl space-y-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <Link className="text-sm font-semibold text-indigo-700 hover:text-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" to="/posts">Back to all posts</Link>
+    <article className="w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <div className="mx-auto max-w-7xl">
+        {/* Full-width Breadcrumb Navigation */}
+        <PostBreadcrumbs category={primaryCategory} title={post.title} />
 
-          {(isEditable || isDeletable || canManageImage) && (
-            <div aria-label="Post management actions" className="flex flex-wrap items-center gap-2" role="group">
-              {isEditable && (
-                <Link
-                  to={`/posts/${post.slug}/edit`}
-                  className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                  Edit Post
-                </Link>
-              )}
-              {isDeletable && (
-                <button className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600" type="button">
-                  Delete Post
-                </button>
-              )}
-            </div>
-          )}
+        {/* Desktop 12-Column Grid (Bounded to Blog Article height so Sidebar un-sticks when Article ends) */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-start">
+          {/* Main Article Content Column */}
+          <main className="space-y-8 lg:col-span-8 max-w-3xl">
+            {/* Header: Badge, Title, Excerpt, Author/Date, Edit Button, Tags */}
+            <PostHeader isEditable={isEditable} post={post} />
+
+            {/* Optional Featured Image Hero (collapses cleanly if missing or onError) */}
+            <PostFeaturedImage title={post.title} url={post.featured_image_url} />
+
+            {/* Article Content Typography */}
+            <PostArticleBody content={post.content} />
+          </main>
+
+          {/* Sidebar Column (Sticky until Blog Article ends) */}
+          <div className="lg:col-span-4">
+            <PostSidebar post={post} />
+          </div>
         </div>
 
-        <header>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">{post.title}</h1>
-          <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
-            <span>
-              By{' '}
-              {post.author?.username ? (
-                <Link
-                  className="font-semibold text-indigo-700 hover:underline hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  to={`/users/${post.author.username}`}
-                >
-                  {post.author.username}
-                </Link>
-              ) : (
-                'Unknown author'
-              )}
-            </span>
-            <span aria-hidden="true">/</span>
-            <time dateTime={post.published_at || undefined}>{formatPostDate(post.published_at)}</time>
-          </div>
-          {post.excerpt ? <p className="mt-6 text-xl leading-8 text-slate-600">{post.excerpt}</p> : null}
-          <div className="mt-6"><PostTaxonomy categories={post.categories} tags={post.tags} /></div>
-        </header>
-
-        {canManageImage && (
-          <section aria-label="Author featured image management">
-            <FeaturedImageUploader
-              initialImageUrl={post.featured_image_url}
-              onRemoveSuccess={handleImageRemoved}
-              onUploadSuccess={handleImageUploaded}
-              postSlug={post.slug}
-            />
-          </section>
-        )}
-
-        <PostImage className="aspect-[16/9] w-full rounded-2xl" title={post.title} url={post.featured_image_url} />
-
-        <div className="whitespace-pre-wrap text-lg leading-8 text-slate-700">{post.content}</div>
-
-        <CommentsSection postSlug={post.slug} />
+        {/* Comments Section (Positioned below Blog Article Grid) */}
+        <div className="max-w-3xl">
+          <CommentsSection postSlug={post.slug} />
+        </div>
       </div>
     </article>
   )

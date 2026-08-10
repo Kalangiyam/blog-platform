@@ -26,14 +26,18 @@ describe('PostForm', () => {
       target: { value: 'This is the test content body.' },
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Draft Post' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save as Draft' }))
 
     expect(onSubmit).toHaveBeenCalledWith({
-      title: 'New Test Post',
-      excerpt: '',
-      content: 'This is the test content body.',
-      category_slugs: [],
-      tag_slugs: [],
+      actionIntent: 'save_draft',
+      formData: {
+        title: 'New Test Post',
+        excerpt: '',
+        content: 'This is the test content body.',
+        category_slugs: [],
+        tag_slugs: [],
+      },
+      imageFile: null,
     })
   })
 
@@ -41,7 +45,7 @@ describe('PostForm', () => {
     const onSubmit = vi.fn()
     render(<PostForm onSubmit={onSubmit} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Draft Post' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save as Draft' }))
 
     expect(screen.getByText('Title is required.')).toBeInTheDocument()
     expect(screen.getByText('Content is required.')).toBeInTheDocument()

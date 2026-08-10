@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -68,13 +68,13 @@ describe('PostDetailPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
     expect(screen.getByText('By')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'ada' })).toHaveAttribute('href', '/users/ada')
-    expect(screen.getByText('February 3, 2026')).toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'ada' })).toHaveAttribute('href', '/users/ada')
+    expect(within(screen.getByRole('main')).getByText('February 3, 2026')).toBeInTheDocument()
     expect(screen.getByText('A detailed summary.')).toBeInTheDocument()
     expect(screen.getByText(/First paragraph\./)).toBeInTheDocument()
     expect(screen.getByText(/Second paragraph\./)).toBeInTheDocument()
-    expect(screen.getByText('Architecture')).toBeInTheDocument()
-    expect(screen.getByText('React')).toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Architecture' })).toBeInTheDocument()
+    expect(within(screen.getByRole('main')).getByRole('link', { name: '#React' })).toBeInTheDocument()
   })
 
   it('renders hostile content as text and never creates executable markup', async () => {
@@ -113,7 +113,7 @@ describe('PostDetailPage', () => {
     expect(apiMocks.getPublishedPost).toHaveBeenCalledTimes(2)
   })
 
-  it('renders FeaturedImageUploader for authenticated author only', async () => {
+  it('links an authenticated author to the edit workflow where featured images are managed', async () => {
     apiMocks.getPublishedPost.mockResolvedValue(POST)
 
     const authorAuthContext = {
@@ -134,10 +134,13 @@ describe('PostDetailPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(await screen.findByText('Post Featured Image')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Edit Post' })).toHaveAttribute(
+      'href',
+      '/posts/detailed-post/edit',
+    )
   })
 
-  it('does not render FeaturedImageUploader for non-author logged in users', async () => {
+  it('does not expose the edit workflow to non-author logged in users', async () => {
     apiMocks.getPublishedPost.mockResolvedValue(POST)
 
     const otherUserAuthContext = {
@@ -158,10 +161,10 @@ describe('PostDetailPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(screen.queryByText('Post Featured Image')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Edit Post' })).not.toBeInTheDocument()
   })
 
-  it('renders FeaturedImageUploader for Editor users even if not author', async () => {
+  it('links Editors to the edit workflow even when they are not the author', async () => {
     apiMocks.getPublishedPost.mockResolvedValue(POST)
 
     const editorAuthContext = {
@@ -183,6 +186,9 @@ describe('PostDetailPage', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Detailed post' })).toBeInTheDocument()
-    expect(await screen.findByText('Post Featured Image')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Edit Post' })).toHaveAttribute(
+      'href',
+      '/posts/detailed-post/edit',
+    )
   })
 })

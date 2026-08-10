@@ -203,7 +203,8 @@ describe('RootLayout authentication navigation', () => {
     expect(router.state.location.pathname).toBe('/login')
   })
 
-  it('shows safe current-user data and every independently assigned role', () => {
+  it('shows safe current-user data and every independently assigned role', async () => {
+    const user = userEvent.setup()
     renderLayout({ auth: authForUser(AUTHENTICATED_USER) })
 
     const accountNavigation = screen.getByRole('navigation', {
@@ -212,9 +213,12 @@ describe('RootLayout authentication navigation', () => {
 
     expect(within(accountNavigation).getByText('Ada')).toBeInTheDocument()
     expect(within(accountNavigation).getByText('Author')).toBeInTheDocument()
-    expect(within(accountNavigation).getByText('Editor')).toBeInTheDocument()
+    await user.click(within(accountNavigation).getByRole('button', { name: 'User account menu' }))
+    const accountMenu = within(accountNavigation).getByRole('menu', { name: 'User account dropdown' })
+    expect(within(accountMenu).getByText('Author')).toBeInTheDocument()
+    expect(within(accountMenu).getByText('Editor')).toBeInTheDocument()
     expect(
-      within(accountNavigation).queryByText('Administrator'),
+      within(accountMenu).queryByText('Administrator'),
     ).not.toBeInTheDocument()
     expect(
       screen.queryByText('private-email@example.com'),
@@ -256,8 +260,10 @@ describe('RootLayout logout behavior', () => {
       initialEntry: '/private',
     })
 
+    await user.click(screen.getByRole('button', { name: 'User account menu' }))
     await user.click(screen.getByRole('button', { name: 'Logout' }))
 
+    await user.click(screen.getByRole('button', { name: 'User account menu' }))
     const pendingButton = screen.getByRole('button', { name: /Signing out/ })
     expect(pendingButton).toBeDisabled()
     expect(router.state.location.pathname).toBe('/')
@@ -280,6 +286,7 @@ describe('RootLayout logout behavior', () => {
     const logoutMock = vi.fn().mockResolvedValue(undefined)
     const router = renderStatefulLogout({ logoutMock })
 
+    await user.click(screen.getByRole('button', { name: 'User account menu' }))
     await user.click(screen.getByRole('button', { name: 'Logout' }))
 
     await screen.findByRole('link', { name: 'Login' })
@@ -299,11 +306,12 @@ describe('RootLayout logout behavior', () => {
     )
     const router = renderStatefulLogout({ logoutMock })
 
+    await user.click(screen.getByRole('button', { name: 'User account menu' }))
     await user.click(screen.getByRole('button', { name: 'Logout' }))
 
     expect(
       await screen.findByText(
-        'You are signed out locally, but the server could not confirm session revocation.',
+        'Signed out locally; server could not confirm session revocation.',
       ),
     ).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
@@ -323,11 +331,12 @@ describe('RootLayout logout behavior', () => {
       )
 
     renderStatefulLogout({ logoutMock })
+    await user.click(screen.getByRole('button', { name: 'User account menu' }))
     await user.click(screen.getByRole('button', { name: 'Logout' }))
 
     expect(
       await screen.findByText(
-        'You are signed out in this tab, but the browser could not confirm removal of the stored session.',
+        'You are signed out in this tab, but session removal could not be confirmed.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Login' })).toBeInTheDocument()
