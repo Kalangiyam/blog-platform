@@ -28,12 +28,13 @@ describe('CategoryTagPicker', () => {
     )
 
     expect(screen.getByText('Tech')).toBeInTheDocument()
-    expect(screen.getByText('#React')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('Design'))
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle category options' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Design' }))
     expect(onCategoryChange).toHaveBeenCalledWith(['tech', 'design'])
 
-    fireEvent.click(screen.getByText('#React'))
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle tag options' }))
+    fireEvent.click(screen.getByRole('button', { name: '#React' }))
     expect(onTagChange).toHaveBeenCalledWith(['react'])
   })
 })

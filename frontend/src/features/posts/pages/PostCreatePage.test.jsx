@@ -32,6 +32,6 @@ describe('PostCreatePage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Create New Post' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Title/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Create Draft Post' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save as Draft' })).toBeInTheDocument()
   })
 })

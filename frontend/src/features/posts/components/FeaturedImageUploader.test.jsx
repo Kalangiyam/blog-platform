@@ -5,8 +5,12 @@ import FeaturedImageUploader from './FeaturedImageUploader.jsx'
 describe('FeaturedImageUploader', () => {
   it('renders empty state when no image is present', () => {
     render(<FeaturedImageUploader />)
-    expect(screen.getByText('No featured image selected. (JPEG, PNG, WebP up to 5MB)')).toBeInTheDocument()
-    expect(screen.getByText('Select Image')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Featured Image' })).toBeInTheDocument()
+    expect(screen.getByText('No image selected')).toBeInTheDocument()
+    expect(screen.getByLabelText('Choose featured image')).toHaveAttribute(
+      'accept',
+      'image/jpeg,image/png,image/webp',
+    )
   })
 
   it('renders image preview and remove button when image exists', () => {

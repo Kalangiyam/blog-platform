@@ -3,10 +3,17 @@ import { normalizePostError } from '../utils/postErrors.js'
 
 export const POSTS_PAGE_SIZE = 20
 
-export async function getPublishedPosts(page = 1, { signal } = {}) {
+export async function getPublishedPosts(page = 1, options = {}) {
   try {
+    const { signal, category, tag, search, pageSize } = options
+    const params = { page }
+    if (category) params.category = category
+    if (tag) params.tag = tag
+    if (search) params.search = search
+    if (pageSize) params.page_size = pageSize
+
     const response = await apiClient.get('/posts/', {
-      params: { page },
+      params,
       signal,
     })
 
@@ -119,21 +126,38 @@ export async function removeFeaturedImage(slug, { signal } = {}) {
   }
 }
 
-export async function getCategories({ signal } = {}) {
+export async function getCategories(page = 1, { signal } = {}) {
   try {
-    const response = await apiClient.get('/categories/', { signal })
+    const response = await apiClient.get('/categories/', { params: { page }, signal })
     return response.data
   } catch (error) {
     throw normalizePostError(error, 'categories')
   }
 }
 
-export async function getTags({ signal } = {}) {
+export async function getCategoryBySlug(slug, { signal } = {}) {
   try {
-    const response = await apiClient.get('/tags/', { signal })
+    const response = await apiClient.get(`/categories/${encodeURIComponent(slug)}/`, { signal })
+    return response.data
+  } catch (error) {
+    throw normalizePostError(error, 'category_detail')
+  }
+}
+
+export async function getTags(page = 1, { signal } = {}) {
+  try {
+    const response = await apiClient.get('/tags/', { params: { page }, signal })
     return response.data
   } catch (error) {
     throw normalizePostError(error, 'tags')
   }
 }
 
+export async function getTagBySlug(slug, { signal } = {}) {
+  try {
+    const response = await apiClient.get(`/tags/${encodeURIComponent(slug)}/`, { signal })
+    return response.data
+  } catch (error) {
+    throw normalizePostError(error, 'tag_detail')
+  }
+}
