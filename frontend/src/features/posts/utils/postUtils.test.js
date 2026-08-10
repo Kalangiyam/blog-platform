@@ -62,6 +62,12 @@ describe('post error normalization', () => {
   it('distinguishes client and server failures', () => {
     const create = (status) => new AxiosError('private', undefined, {}, {}, { status, data: {}, headers: {}, config: {} })
     expect(normalizePostError(create(400)).code).toBe(POST_ERROR_CODES.CLIENT)
+    const forbiddenError = normalizePostError({
+      response: { status: 403, data: { detail: 'private detail' } },
+    })
+    expect(forbiddenError.code).toBe(POST_ERROR_CODES.FORBIDDEN)
+    expect(forbiddenError.status).toBe(403)
+    expect(forbiddenError.message).not.toContain('private detail')
     const serverError = normalizePostError(create(503))
     expect(serverError).toBeInstanceOf(PostError)
     expect(serverError.code).toBe(POST_ERROR_CODES.SERVER)

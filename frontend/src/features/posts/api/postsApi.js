@@ -36,6 +36,19 @@ export async function getPublishedPost(slug, { signal } = {}) {
   }
 }
 
+export async function getEditorialPost(slug, { signal } = {}) {
+  try {
+    const response = await apiClient.get(
+      `/editorial/posts/${encodeURIComponent(slug)}/`,
+      { signal },
+    )
+
+    return response.data
+  } catch (error) {
+    throw normalizePostError(error, 'detail')
+  }
+}
+
 export async function createPost(postData, { signal } = {}) {
   try {
     const response = await apiClient.post('/posts/', postData, { signal })

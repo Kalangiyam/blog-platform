@@ -244,6 +244,58 @@ A missing `token` field returns `400 Bad Request` with `{"token":["This field is
 
 ---
 
+## Account Security Contracts — Pre-QA Closure
+
+### Change Password
+
+```http
+POST /api/auth/password/change/
+Authorization: Bearer <access-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "current_password": "<current-password>",
+  "new_password": "<new-password>",
+  "confirm_password": "<new-password>"
+}
+```
+
+The endpoint requires an authenticated User. Validation failures return `400 Bad Request`. A successful request returns `200 OK` and requires fresh frontend authentication.
+
+Password mutation and outstanding-refresh-token blacklisting execute in one database transaction. If revocation fails, both operations roll back and the endpoint returns `503 Service Unavailable`:
+
+```json
+{
+  "detail": "Unable to complete the security update. Please try again."
+}
+```
+
+No exception, token, JTI, password, or database detail is returned.
+
+### Confirm Password Reset
+
+```http
+POST /api/auth/password/reset/confirm/
+Content-Type: application/json
+```
+
+```json
+{
+  "uid": "<encoded-user-id>",
+  "token": "<password-reset-token>",
+  "new_password": "<new-password>",
+  "confirm_password": "<new-password>"
+}
+```
+
+Invalid or expired confirmation data returns `400 Bad Request`. Successful confirmation returns `200 OK`. Refresh-token revocation uses the same transaction and safe `503` failure contract as password change; a rollback leaves the prior password and reset token usable for a safe retry.
+
+Refresh-token blacklisting does not revoke already-issued access tokens. Access tokens retain the configured 15-minute lifetime and remain valid until natural expiry. A narrow concurrent refresh-token issuance race remains outside this focused policy; eliminating it requires a broader session-version architecture.
+
+---
+
 # User Administration APIs
 
 ## Current Status
@@ -1598,6 +1650,50 @@ Validation requires a genuine, non-animated JPEG, PNG, or WebP image. The filena
 Replacing or removing an image updates storage through the Django Storage API. Old-file deletion is scheduled with `transaction.on_commit()` so a rolled-back database transaction does not prematurely remove the existing file. Deleting the image returns `204 No Content`.
 
 Public Post list, detail, and search responses expose `featured_image_url`; clients never receive internal storage paths.
+
+---
+
+# Editorial Management APIs — Pre-QA Closure
+
+The editorial namespace separates management operations from public resource contracts. `Author`, `Editor`, and `Administrator` remain independent application roles.
+
+## Editorial Comment Delete
+
+```http
+DELETE /api/editorial/comments/{id}/
+Authorization: Bearer <access-token>
+```
+
+Only Editors may use this contract. It soft-deletes the Comment through the shared model lifecycle, setting `is_deleted`, `deleted_at`, and `deleted_by` to the acting Editor without changing `updated_at` or `updated_by`. Success returns `204 No Content`. Repeating deletion of an already-deleted Comment is idempotent and also returns `204`; an unknown ID returns `404`.
+
+Anonymous requests return `401`; authenticated Author-only and Administrator-only requests return `403`. The public `DELETE /api/comments/{id}/` contract remains owner-only and does not grant an Editor override.
+
+Deleted comments disappear from the public published-Post comment listing and remain restorable through `POST /api/editorial/comments/{id}/restore/`.
+
+## Editorial Post Management Detail
+
+```http
+GET /api/editorial/posts/{slug}/
+Authorization: Bearer <access-token>
+```
+
+The endpoint returns the existing Post detail representation for editing without performing any write.
+
+- Authors may retrieve only their own active draft or published Posts.
+- Editors may retrieve any active draft or published Post.
+- Administrator-only users receive `403`.
+- Anonymous users receive `401`.
+- Unknown, unauthorized-by-queryset, and soft-deleted Posts return `404`.
+
+The detail response contains `id`, `title`, `slug`, `excerpt`, `content`, `featured_image_url`, `status`, `author`, `published_at`, `created_at`, `updated_at`, `categories`, and `tags`.
+
+Editorial list behavior continues to include deleted inventory where allowed and accepts its existing filters. Retrieve is active-only. Restore remains Editor-only and can resolve deleted Posts. List-only filters do not affect retrieve or restore.
+
+## Manual / Full-Stack Verification Qualification — 2026-08-10
+
+The editorial delete, audit attribution, public disappearance, deleted-filter retrieval, restore, role-denial, management-detail role matrix, soft-deleted `404`, zero-PATCH initial loading, and deliberate-update behaviors were verified against the live frontend/backend stack. Password change, logout after success, old/new credential behavior, invalid-current-password handling, confirmation-mismatch handling, and authentication/session smoke scenarios were also verified.
+
+The overall manual result is **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**, not an unconditional pass. Manual password-reset email delivery was not completed: `POST /api/auth/password/reset/` returned `500 Internal Server Error` when the local environment could not connect to an SMTP server at `127.0.0.1:25` (`ConnectionRefusedError`, WinError 10061). Automated password-reset, token, and revocation coverage remains green. Current evidence identifies the missing local SMTP service as an environment/deployment limitation rather than an application defect. Real email-provider configuration and end-to-end delivery verification remain required before production readiness.
 
 ---
 

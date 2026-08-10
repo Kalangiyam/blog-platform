@@ -33,14 +33,18 @@ describe('moderationApi', () => {
     })
   })
 
-  it('deletes comment via public moderation endpoint', async () => {
+  it('deletes comment via the editorial moderation endpoint', async () => {
     apiClientMocks.delete.mockResolvedValue({})
 
     const res = await deleteCommentModeration(10)
     expect(res).toBe(true)
-    expect(apiClientMocks.delete).toHaveBeenCalledWith('/comments/10/', {
+    expect(apiClientMocks.delete).toHaveBeenCalledWith('/editorial/comments/10/', {
       signal: undefined,
     })
+    expect(apiClientMocks.delete).not.toHaveBeenCalledWith(
+      '/comments/10/',
+      expect.anything(),
+    )
   })
 
   it('restores soft-deleted comment via editorial endpoint', async () => {
@@ -51,6 +55,21 @@ describe('moderationApi', () => {
     expect(res).toBe(restored)
     expect(apiClientMocks.post).toHaveBeenCalledWith('/editorial/comments/10/restore/', {}, {
       signal: undefined,
+    })
+  })
+
+  it('normalizes editorial delete failures safely', async () => {
+    apiClientMocks.delete.mockRejectedValue({
+      response: {
+        status: 403,
+        data: { detail: 'Internal permission implementation detail.' },
+      },
+    })
+
+    await expect(deleteCommentModeration(10)).rejects.toMatchObject({
+      code: 'forbidden',
+      message: 'You do not have permission to perform this action.',
+      status: 403,
     })
   })
 })

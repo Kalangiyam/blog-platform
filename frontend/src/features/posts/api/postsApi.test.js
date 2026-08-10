@@ -5,7 +5,7 @@ const apiClientMocks = vi.hoisted(() => ({ get: vi.fn() }))
 
 vi.mock('../../../lib/apiClient.js', () => ({ apiClient: apiClientMocks }))
 
-import { getPublishedPost, getPublishedPosts } from './postsApi.js'
+import { getEditorialPost, getPublishedPost, getPublishedPosts } from './postsApi.js'
 import { POST_ERROR_CODES } from '../utils/postErrors.js'
 
 function axiosError(status) {
@@ -40,6 +40,17 @@ describe('public posts API', () => {
     expect(apiClientMocks.get).toHaveBeenCalledWith('/posts/safe%20slug/', {
       signal: undefined,
     })
+  })
+
+  it('loads an editable post through the exact editorial detail GET path', async () => {
+    const detail = { id: 3, slug: 'draft & review', status: 'draft' }
+    apiClientMocks.get.mockResolvedValue({ data: detail })
+
+    await expect(getEditorialPost('draft & review')).resolves.toBe(detail)
+    expect(apiClientMocks.get).toHaveBeenCalledWith(
+      '/editorial/posts/draft%20%26%20review/',
+      { signal: undefined },
+    )
   })
 
   it('normalizes list and detail 404 responses by operation', async () => {

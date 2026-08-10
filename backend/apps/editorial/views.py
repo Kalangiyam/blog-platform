@@ -23,6 +23,7 @@ from apps.users.constants import EDITOR_GROUP
 
 class EditorialPostViewSet(
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -40,7 +41,7 @@ class EditorialPostViewSet(
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action == "restore":
+        if self.action in ("retrieve", "restore"):
             return PostDetailSerializer
         return EditorialPostListSerializer
 
@@ -53,7 +54,15 @@ class EditorialPostViewSet(
         else:
             qs = Post.objects.with_deleted().filter(author=user).select_related("author").prefetch_related("categories", "tags")
 
-        filter_serializer = EditorialPostFilterSerializer(data=self.request.query_params)
+        if self.action == "retrieve":
+            return qs.filter(is_deleted=False)
+
+        if self.action != "list":
+            return qs
+
+        filter_serializer = EditorialPostFilterSerializer(
+            data=self.request.query_params,
+        )
         filter_serializer.is_valid(raise_exception=True)
         validated_params = filter_serializer.validated_data
 
@@ -154,6 +163,7 @@ class EditorialTagViewSet(
 
 class EditorialCommentViewSet(
     mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -173,6 +183,12 @@ class EditorialCommentViewSet(
             qs = qs.filter(is_deleted=False)
 
         return qs.order_by("-created_at", "-pk")
+
+    def perform_destroy(self, instance):
+        """
+        Soft delete the Comment and attribute the moderation action.
+        """
+        instance.delete(user=self.request.user)
 
     @action(detail=True, methods=["post"])
     def restore(self, request, *args, **kwargs):

@@ -42,7 +42,7 @@ describe('PostEditPage', () => {
       tags: [],
     }
 
-    vi.mocked(postsApi.getPublishedPost).mockResolvedValue(mockPost)
+    vi.mocked(postsApi.getEditorialPost).mockResolvedValue(mockPost)
 
     render(
       <MemoryRouter initialEntries={['/posts/existing-post/edit']}>
@@ -54,5 +54,32 @@ describe('PostEditPage', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Edit Post' })).toBeInTheDocument()
     expect(screen.getByDisplayValue('Existing Post')).toBeInTheDocument()
+    expect(postsApi.getEditorialPost).toHaveBeenCalledWith(
+      'existing-post',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+    expect(postsApi.getPublishedPost).not.toHaveBeenCalled()
+    expect(postsApi.updatePost).not.toHaveBeenCalled()
+  })
+
+  it('renders a controlled error when management detail is forbidden', async () => {
+    vi.mocked(postsApi.getEditorialPost).mockRejectedValue({
+      code: 'forbidden',
+      message: 'You do not have permission to perform this action on this post.',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/posts/private-draft/edit']}>
+        <Routes>
+          <Route path="/posts/:postSlug/edit" element={<PostEditPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Unable to edit post' })).toBeInTheDocument()
+    expect(
+      screen.getByText('You do not have permission to perform this action on this post.'),
+    ).toBeInTheDocument()
+    expect(postsApi.updatePost).not.toHaveBeenCalled()
   })
 })

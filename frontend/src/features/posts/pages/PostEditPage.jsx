@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useLocation } from 'react-router'
-import { getPublishedPost, updatePost } from '../api/postsApi.js'
+import { getEditorialPost } from '../api/postsApi.js'
 import PostForm from '../components/PostForm.jsx'
 import { usePostMutations } from '../hooks/usePostMutations.js'
 
@@ -45,13 +45,9 @@ export default function PostEditPage() {
         setLoading(true)
         setFetchError(null)
 
-        let postData
-        try {
-          postData = await getPublishedPost(postSlug, { signal: controller.signal })
-        } catch {
-          // If 404 on published, try management fetch (PATCH {}) for draft posts
-          postData = await updatePost(postSlug, {}, { signal: controller.signal })
-        }
+        const postData = await getEditorialPost(postSlug, {
+          signal: controller.signal,
+        })
 
         if (isSubscribed) {
           setPost(postData)

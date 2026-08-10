@@ -1244,3 +1244,106 @@ OK
 
 The test database `test_blog_platform` was created, migrated, and destroyed
 successfully. Failures: 0. Errors: 0.
+
+---
+
+# Pre-QA Contract and Session Security Closure Verification
+
+Verified on 2026-08-10.
+
+## Backend Coverage
+
+Editorial Comment tests cover:
+
+- Editor deletion of another User's Comment;
+- `deleted_at` and acting-Editor `deleted_by` attribution;
+- unchanged `updated_at` and `updated_by`;
+- removal from public listing and successful restoration;
+- idempotent repeated deletion and unknown IDs;
+- anonymous, Author, Administrator, and multi-role permission behavior;
+- preservation of the public owner-only delete contract.
+
+Editorial Post tests cover:
+
+- Author retrieval of own active draft/published Posts;
+- Editor retrieval of another Author's active draft;
+- anonymous and Administrator-only denial;
+- owner scoping, unknown slugs, and soft-deleted `404` behavior;
+- list-filter isolation from retrieve and restore;
+- unchanged timestamps, audit users, publication fields, content fields, featured image, soft-delete fields, Categories, and Tags across management GET;
+- preservation of public published-only detail.
+
+Account-security tests cover:
+
+- multiple outstanding refresh tokens and explicit blacklist rows;
+- old-refresh rejection through the real refresh endpoint;
+- password-change and password-reset consistency;
+- partial blacklist failure rollback of password and all blacklist writes;
+- reset retry with the same token after rollback;
+- safe `503` response and server logging;
+- successful login with the new password;
+- continued validity of an already-issued access token until expiry.
+
+## Frontend Coverage
+
+- Moderation uses only `/api/editorial/comments/{id}/` for Editor deletion.
+- Successful moderation deletion refetches authoritative list state.
+- Moderation errors use safe Comment error normalization.
+- Post Edit loads through `GET /api/editorial/posts/{slug}/`.
+- Initial Post Edit loading never calls the update API.
+- Forbidden management states render a controlled error.
+- Account-security `503` responses normalize generically.
+- Failed password change does not invoke frontend logout.
+
+## Current Execution Results
+
+```text
+python manage.py check
+System check identified no issues (0 silenced).
+
+python manage.py test --verbosity 1 --noinput
+Found 126 tests.
+Ran 126 tests in 361.994s.
+OK
+
+npm.cmd test
+92 test files passed.
+494 tests passed.
+
+npm.cmd run lint
+Passed with 0 errors and 0 warnings.
+
+npm.cmd run build
+277 modules transformed.
+Production build succeeded.
+
+git diff --check
+Passed.
+```
+
+Vite retained its non-blocking advisory for a main JavaScript chunk above 500 kB.
+
+## Manual / Full-Stack Results
+
+**Overall result: PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION.** This qualified result is separate from, and does not inflate, either automated test baseline.
+
+The live frontend/backend run verified:
+
+- Editor deletion of another User's Comment through the editorial endpoint, acting-Editor audit attribution, public-list disappearance, deleted-filter retrieval, restoration, Administrator-only denial, and preservation of public owner-only deletion;
+- Author-own, Author-other, Editor, Administrator-only, and soft-deleted Post management-detail boundaries;
+- zero PATCH requests during initial Post Edit loading and a successful deliberate Post update;
+- password change, logout after success, old-credential rejection, new-credential acceptance, invalid-current-password rejection, and confirmation-mismatch rejection;
+- authentication/session/navigation plus Home/filtering, Post Detail, search, profiles, Administrator User Creation, and responsive-layout smoke scenarios.
+
+No application defect was identified by the manual run.
+
+### Non-Blocking Environment Limitation
+
+Manual password-reset email delivery was not completed. The local request:
+
+```text
+POST /api/auth/password/reset/
+→ 500 Internal Server Error
+```
+
+failed because no SMTP server was listening at `127.0.0.1:25` (`ConnectionRefusedError`, WinError 10061). Automated password-reset, token, rollback, and revocation tests remain green. Current evidence classifies this as a local-development environment limitation, not an application defect. Real email-provider configuration and end-to-end password-reset delivery verification remain production/deployment work; graceful provider-outage handling may be reviewed separately during production hardening.

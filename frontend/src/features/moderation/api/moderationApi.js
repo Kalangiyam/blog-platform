@@ -1,4 +1,5 @@
 import { apiClient } from '../../../lib/apiClient.js'
+import { normalizeCommentError } from '../../comments/utils/commentErrors.js'
 
 export async function getCommentModerationList({ page = 1, is_deleted, signal } = {}) {
   const params = { page }
@@ -6,20 +7,36 @@ export async function getCommentModerationList({ page = 1, is_deleted, signal } 
     params.is_deleted = is_deleted
   }
 
-  const response = await apiClient.get('/editorial/comments/', {
-    params,
-    signal,
-  })
+  try {
+    const response = await apiClient.get('/editorial/comments/', {
+      params,
+      signal,
+    })
 
-  return response.data
+    return response.data
+  } catch (error) {
+    throw normalizeCommentError(error, 'list')
+  }
 }
 
 export async function deleteCommentModeration(id, { signal } = {}) {
-  await apiClient.delete(`/comments/${id}/`, { signal })
-  return true
+  try {
+    await apiClient.delete(`/editorial/comments/${encodeURIComponent(id)}/`, { signal })
+    return true
+  } catch (error) {
+    throw normalizeCommentError(error, 'delete')
+  }
 }
 
 export async function restoreCommentModeration(id, { signal } = {}) {
-  const response = await apiClient.post(`/editorial/comments/${id}/restore/`, {}, { signal })
-  return response.data
+  try {
+    const response = await apiClient.post(
+      `/editorial/comments/${encodeURIComponent(id)}/restore/`,
+      {},
+      { signal },
+    )
+    return response.data
+  } catch (error) {
+    throw normalizeCommentError(error, 'restore')
+  }
 }
