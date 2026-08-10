@@ -1,10 +1,32 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MockAdapter from 'axios-mock-adapter'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { apiClient } from '../../../lib/apiClient.js'
+import { AuthContext, AUTH_STATUS } from '../../auth/context/AuthContext.js'
 import MyProfilePage from './MyProfilePage.jsx'
+
+const authenticatedUser = {
+  id: 1,
+  username: 'currentuser',
+  email: 'current@example.com',
+  first_name: '',
+  last_name: '',
+  roles: [],
+}
+
+const authValue = {
+  user: authenticatedUser,
+  status: AUTH_STATUS.AUTHENTICATED,
+  isAuthenticated: true,
+  authError: null,
+  login: () => {},
+  logout: () => {},
+  clearAuthError: () => {},
+  hasRole: () => false,
+  hasAnyRole: () => false,
+}
 
 describe('MyProfilePage', () => {
   let mockAxios
@@ -19,11 +41,13 @@ describe('MyProfilePage', () => {
 
   function renderPage() {
     return render(
-      <MemoryRouter initialEntries={['/profile']}>
-        <Routes>
-          <Route element={<MyProfilePage />} path="/profile" />
-        </Routes>
-      </MemoryRouter>
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter initialEntries={['/profile']}>
+          <Routes>
+            <Route element={<MyProfilePage />} path="/profile" />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
     )
   }
 
@@ -42,10 +66,9 @@ describe('MyProfilePage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'My Profile' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: 'currentuser' })).toBeInTheDocument()
     })
 
-    expect(screen.getByRole('heading', { level: 1, name: 'currentuser' })).toBeInTheDocument()
     expect(screen.getByText('current@example.com')).toBeInTheDocument()
     expect(screen.getByText('Initial Bio')).toBeInTheDocument()
     expect(screen.getByText('1992-04-12')).toBeInTheDocument()
@@ -62,11 +85,15 @@ describe('MyProfilePage', () => {
 
     renderPage()
 
+    let profileCard
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument()
+      profileCard = screen
+        .getByRole('heading', { level: 1, name: 'currentuser' })
+        .closest('article')
+      expect(within(profileCard).getByRole('button', { name: 'Edit Profile' })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+    await user.click(within(profileCard).getByRole('button', { name: 'Edit Profile' }))
 
     expect(screen.getByLabelText(/biography/i)).toHaveValue('Initial Bio')
 

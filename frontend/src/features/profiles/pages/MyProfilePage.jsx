@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react'
 
+import { useAuth } from '../../auth/hooks/useAuth.js'
 import { getCurrentProfile, updateCurrentProfile } from '../api/profilesApi.js'
-import ProfileDetails from '../components/ProfileDetails.jsx'
+import ProfileAccountActionsCard from '../components/ProfileAccountActionsCard.jsx'
+import ProfileBreadcrumbs from '../components/ProfileBreadcrumbs.jsx'
+import ProfileCompletionCard from '../components/ProfileCompletionCard.jsx'
 import ProfileEditForm from '../components/ProfileEditForm.jsx'
+import ProfileHeaderCard from '../components/ProfileHeaderCard.jsx'
 import ProfileRequestError from '../components/ProfileRequestError.jsx'
+import ProfileSidebarNav from '../components/ProfileSidebarNav.jsx'
 import ProfileSkeleton from '../components/ProfileSkeleton.jsx'
+import ProfileUserInfoCard from '../components/ProfileUserInfoCard.jsx'
 import { PROFILE_ERROR_CODES } from '../utils/normalizeProfileError.js'
 
 export default function MyProfilePage() {
+  const { user, hasAnyRole } = useAuth()
+  const isAuthorOrEditor = hasAnyRole(['Author', 'Editor'])
+
   const [retryKey, setRetryKey] = useState(0)
   const [isEditing, setIsEditing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,6 +87,11 @@ export default function MyProfilePage() {
     }
   }
 
+  function handleStartEditing() {
+    setSaveError(null)
+    setIsEditing(true)
+  }
+
   if (status === 'loading') {
     return <ProfileSkeleton />
   }
@@ -96,48 +110,81 @@ export default function MyProfilePage() {
   }
 
   const profile = state.profile
+  const firstName = (user?.first_name || '').trim()
+  const lastName = (user?.last_name || '').trim()
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || profile?.username || 'User'
+
+  const breadcrumbItems = [
+    { label: 'Home', to: '/' },
+    { label: 'Profile', to: '/profile' },
+    { label: displayName, isCurrent: true },
+  ]
 
   return (
-    <section className="w-full px-4 py-12 sm:px-6">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              My Profile
-            </h1>
-            <p className="text-sm text-slate-500">
-              Manage your personal account profile and public representation.
-            </p>
+    <section className="w-full px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+      <ProfileBreadcrumbs items={breadcrumbItems} />
+
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-12 lg:items-start">
+        {/* Left Column (Desktop 3 cols) */}
+        <div className="order-5 flex flex-col gap-6 lg:order-1 lg:col-span-3">
+          <ProfileSidebarNav isAuthorOrEditor={isAuthorOrEditor} />
+
+          <div className="hidden lg:block">
+            <ProfileCompletionCard
+              onEdit={handleStartEditing}
+              profile={profile}
+              user={user}
+            />
           </div>
+        </div>
 
-          {!isEditing ? (
-            <button
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              onClick={() => {
+        {/* Center Column (Desktop 6 cols) */}
+        <div className="order-1 flex flex-col gap-6 lg:order-2 lg:col-span-6">
+          {isEditing ? (
+            <ProfileEditForm
+              initialProfile={profile}
+              isSubmitting={isSubmitting}
+              onCancel={() => {
                 setSaveError(null)
-                setIsEditing(true)
+                setIsEditing(false)
               }}
-              type="button"
-            >
-              Edit Profile
-            </button>
-          ) : null}
-        </header>
+              onSubmit={handleUpdateProfile}
+              serverError={saveError}
+            />
+          ) : (
+            <ProfileHeaderCard
+              isPrivate={true}
+              onEdit={handleStartEditing}
+              profile={profile}
+              user={user}
+            />
+          )}
+        </div>
 
-        {isEditing ? (
-          <ProfileEditForm
-            initialProfile={profile}
-            isSubmitting={isSubmitting}
-            onCancel={() => {
-              setSaveError(null)
-              setIsEditing(false)
-            }}
-            onSubmit={handleUpdateProfile}
-            serverError={saveError}
+        {/* Mobile Profile Completion Card (Order 2 on Mobile) */}
+        <div className="order-2 lg:hidden">
+          <ProfileCompletionCard
+            onEdit={handleStartEditing}
+            profile={profile}
+            user={user}
           />
-        ) : (
-          <ProfileDetails isPrivate={true} profile={profile} />
-        )}
+        </div>
+
+        {/* Right Column (Desktop 3 cols, Mobile Orders 3 & 4) */}
+        <div className="order-3 flex flex-col gap-6 lg:order-3 lg:col-span-3">
+          <ProfileUserInfoCard
+            isPrivate={true}
+            profile={profile}
+            user={user}
+          />
+
+          <div className="order-4 lg:order-none">
+            <ProfileAccountActionsCard
+              isAuthorOrEditor={isAuthorOrEditor}
+              onEdit={handleStartEditing}
+            />
+          </div>
+        </div>
       </div>
     </section>
   )
