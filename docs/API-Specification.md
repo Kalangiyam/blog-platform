@@ -382,6 +382,102 @@ prefetch_related("categories", "tags")
 
 This prevents N+1 queries when serializing authors, categories, and tags.
 
+### Optional Query Parameters
+
+| Parameter  | Type   | Description                                     |
+| ---------- | ------ | ----------------------------------------------- |
+| `category` | string | Filter by active Category slug (optional)       |
+| `tag`      | string | Filter by active Tag slug (optional)            |
+| `page`     | int    | Page number (default: 1)                        |
+| `page_size`| int    | Items per page (default: 20, maximum: 100)      |
+
+#### Category Filtering
+
+```http
+GET /api/posts/?category=django
+```
+
+Returns only published, non-deleted posts assigned to the **active** Category
+whose slug is `django`.
+
+#### Tag Filtering
+
+```http
+GET /api/posts/?tag=python
+```
+
+Returns only published, non-deleted posts assigned to the **active** Tag
+whose slug is `python`.
+
+#### Combined Filtering
+
+```http
+GET /api/posts/?category=django&tag=python
+```
+
+Returns posts satisfying **both** conditions simultaneously (logical AND).
+Only posts that belong to the Django Category **and** have the Python Tag are returned.
+
+#### Active Taxonomy Requirement
+
+Filters recognize only **active** Categories and Tags. If the requested slug
+belongs to an inactive taxonomy, the response is an empty collection:
+
+```http
+GET /api/posts/?category=inactive-category
+```
+
+```json
+{
+  "count": 0,
+  "next": null,
+  "previous": null,
+  "results": []
+}
+```
+
+#### Unknown Slug Behavior
+
+An unrecognised slug returns a `200 OK` response with an empty paginated
+collection. The filter represents a constraint on the Post collection; an
+unmatched constraint produces zero results rather than a `404`.
+
+```http
+GET /api/posts/?category=does-not-exist
+```
+
+```json
+{
+  "count": 0,
+  "next": null,
+  "previous": null,
+  "results": []
+}
+```
+
+#### Empty Parameter Behavior
+
+Empty or whitespace-only parameters are ignored. The remaining valid
+parameter (if any) continues to apply:
+
+```http
+GET /api/posts/?category=             → unfiltered published list
+GET /api/posts/?tag=                  → unfiltered published list
+GET /api/posts/?category=&tag=        → unfiltered published list
+GET /api/posts/?category=&tag=python  → filtered by Python Tag only
+GET /api/posts/?category=django&tag=  → filtered by Django Category only
+```
+
+#### Visibility Guarantees
+
+Taxonomy filtering applies **after** all existing visibility rules:
+
+- Draft posts are never returned, regardless of taxonomy filter.
+- Soft-deleted posts are never returned, regardless of taxonomy filter.
+- Only published posts associated with active taxonomies appear in results.
+
+Frontend access controls must not be relied on for enforcement.
+
 ### Pagination
 
 The list uses standard page-number pagination:
@@ -391,6 +487,14 @@ Default page size: 20
 Client parameter: page_size
 Maximum page size: 100
 Ordering: -published_at, -created_at, -pk
+```
+
+Taxonomy filters are fully compatible with pagination:
+
+```http
+GET /api/posts/?category=django&page=2
+GET /api/posts/?tag=python&page_size=5
+GET /api/posts/?category=django&tag=python&page=2
 ```
 
 Successful responses use the standard `count`, `next`, `previous`, and `results` envelope.

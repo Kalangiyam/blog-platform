@@ -1119,3 +1119,128 @@ npm run test   23 files, 198 tests passed
 npm run lint   passed
 npm run build  passed (177 modules transformed)
 ```
+
+---
+
+## Backend Feature 17 — Taxonomy Filtering Automated Testing
+
+Feature 17 introduces the first systematic automated test suite for the Posts
+backend. Tests live in:
+
+```text
+backend/apps/posts/tests/test_post_taxonomy_filtering.py
+```
+
+The test module follows the existing project convention: `django.test.TestCase`
+with `rest_framework.test.APIClient`, `force_authenticate`, and `reverse`.
+No third-party test factories are used; helper functions create model instances
+directly via `Model.all_objects.create()` with explicit slugs (slug generation
+is serializer-driven, not model-level).
+
+### QuerySet-Level Tests
+
+`PostQuerySetForCategoryTests` and `PostQuerySetForTagTests` exercise the new
+domain methods directly against the PostgreSQL test database:
+
+- Valid active slug filters to the correct Posts.
+- Empty slug (`""`) leaves the queryset unchanged.
+- Whitespace-only slug (`"   "`) is normalized to empty — queryset unchanged.
+- Unknown slug returns an empty queryset.
+- Inactive taxonomy slug returns an empty queryset (active-manager guard confirmed).
+- Draft Posts remain excluded when starting from `.published()`.
+- Soft-deleted Posts remain excluded.
+- Methods are chainable with further `.filter()` calls.
+- No duplicate Post IDs are present in results.
+
+`PostQuerySetCombinedFilterTests` verifies chained AND semantics at the
+QuerySet level with a four-post fixture.
+
+### API-Level Tests
+
+#### Regression — `PostListRegressionTests`
+
+Confirms unfiltered `GET /api/posts/` is unchanged:
+
+- Returns `200 OK` with the standard `count/next/previous/results` envelope.
+- All published posts are included.
+- All response fields match the specification.
+- Nested author, category, and tag representations are correct.
+- Draft and soft-deleted posts are excluded.
+- Deterministic ordering (`-published_at, -created_at, -pk`) is preserved.
+
+#### Category Filtering — `PostListCategoryFilterTests`
+
+Verifies `?category=<slug>` behavior: correct posts returned, count, envelope,
+nested categories, draft exclusion, soft-delete exclusion, no duplicates.
+
+#### Tag Filtering — `PostListTagFilterTests`
+
+Same coverage for `?tag=<slug>`.
+
+#### Combined AND Filtering — `PostListCombinedFilterTests`
+
+Uses a four-post fixture (Django+Python, Django+JavaScript, Flask+Python,
+Flask+JavaScript). Verifies only the AND-matching post is returned, plus
+correct count, no duplicates, and intact nested representations.
+
+#### Unknown Slug — `PostListUnknownSlugTests`
+
+- Unknown category: `200 OK`, `count: 0`, empty results.
+- Unknown tag: same.
+- Unknown category AND tag: empty.
+- Valid category with unknown tag: empty (AND semantics).
+
+#### Inactive Taxonomy — `PostListInactiveTaxonomyTests`
+
+- Inactive category slug: `200 OK`, `count: 0`, `next/previous: null`.
+- Inactive tag slug: same.
+- Posts historically associated with an inactive taxonomy remain hidden.
+
+#### Empty Parameters — `PostListEmptyParameterTests`
+
+- `?category=` → full published list.
+- `?tag=` → full published list.
+- `?category=&tag=` → full published list.
+- `?category=&tag=python` → filtered by Python tag only.
+- `?category=django&tag=` → filtered by Django category only.
+
+#### Pagination — `PostListPaginationFilterTests`
+
+Creates 25 posts (exceeding one page) in Django category and Python tag:
+
+- Correct total `count` (25).
+- Page 1 returns 20 items (default page size).
+- Page 2 returns remaining 5 items.
+- Page 1 has `next`; Page 2 has `previous`.
+- No Post ID appears on both pages (cross-page uniqueness).
+- `page_size` parameter is respected.
+
+#### Query Efficiency — `PostListQueryEfficiencyTests`
+
+Uses Django's `CaptureQueriesContext` to confirm that doubling the matching
+Posts on a single page does not increase the query count (N+1 free).
+
+### Test Execution Command
+
+```bash
+cd backend
+.\venv\Scripts\python.exe manage.py test apps.posts.tests.test_post_taxonomy_filtering --verbosity=2
+```
+
+### Verification Results
+
+Verified on 2026-08-10 with the repository virtual environment and PostgreSQL
+test database:
+
+```text
+python manage.py check
+System check identified no issues (0 silenced).
+
+python manage.py test apps.posts.tests.test_post_taxonomy_filtering --verbosity=2
+Found 76 tests.
+Ran 76 tests in 87.639s.
+OK
+```
+
+The test database `test_blog_platform` was created, migrated, and destroyed
+successfully. Failures: 0. Errors: 0.
