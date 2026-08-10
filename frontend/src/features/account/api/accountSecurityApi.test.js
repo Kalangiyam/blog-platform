@@ -86,4 +86,17 @@ describe('accountSecurityApi', () => {
       fieldErrors: { current_password: 'Invalid password.' },
     })
   })
+
+  it('normalizes a session-revocation 503 without exposing backend detail', async () => {
+    apiClientMocks.post.mockRejectedValue(
+      axiosError(503, {
+        detail: 'Unable to complete the security update. Please try again.',
+      }),
+    )
+
+    await expect(changePassword({})).rejects.toEqual({
+      message: 'An unexpected server error occurred.',
+      fieldErrors: {},
+    })
+  })
 })

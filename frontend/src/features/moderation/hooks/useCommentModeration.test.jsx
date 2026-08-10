@@ -21,7 +21,9 @@ describe('useCommentModeration', () => {
       count: 1,
       results: [{ id: 10, content: 'Bad comment', is_deleted: false }],
     }
-    apiMocks.getCommentModerationList.mockResolvedValue(listData)
+    apiMocks.getCommentModerationList
+      .mockResolvedValueOnce(listData)
+      .mockResolvedValueOnce({ count: 0, results: [] })
     apiMocks.deleteCommentModeration.mockResolvedValue(true)
 
     const { result } = renderHook(() => useCommentModeration())
@@ -37,6 +39,10 @@ describe('useCommentModeration', () => {
     })
 
     expect(apiMocks.deleteCommentModeration).toHaveBeenCalledWith(10)
+    await waitFor(() => {
+      expect(apiMocks.getCommentModerationList).toHaveBeenCalledTimes(2)
+      expect(result.current.data).toEqual({ count: 0, results: [] })
+    })
   })
 
   it('handles comment restoration and handles 401 versus 403 error responses', async () => {

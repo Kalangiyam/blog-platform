@@ -61,4 +61,27 @@ describe('useAccountSecurity', () => {
     expect(apiMocks.requestPasswordReset).toHaveBeenCalledWith({ email: 'test@example.com' })
     expect(result.current.successMessage).toBe('Instructions sent.')
   })
+
+  it('does not log out when password change fails and rolls back', async () => {
+    const error = {
+      message: 'An unexpected server error occurred.',
+      fieldErrors: {},
+    }
+    apiMocks.changePassword.mockRejectedValue(error)
+
+    const { result } = renderHook(() => useAccountSecurity())
+
+    await act(async () => {
+      await expect(
+        result.current.handleChangePassword({
+          current_password: 'old',
+          new_password: 'new',
+          confirm_password: 'new',
+        }),
+      ).rejects.toBe(error)
+    })
+
+    expect(authMocks.logout).not.toHaveBeenCalled()
+    expect(result.current.error).toBe(error)
+  })
 })
