@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -29,6 +29,9 @@ describe('AuthNavigation role-based link visibility', () => {
       </MemoryRouter>
     )
 
+    // Open user dropdown menu
+    fireEvent.click(screen.getByRole('button', { name: /user account menu/i }))
+
     expect(screen.getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /security/i })).toBeInTheDocument()
   })
@@ -42,6 +45,9 @@ describe('AuthNavigation role-based link visibility', () => {
         <AuthNavigation />
       </MemoryRouter>
     )
+
+    // Open user dropdown menu
+    fireEvent.click(screen.getByRole('button', { name: /user account menu/i }))
 
     expect(screen.queryByRole('link', { name: /dashboard/i })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: /security/i })).toBeInTheDocument()
