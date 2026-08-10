@@ -1313,6 +1313,98 @@ Feature 12 adds a public Post search endpoint without creating a separate search
 
 ---
 
+# Taxonomy Filtering Architecture
+
+Feature 17 extends the public published-post listing endpoint with optional
+`category` and `tag` query parameters. No new endpoint, model, migration,
+permission, or response envelope was introduced.
+
+## QuerySet Placement
+
+Domain-level filtering belongs in `PostQuerySet`, following the same pattern
+as `.published()` and `.search()`. HTTP parameter extraction remains in
+`PostViewSet.get_queryset()`.
+
+Two new methods were added to `PostQuerySet`:
+
+- `for_category(category_slug: str)` — filters by an active Category slug.
+- `for_tag(tag_slug: str)` — filters by an active Tag slug.
+
+Both methods are chainable, allowing combined AND filtering:
+
+```python
+Post.objects.published().for_category("django").for_tag("python")
+```
+
+Because `PostManager` extends `SoftDeleteManager` directly (not via
+`Manager.from_queryset()`), QuerySet methods are not automatically proxied.
+Corresponding forwarding methods were added to `PostManager`, consistent with
+the existing `published()` and `search()` pattern.
+
+## Active Taxonomy Guard
+
+`Category.objects` and `Tag.objects` use `ActiveStatusManager` as their
+default manager — returning only active records. The `for_category()` and
+`for_tag()` methods use these default managers to check existence:
+
+```python
+if not Category.objects.filter(slug=slug).exists():
+    return self.none()
+```
+
+This means a slug belonging to an inactive Category or Tag is invisible to the
+filter, and the method returns an empty queryset. This preserves the semantic
+consistency of the active-taxonomy lifecycle throughout all public APIs.
+
+## Slug Normalization
+
+Both methods call `.strip()` on the received slug. An empty or whitespace-only
+slug returns `self` (unchanged queryset), so empty parameters are silently
+ignored.
+
+## Unknown Slug Behavior
+
+A slug that does not match any active taxonomy record returns `self.none()`,
+which the ViewSet returns as a `200 OK` response with an empty paginated
+collection. A `404` is never returned for collection filters.
+
+## Security Order
+
+Taxonomy filtering applies **after** the published and soft-delete visibility
+rules are already established:
+
+```text
+Post.objects.published()          ← excludes drafts + soft-deleted
+    .for_category(slug)           ← constrains to active Category
+    .for_tag(slug)                ← constrains to active Tag
+    .select_related("author")     ← eager load preserved
+    .prefetch_related(...)        ← eager load preserved
+```
+
+Filtering cannot expose drafts or soft-deleted posts because those are
+excluded before filtering is applied.
+
+## Duplicate Row Analysis
+
+Each filter targets a single unique taxonomy slug (unique constraint on
+`Category.slug` and `Tag.slug`). Django M2M relationships prevent identical
+Post–taxonomy associations. Empirical testing with chained category and tag
+filters confirmed no duplicate Post IDs in results. `.distinct()` was not
+added.
+
+## Performance
+
+- `select_related("author")` and `prefetch_related("categories", "tags")`
+  are preserved on all code paths.
+- The taxonomy existence check uses `.exists()` (a single efficient
+  `SELECT 1` query) and does not load full model instances.
+- `Category.slug` and `Tag.slug` carry unique B-tree indexes (created by
+  `unique=True` on `SlugField`). No additional index was needed.
+- M2M through-table columns are indexed by Django automatically.
+- No schema change or migration was required.
+
+---
+
 # Featured Image Architecture
 
 Feature 13 extends the Post domain with one optional `ImageField` rather than introducing a separate media domain.
