@@ -1,17 +1,16 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
-import { APPLICATION_ROLES } from '../../permissions/index.js'
+import AdminUserError from './AdminUserError.jsx'
+import PasswordInput from './PasswordInput.jsx'
+import PasswordStrengthIndicator from './PasswordStrengthIndicator.jsx'
+import UserRoleSelector from './UserRoleSelector.jsx'
 import { validateUserCreateData } from '../utils/adminUserValidation.js'
-
-const AVAILABLE_ROLES = [
-  APPLICATION_ROLES.AUTHOR,
-  APPLICATION_ROLES.EDITOR,
-  APPLICATION_ROLES.ADMINISTRATOR,
-]
 
 /**
  * Controlled user creation form for Administrators.
- * Maps field validation errors and guards against duplicate submissions.
+ * Composes presentational inputs, role selection cards, password strength indicator,
+ * and handles form submit lifecycle and pre-flight validation.
  *
  * @param {Object} props
  * @param {Function} props.onSubmit Callback returning Promise<void>
@@ -19,6 +18,8 @@ const AVAILABLE_ROLES = [
  * @param {Object} [props.error=null] Normalized error object
  */
 export default function UserCreateForm({ onSubmit, isSubmitting = false, error = null }) {
+  const navigate = useNavigate()
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -70,6 +71,10 @@ export default function UserCreateForm({ onSubmit, isSubmitting = false, error =
     }
   }
 
+  function handleCancel() {
+    navigate('/admin/users')
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -93,205 +98,269 @@ export default function UserCreateForm({ onSubmit, isSubmitting = false, error =
     })
   }
 
-  return (
-    <form className="space-y-6 max-w-2xl bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-xs" noValidate onSubmit={handleSubmit}>
-      <h2 className="text-xl font-bold text-slate-900 border-b border-slate-200 pb-4">
-        Account Identity & Credentials
-      </h2>
+  const hasGeneralError = Boolean(
+    error?.message &&
+      (!error?.fieldErrors || Object.keys(error.fieldErrors).length === 0)
+  )
 
-      {error?.message && (!error?.fieldErrors || Object.keys(error.fieldErrors).length === 0) ? (
-        <div
-          aria-live="polite"
-          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-          role="alert"
-        >
-          {error.message}
-        </div>
+  return (
+    <form
+      aria-busy={isSubmitting}
+      className="space-y-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8"
+      noValidate
+      onSubmit={handleSubmit}
+    >
+      {/* General Non-Field Error Banner */}
+      {hasGeneralError ? (
+        <AdminUserError message={error.message} title="Account Creation Failed" />
       ) : null}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Username */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="username">
-            Username <span className="text-red-500">*</span>
-          </label>
-          <input
-            aria-describedby={fieldErrors.username ? 'username-error' : undefined}
-            aria-invalid={Boolean(fieldErrors.username)}
-            autoComplete="username"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            disabled={isSubmitting}
-            id="username"
-            name="username"
-            onChange={handleTextChange}
-            required
-            type="text"
-            value={formData.username}
-          />
-          {fieldErrors.username ? (
-            <p className="mt-1 text-xs text-red-600" id="username-error">
-              {Array.isArray(fieldErrors.username) ? fieldErrors.username.join(' ') : fieldErrors.username}
+      {/* Section 1: Account Identity & Credentials */}
+      <div>
+        <div className="flex items-start gap-3.5 mb-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            {/* User Icon */}
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">
+              Account Identity & Credentials
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Basic identity information and login credentials for the new user.
             </p>
-          ) : null}
+          </div>
         </div>
 
-        {/* Email */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="email">
-            Email Address <span className="text-red-500">*</span>
-          </label>
-          <input
-            aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-            aria-invalid={Boolean(fieldErrors.email)}
-            autoComplete="email"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            disabled={isSubmitting}
-            id="email"
-            name="email"
-            onChange={handleTextChange}
-            required
-            type="email"
-            value={formData.email}
-          />
-          {fieldErrors.email ? (
-            <p className="mt-1 text-xs text-red-600" id="email-error">
-              {Array.isArray(fieldErrors.email) ? fieldErrors.email.join(' ') : fieldErrors.email}
-            </p>
-          ) : null}
-        </div>
+        {/* Input Grid */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {/* Username */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700" htmlFor="username">
+              Username <span className="text-red-500">*</span>
+            </label>
+            <input
+              aria-describedby={fieldErrors.username ? 'username-error' : undefined}
+              aria-invalid={Boolean(fieldErrors.username)}
+              autoComplete="username"
+              className={`mt-1.5 block w-full rounded-xl border ${
+                fieldErrors.username
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                  : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
+              } px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500`}
+              disabled={isSubmitting}
+              id="username"
+              name="username"
+              onChange={handleTextChange}
+              placeholder="Enter username"
+              required
+              type="text"
+              value={formData.username}
+            />
+            {fieldErrors.username ? (
+              <p className="mt-1.5 text-xs font-medium text-red-600" id="username-error">
+                {Array.isArray(fieldErrors.username)
+                  ? fieldErrors.username.join(' ')
+                  : fieldErrors.username}
+              </p>
+            ) : null}
+          </div>
 
-        {/* First Name */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="first_name">
-            First Name
-          </label>
-          <input
-            autoComplete="given-name"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            disabled={isSubmitting}
-            id="first_name"
-            name="first_name"
-            onChange={handleTextChange}
-            type="text"
-            value={formData.first_name}
-          />
-        </div>
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700" htmlFor="email">
+              Email Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+              aria-invalid={Boolean(fieldErrors.email)}
+              autoComplete="email"
+              className={`mt-1.5 block w-full rounded-xl border ${
+                fieldErrors.email
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
+                  : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/20'
+              } px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500`}
+              disabled={isSubmitting}
+              id="email"
+              name="email"
+              onChange={handleTextChange}
+              placeholder="Enter email address"
+              required
+              type="email"
+              value={formData.email}
+            />
+            {fieldErrors.email ? (
+              <p className="mt-1.5 text-xs font-medium text-red-600" id="email-error">
+                {Array.isArray(fieldErrors.email)
+                  ? fieldErrors.email.join(' ')
+                  : fieldErrors.email}
+              </p>
+            ) : null}
+          </div>
 
-        {/* Last Name */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="last_name">
-            Last Name
-          </label>
-          <input
-            autoComplete="family-name"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            disabled={isSubmitting}
-            id="last_name"
-            name="last_name"
-            onChange={handleTextChange}
-            type="text"
-            value={formData.last_name}
-          />
-        </div>
-      </div>
+          {/* First Name */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700" htmlFor="first_name">
+              First Name
+            </label>
+            <input
+              autoComplete="given-name"
+              className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              disabled={isSubmitting}
+              id="first_name"
+              name="first_name"
+              onChange={handleTextChange}
+              placeholder="Enter first name"
+              type="text"
+              value={formData.first_name}
+            />
+            {fieldErrors.first_name ? (
+              <p className="mt-1.5 text-xs font-medium text-red-600">
+                {Array.isArray(fieldErrors.first_name)
+                  ? fieldErrors.first_name.join(' ')
+                  : fieldErrors.first_name}
+              </p>
+            ) : null}
+          </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-        {/* Password */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="password">
-            Password <span className="text-red-500">*</span>
-          </label>
-          <input
-            aria-describedby={fieldErrors.password ? 'password-error' : undefined}
-            aria-invalid={Boolean(fieldErrors.password)}
+          {/* Last Name */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700" htmlFor="last_name">
+              Last Name
+            </label>
+            <input
+              autoComplete="family-name"
+              className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-xs transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              disabled={isSubmitting}
+              id="last_name"
+              name="last_name"
+              onChange={handleTextChange}
+              placeholder="Enter last name"
+              type="text"
+              value={formData.last_name}
+            />
+            {fieldErrors.last_name ? (
+              <p className="mt-1.5 text-xs font-medium text-red-600">
+                {Array.isArray(fieldErrors.last_name)
+                  ? fieldErrors.last_name.join(' ')
+                  : fieldErrors.last_name}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Password */}
+          <PasswordInput
             autoComplete="new-password"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             disabled={isSubmitting}
+            error={fieldErrors.password}
             id="password"
+            label="Password"
             name="password"
             onChange={handleTextChange}
+            placeholder="Enter password"
             required
-            type="password"
             value={formData.password}
           />
-          {fieldErrors.password ? (
-            <p className="mt-1 text-xs text-red-600" id="password-error">
-              {Array.isArray(fieldErrors.password) ? fieldErrors.password.join(' ') : fieldErrors.password}
-            </p>
-          ) : null}
-        </div>
 
-        {/* Password Confirm */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700" htmlFor="password_confirm">
-            Confirm Password <span className="text-red-500">*</span>
-          </label>
-          <input
-            aria-describedby={fieldErrors.password_confirm ? 'password-confirm-error' : undefined}
-            aria-invalid={Boolean(fieldErrors.password_confirm)}
+          {/* Confirm Password */}
+          <PasswordInput
             autoComplete="new-password"
-            className="mt-1.5 block w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-900 shadow-xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             disabled={isSubmitting}
+            error={fieldErrors.password_confirm}
             id="password_confirm"
+            label="Confirm Password"
             name="password_confirm"
             onChange={handleTextChange}
+            placeholder="Confirm password"
             required
-            type="password"
             value={formData.password_confirm}
           />
-          {fieldErrors.password_confirm ? (
-            <p className="mt-1 text-xs text-red-600" id="password-confirm-error">
-              {Array.isArray(fieldErrors.password_confirm)
-                ? fieldErrors.password_confirm.join(' ')
-                : fieldErrors.password_confirm}
-            </p>
-          ) : null}
         </div>
+
+        {/* Password Strength Indicator */}
+        <PasswordStrengthIndicator password={formData.password} />
       </div>
 
-      {/* Application Roles Selection */}
-      <fieldset className="border-t border-slate-200 pt-6">
-        <legend className="text-base font-bold text-slate-900">
-          Initial Application Roles
-        </legend>
-        <p className="mt-1 text-xs text-slate-500">
-          Select any explicit combination of application roles. Users may hold zero, one, or multiple roles.
-        </p>
+      {/* Section 2: Initial Application Roles */}
+      <UserRoleSelector
+        disabled={isSubmitting}
+        error={fieldErrors.roles}
+        onRoleToggle={handleRoleToggle}
+        selectedRoles={formData.roles}
+      />
 
-        <div className="mt-3 space-y-2">
-          {AVAILABLE_ROLES.map((role) => {
-            const isChecked = formData.roles.includes(role)
-            return (
-              <label
-                className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 cursor-pointer transition"
-                key={role}
-              >
-                <input
-                  checked={isChecked}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                  onChange={() => handleRoleToggle(role)}
-                  type="checkbox"
-                />
-                <span className="text-sm font-semibold text-slate-800">{role}</span>
-              </label>
-            )
-          })}
-        </div>
-        {fieldErrors.roles ? (
-          <p className="mt-1.5 text-xs text-red-600">
-            {Array.isArray(fieldErrors.roles) ? fieldErrors.roles.join(' ') : fieldErrors.roles}
-          </p>
-        ) : null}
-      </fieldset>
-
-      <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-200">
+      {/* Form Action Footer */}
+      <div className="flex items-center justify-between border-t border-slate-100 pt-6">
         <button
-          className="inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-indigo-300"
+          className="inline-flex items-center rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          onClick={handleCancel}
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <button
+          className="inline-flex min-w-[11.5rem] items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:bg-indigo-400"
           disabled={isSubmitting}
           type="submit"
         >
-          {isSubmitting ? 'Creating User…' : 'Create User Account'}
+          {isSubmitting ? (
+            <>
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>Creating User…</span>
+            </>
+          ) : (
+            <>
+              {/* User Plus Icon */}
+              <svg
+                aria-hidden="true"
+                className="h-4.5 w-4.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M18 7.5v6m3-3h-6m-1.5-1.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>Create User Account</span>
+            </>
+          )}
         </button>
       </div>
     </form>

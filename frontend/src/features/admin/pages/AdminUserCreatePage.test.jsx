@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -47,10 +47,10 @@ describe('AdminUserCreatePage', () => {
     expect(screen.getByRole('heading', { name: 'Create User Account' })).toBeInTheDocument()
 
     const user = userEvent.setup()
-    await user.type(screen.getByLabelText(/Username/i), 'new_writer')
-    await user.type(screen.getByLabelText(/Email Address/i), 'new@example.com')
-    await user.type(screen.getByLabelText(/^Password/i), 'Password123!')
-    await user.type(screen.getByLabelText(/Confirm Password/i), 'Password123!')
+    fireEvent.change(screen.getByLabelText(/Username/i), { target: { value: 'new_writer' } })
+    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'new@example.com' } })
+    fireEvent.change(screen.getByLabelText(/^Password \*$/i), { target: { value: 'Password123!' } })
+    fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } })
 
     await user.click(screen.getByRole('button', { name: /Create User Account/i }))
 
