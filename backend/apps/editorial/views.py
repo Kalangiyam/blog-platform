@@ -154,6 +154,7 @@ class EditorialTagViewSet(
 
 class EditorialCommentViewSet(
     mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -173,6 +174,12 @@ class EditorialCommentViewSet(
             qs = qs.filter(is_deleted=False)
 
         return qs.order_by("-created_at", "-pk")
+
+    def perform_destroy(self, instance):
+        """
+        Soft delete the Comment and attribute the moderation action.
+        """
+        instance.delete(user=self.request.user)
 
     @action(detail=True, methods=["post"])
     def restore(self, request, *args, **kwargs):
