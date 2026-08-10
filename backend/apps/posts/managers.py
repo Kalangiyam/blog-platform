@@ -26,6 +26,42 @@ class PostQuerySet(SoftDeleteQuerySet):
             status=PostStatus.PUBLISHED,
         )
 
+    def for_category(self, category_slug: str):
+        """
+        Filter posts by an active Category slug.
+
+        Empty or whitespace-only slugs leave the queryset unchanged.
+        Unknown or inactive category slugs return an empty queryset.
+        """
+        slug = category_slug.strip() if category_slug else ""
+        if not slug:
+            return self
+
+        from apps.categories.models import Category
+
+        if not Category.objects.filter(slug=slug).exists():
+            return self.none()
+
+        return self.filter(categories__slug=slug)
+
+    def for_tag(self, tag_slug: str):
+        """
+        Filter posts by an active Tag slug.
+
+        Empty or whitespace-only slugs leave the queryset unchanged.
+        Unknown or inactive tag slugs return an empty queryset.
+        """
+        slug = tag_slug.strip() if tag_slug else ""
+        if not slug:
+            return self
+
+        from apps.tags.models import Tag
+
+        if not Tag.objects.filter(slug=slug).exists():
+            return self.none()
+
+        return self.filter(tags__slug=slug)
+
     def search(self, query):
         """
         Return posts matching the query, ordered by relevance.
@@ -94,6 +130,18 @@ class PostManager(SoftDeleteManager):
         Return published, non-deleted posts.
         """
         return self.get_queryset().published()
+
+    def for_category(self, category_slug: str):
+        """
+        Return active posts filtered by an active Category slug.
+        """
+        return self.get_queryset().for_category(category_slug)
+
+    def for_tag(self, tag_slug: str):
+        """
+        Return active posts filtered by an active Tag slug.
+        """
+        return self.get_queryset().for_tag(tag_slug)
 
     def search(self, query):
         """

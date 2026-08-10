@@ -84,12 +84,20 @@ class PostViewSet(
 
             return queryset.filter(author=user)
 
-        return Post.objects.published().select_related(
-            "author"
-        ).prefetch_related(
-            "categories",
-            "tags",
+        queryset = (
+            Post.objects.published()
+            .select_related("author")
+            .prefetch_related("categories", "tags")
         )
+
+        params = self.request.query_params
+        category_slug = params.get("category", "")
+        tag_slug = params.get("tag", "")
+
+        queryset = queryset.for_category(category_slug)
+        queryset = queryset.for_tag(tag_slug)
+
+        return queryset
 
     def get_serializer_class(self):
         """
