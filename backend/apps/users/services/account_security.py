@@ -1,33 +1,48 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db import transaction
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
 
 from apps.users.tokens import email_verification_token_generator
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
-def revoke_user_outstanding_tokens(user):
+class SessionRevocationError(Exception):
+    """Raised when a credential update cannot safely revoke refresh sessions."""
+
+
+def revoke_user_outstanding_tokens(user, *, operation):
     """
     Blacklist all outstanding Simple JWT refresh tokens for the given user.
     """
     try:
-        from rest_framework_simplejwt.token_blacklist.models import (
-            BlacklistedToken,
-            OutstandingToken,
-        )
         tokens = OutstandingToken.objects.filter(user=user)
         for token in tokens:
             BlacklistedToken.objects.get_or_create(token=token)
-    except Exception:
-        # Simple JWT token_blacklist app may not be in INSTALLED_APPS or table empty
-        pass
+    except Exception as exc:
+        logger.exception(
+            "session_revocation_failed operation=%s user_id=%s",
+            operation,
+            user.pk,
+        )
+        raise SessionRevocationError(
+            "Refresh-token revocation failed."
+        ) from exc
 
 
+@transaction.atomic
 def change_user_password(user, current_password, new_password):
     """
     Validate current password, set new password, and revoke user sessions.
@@ -37,7 +52,7 @@ def change_user_password(user, current_password, new_password):
 
     user.set_password(new_password)
     user.save()
-    revoke_user_outstanding_tokens(user)
+    revoke_user_outstanding_tokens(user, operation="password_change")
 
 
 def request_password_reset(email):
@@ -80,6 +95,7 @@ def request_password_reset(email):
     )
 
 
+@transaction.atomic
 def confirm_password_reset(uidb64, token, new_password):
     """
     Verify password reset token and update user password if valid.
@@ -98,7 +114,7 @@ def confirm_password_reset(uidb64, token, new_password):
 
     user.set_password(new_password)
     user.save()
-    revoke_user_outstanding_tokens(user)
+    revoke_user_outstanding_tokens(user, operation="password_reset")
 
 
 def send_email_verification(user):

@@ -10,12 +10,26 @@ from apps.users.serializers.account_security import (
     PasswordResetRequestSerializer,
 )
 from apps.users.services.account_security import (
+    SessionRevocationError,
     change_user_password,
     confirm_email_verification,
     confirm_password_reset,
     request_password_reset,
     send_email_verification,
 )
+
+
+SECURITY_UPDATE_UNAVAILABLE_DETAIL = (
+    "Unable to complete the security update. Please try again."
+)
+
+
+def security_update_unavailable_response():
+    """Return the safe HTTP representation of a revocation-layer failure."""
+    return Response(
+        {"detail": SECURITY_UPDATE_UNAVAILABLE_DETAIL},
+        status=status.HTTP_503_SERVICE_UNAVAILABLE,
+    )
 
 
 class PasswordResetRateThrottle(AnonRateThrottle):
@@ -34,11 +48,14 @@ class PasswordChangeAPIView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        change_user_password(
-            user=request.user,
-            current_password=serializer.validated_data["current_password"],
-            new_password=serializer.validated_data["new_password"],
-        )
+        try:
+            change_user_password(
+                user=request.user,
+                current_password=serializer.validated_data["current_password"],
+                new_password=serializer.validated_data["new_password"],
+            )
+        except SessionRevocationError:
+            return security_update_unavailable_response()
 
         return Response(
             {"detail": "Password updated successfully. Please log in with your new password."},
@@ -73,11 +90,14 @@ class PasswordResetConfirmAPIView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        confirm_password_reset(
-            uidb64=serializer.validated_data["uid"],
-            token=serializer.validated_data["token"],
-            new_password=serializer.validated_data["new_password"],
-        )
+        try:
+            confirm_password_reset(
+                uidb64=serializer.validated_data["uid"],
+                token=serializer.validated_data["token"],
+                new_password=serializer.validated_data["new_password"],
+            )
+        except SessionRevocationError:
+            return security_update_unavailable_response()
 
         return Response(
             {"detail": "Password has been reset successfully. Please log in with your new password."},
