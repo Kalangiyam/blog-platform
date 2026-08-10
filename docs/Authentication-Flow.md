@@ -59,15 +59,12 @@ This section preserves the backend feature-history milestone. Frontend Feature 0
 
 ## Remaining Authentication Features
 
-The authentication foundation is complete.
+The required authentication and account-security foundation is complete, including password change, password reset, email verification, and transactional refresh-token revocation for credential changes.
 
-Future authentication enhancements include:
+Future optional enhancements include:
 
-* Password Change
-* Password Reset
-* Email Verification
-* Multi-Factor Authentication (Optional)
-* Social Authentication (Optional)
+* Multi-Factor Authentication
+* Social Authentication
 
 ---
 
@@ -137,12 +134,15 @@ Implementing the custom User model before the initial migration is considered a 
 * Authenticated Profile Updates
 * Public User Profile Retrieval
 * Automatic Profile Provisioning
-
-## Planned
-
 * Password Change
 * Password Reset
 * Email Verification
+* Transactional fail-closed refresh-token revocation on password change/reset
+
+## Planned
+
+* Multi-Factor Authentication (Optional)
+* Social Authentication (Optional)
 
 ---
 
@@ -777,3 +777,59 @@ Create, retrieve, update, delete, workflow, featured-image, and Profile detail r
 ## Current Frontend Milestone
 
 Frontend Feature 02 now supplies the React authentication and session architecture for this backend contract. The earlier backend roadmap identified Deployment & CI/CD as Feature 17; that remains a future backend milestone rather than the current authentication task.
+
+---
+
+# Pre-QA Editorial Authorization and Credential-Change Flow
+
+## Editor Comment Moderation
+
+```text
+DELETE /api/editorial/comments/{id}/
+→ JWT identity
+→ IsEditor
+→ editorial Comment lookup including deleted records
+→ Comment.delete(user=request.user)
+→ 204 No Content
+```
+
+Anonymous requests receive `401`; Author-only and Administrator-only users receive `403`; unknown IDs receive `404`. Repeated deletion is idempotent `204`. The public `DELETE /api/comments/{id}/` flow remains owner-only.
+
+## Post Management Detail
+
+```text
+GET /api/editorial/posts/{slug}/
+→ JWT identity
+→ IsAuthor OR IsEditor
+→ role-scoped active Post queryset
+→ PostDetailSerializer
+→ 200 OK without persistence mutation
+```
+
+Authors retrieve only their own active draft/published Posts. Editors retrieve any active draft/published Post. Administrator-only users receive `403`, and soft-deleted Posts are hidden behind `404`; Editor restoration remains a separate action.
+
+## Password Change and Reset Consistency
+
+Password change and password-reset confirmation invoke an atomic account-security service. The password write and all refresh-token blacklist writes processed by the transaction commit together. A revocation failure raises `SessionRevocationError`, rolls back the transaction, is logged with safe operation/User context, and is mapped by the DRF view to:
+
+```http
+503 Service Unavailable
+```
+
+```json
+{
+  "detail": "Unable to complete the security update. Please try again."
+}
+```
+
+The frontend logs out only after successful password change. A `503` is normalized to a controlled error and does not trigger logout because the credential update rolled back.
+
+Refresh revocation does not invalidate already-issued access tokens. Their configured lifetime is 15 minutes, during which they remain usable until natural expiry. Refresh tokens have a seven-day lifetime, rotation and blacklist-after-rotation remain enabled, and no JWT lifetime changed in this workstream.
+
+A narrow concurrent refresh-token issuance race remains outside this transactional guarantee. Immediate access-token invalidation or removal of that race requires a broader session-version or denylist design and was not introduced.
+
+## Manual Credential-Flow Qualification — 2026-08-10
+
+The live frontend/backend flow verified successful password change, logout after success, rejection of the old credentials, acceptance of the new credentials, and safe rejection of invalid-current-password and confirmation-mismatch requests. Authentication restoration, session, and navigation smoke scenarios also passed. The overall manual result is **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**.
+
+Manual password-reset email delivery remains unverified. The local `POST /api/auth/password/reset/` attempt returned `500 Internal Server Error` because no SMTP service was available at `127.0.0.1:25` (`ConnectionRefusedError`, WinError 10061). Automated password-reset, token, rollback, and refresh-revocation tests remain green. This evidence identifies a local infrastructure limitation, not an application defect; production requires real email-provider configuration and end-to-end delivery verification.

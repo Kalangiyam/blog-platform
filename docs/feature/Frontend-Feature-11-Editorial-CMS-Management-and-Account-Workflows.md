@@ -98,8 +98,30 @@ Manual browser verification is deferred to the final frontend QA and production-
 - WAI-ARIA roles (`role="dialog"`, `aria-modal="true"`, `aria-labelledby`).
 
 ## 15. Known Limitations
-- Short-lived access tokens remain valid until their natural expiration (e.g. 5 minutes) after password change, but all refresh tokens are blacklisted immediately preventing session extension.
+- Short-lived access tokens remain valid until their configured 15-minute expiration after password change. Refresh-token blacklisting does not invalidate already-issued access tokens.
 
 ## 16. Key Concepts & Interview Questions
 - **Q**: Why create a dedicated `/api/editorial/` namespace instead of `/api/posts/management/`?
 - **A**: Placing management under `/api/posts/management/` creates slug collisions if a post has the slug `management`. A dedicated namespace `/api/editorial/` completely eliminates routing ambiguity.
+
+---
+
+## Post-Completion Pre-QA Qualification — 2026-08-10
+
+A later audit found that the Feature 11 moderation frontend called the public owner-only Comment delete endpoint and that refresh-token revocation silently swallowed failures. The Pre-QA Contract & Session Security Closure subsequently added:
+
+- Editor-only `DELETE /api/editorial/comments/{id}/` with acting-Editor audit attribution;
+- read-only `GET /api/editorial/posts/{slug}/` for active management Post loading;
+- transactional fail-closed password mutation and refresh-token revocation;
+- a safe generic `503` response when revocation fails;
+- permission, lifecycle, no-mutation, blacklist, rollback, and frontend contract tests.
+
+This qualification preserves Feature 11 as an accepted historical milestone while recording the later closure. The guarantee is bounded to password mutation and refresh-token revocation processed by the transaction. Already-issued access tokens remain valid for 15 minutes, and a narrow concurrent refresh-token issuance race remains outside this focused milestone. ADR-030 records the prospective policy.
+
+## Post-Closure Manual QA Qualification — 2026-08-10
+
+The later live-stack run verified Editor deletion of another User's Comment through the editorial contract, acting-Editor audit attribution, public disappearance, retrieval through the deleted filter, restoration, Administrator-only denial, and preservation of public owner-only deletion. It also verified the Post management-detail role matrix, deleted-Post `404`, zero-PATCH editor loading, successful deliberate updates, password change/logout behavior, old/new credential behavior, validation failures, and authentication/session/navigation smoke paths.
+
+The overall result is **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**. Manual password-reset email delivery was not completed because the local environment had no SMTP service at `127.0.0.1:25`; the reset request returned `500` with a `ConnectionRefusedError` (WinError 10061). Automated password-reset, token, rollback, and revocation tests remain green. This is recorded as an environment/deployment limitation rather than an application defect, and real provider configuration plus end-to-end delivery verification remain future production work.
+
+This dated qualification does not rewrite Feature 11's historical test counts or its original manual-verification deferral. Author, Editor, and Administrator remain independent roles; Administrator does not imply Editor, and backend permissions remain authoritative.

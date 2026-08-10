@@ -1757,3 +1757,51 @@ src/features/posts/components/detail/
 ```
 
 The orchestration component (`PostDetailPage.jsx`) retains local state for the main post request, error normalization, comments integration, and permission-aware edit navigation (`canEditPost`). Featured-image management remains in the create and edit authoring interfaces. Category and tag navigation links directly to site-wide filtering query parameters (`/?category=...` and `/?tag=...`).
+
+---
+
+# Pre-QA Management Contract and Session Security Architecture
+
+## Editorial Read/Write Boundary
+
+The `/api/editorial/` namespace is the backend-authoritative boundary for CMS operations that must not weaken public contracts.
+
+- `DELETE /api/editorial/comments/{id}/` is Editor-only and reuses `Comment.delete(user=request.user)`. The public Comment detail endpoint remains authenticated-owner-only.
+- `GET /api/editorial/posts/{slug}/` is a read-only management-detail contract. Authors see only their own active Posts; Editors see any active Post; Administrator alone grants neither permission.
+- Editorial Post list, retrieve, and restore use action-specific queryset boundaries. List retains its deleted-record inventory and filters, retrieve excludes deleted Posts, and restore retains access to deleted Posts.
+- `PostDetailSerializer` is reused because it is read-only, contains the complete editor form representation, and does not expose deletion audit fields or write-only inputs.
+
+The management-detail request executes only SELECT queries. Opening Post Edit no longer falls back to `PATCH {}` and therefore does not update timestamps, audit users, publication state, content, media, or taxonomy relationships.
+
+Existing eager loading remains sufficient: comments use `select_related("author", "post")`; Posts use `select_related("author")` and `prefetch_related("categories", "tags")`. No schema or index change is required.
+
+## Transactional Session-Revocation Boundary
+
+Password change and reset follow a layered failure flow:
+
+```text
+DRF view
+→ account-security service
+→ atomic password mutation and refresh-token blacklisting
+→ success commit
+
+revocation failure
+→ safe structured server log
+→ SessionRevocationError
+→ transaction rollback
+→ DRF view maps to generic 503
+```
+
+`SessionRevocationError` is an application exception rather than an HTTP exception. The service owns consistency and the DRF view owns response semantics.
+
+The guarantee is intentionally bounded: password mutation and refresh-token revocation processed by the transaction succeed together or roll back together. It is not a claim of instantaneous invalidation of every possible session. Already-issued access tokens remain valid until the configured 15-minute expiry, and a narrow concurrent refresh-token issuance race remains. Closing that race would require a broader session-version or token-issuance design and is outside this milestone.
+
+Revocation failures log only safe context such as event, operation, and User ID. API responses never expose passwords, token values, reset tokens, JTIs, database details, exception messages, or stack traces.
+
+ADR-030 records these prospective decisions and qualifies the narrower guarantees documented historically in ADR-029.
+
+## Full-Stack QA Qualification — 2026-08-10
+
+The live-stack QA matrix verified the editorial Comment delete/audit/public-hide/restore lifecycle, independent-role denials, read-only Post management role and deletion boundaries, zero-PATCH Post Edit loading, deliberate Post updates, password-change/logout/credential behavior, and authentication/session/navigation smoke paths. The overall result is **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**.
+
+The limitation is environmental: manual password-reset email delivery was not completed because no SMTP service was listening at `127.0.0.1:25`, producing `ConnectionRefusedError` (WinError 10061) and a `500` response from the local reset-request endpoint. Automated reset, token, rollback, and revocation coverage remains green, and no application defect was identified by the manual run. A real provider, end-to-end delivery verification, and optional graceful provider-outage handling review belong to production/deployment hardening.

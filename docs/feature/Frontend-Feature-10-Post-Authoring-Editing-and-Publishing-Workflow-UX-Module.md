@@ -129,3 +129,23 @@ Inspected files:
 
 ## Conclusion
 Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module is **100% complete, fully verified, and ready for production merge**.
+
+---
+
+## Post-Completion Contract Correction — 2026-08-10
+
+The historical “Retrieve Draft Post” entry used `PATCH /api/posts/{slug}/` with an empty object because no management-detail GET existed at Feature 10 completion. A later Pre-QA audit proved that the update serializer changed `updated_by` and `updated_at`, so this was not a read-only retrieval contract.
+
+The current Post Edit implementation now loads active draft or published Posts through:
+
+```http
+GET /api/editorial/posts/{slug}/
+```
+
+The new contract is role- and ownership-scoped, excludes soft-deleted Posts, and has regression coverage proving that initial editor loading performs no PATCH and makes no database mutation. The earlier 73-file/443-test result remains historical milestone evidence rather than the current baseline.
+
+## Post-Closure Manual QA Qualification — 2026-08-10
+
+Later live-stack verification confirmed that an Author can load their own management Post but not another Author's draft, an Editor can load another Author's active draft, an Administrator-only User is denied, and a soft-deleted Post returns `404`. Initial Post Edit loading issued zero PATCH requests, while a deliberate Post update continued to succeed.
+
+These scenarios passed under the overall Pre-QA result **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**. The qualification concerns an unrelated local SMTP limitation in the password-reset flow; it does not change the historical Feature 10 verification counts or rewrite the original milestone record.

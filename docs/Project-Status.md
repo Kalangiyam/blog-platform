@@ -8,7 +8,7 @@
 
 **Latest Completed Backend Feature:** ✅ Backend Feature 17 — Taxonomy Filtering for Published Posts
 
-**Current Workstream:** Pre-QA Contract & Session Security Closure
+**Current Workstream:** ✅ Pre-QA Contract & Session Security Closure — COMPLETED; manual/full-stack QA result: PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION
 
 ---
 
@@ -1055,7 +1055,7 @@ Repository source, routes, automated tests, Feature Completion Reports, and ADRs
 | Frontend Feature 08 — Permissions & Authorization UX | Central role/ownership rules, hooks, guards, and declarative controls; UX only | Source and tests under `src/features/permissions/`; Feature Report; ADR-028 |
 | Frontend Feature 09 — User Administration | Administrator user create/list/detail, activation, deactivation, and role replacement | Source and tests under `src/features/admin/`; Feature Report; backend Feature 15 contracts |
 | Frontend Feature 10 — Post Authoring Workflow | Create/edit, taxonomy assignment, featured images, publish/unpublish, and soft delete | Source and tests under `src/features/posts/`; Feature Report |
-| Frontend Feature 11 — Editorial CMS & Account Workflows | Accepted completed milestone delivering role-scoped editorial inventory/restore, taxonomy management, comment list/restore, password change/reset, and email verification; later audit found Editor-delete and fail-open revocation gaps | `apps.editorial`, `src/features/dashboard`, `taxonomies`, `moderation`, and `account`; Feature Report; ADR-029 |
+| Frontend Feature 11 — Editorial CMS & Account Workflows | Accepted completed milestone delivering role-scoped editorial inventory/restore, taxonomy management, comment list/restore, password change/reset, and email verification; later contract and revocation gaps were closed by the Pre-QA workstream | `apps.editorial`, `src/features/dashboard`, `taxonomies`, `moderation`, and `account`; Feature Report; ADR-029; ADR-030 |
 
 Frontend Feature 11 remains the latest accepted numbered frontend milestone. Its historical completion is preserved; the current qualifications are summarized under Latest Completed Milestones and Pending Features.
 
@@ -1074,8 +1074,8 @@ The later reference-driven redesign of Home, Post Detail, Post Create/Edit, priv
 | Token storage | Access token in module memory only; rotating refresh token under one namespaced localStorage key; no persisted user data. |
 | Public blog | API-driven Home and post browsing, post detail, search, category/tag filtering, comments, public profiles, featured images, pagination, and controlled loading/empty/error states. |
 | Authoring | Create/edit posts, taxonomy selection, featured-image management, publish/unpublish, soft delete, and ownership-aware controls. |
-| Editorial CMS | Role-scoped post inventory, Editor restore, Category/Tag create/edit/activation management, and comment list/restore; Editor comment deletion remains a confirmed contract gap. |
-| Account security | Password change, password-reset request/confirmation, and email-verification request/confirmation pages; refresh-token revocation failure policy remains Pre-QA work. |
+| Editorial CMS | Role-scoped post inventory and active management detail, Editor post restore, Category/Tag create/edit/activation management, and Editor comment list/delete/restore. |
+| Account security | Password change, password-reset request/confirmation, and email-verification request/confirmation pages; password mutation and refresh-token revocation now use a transactional fail-closed policy. |
 | User administration | Administrator-only user create/list/detail, activation/deactivation, and complete application-role replacement. |
 | Profiles | Private profile retrieval/edit and privacy-safe public profile views without invented metrics or private-field leakage. |
 | Configuration | Build-time and browser-runtime validation of the public API URL. |
@@ -1083,7 +1083,7 @@ The later reference-driven redesign of Home, Post Detail, Post Create/Edit, priv
 | Route and role UX | Protected, anonymous-only, and role guards; `/me` roles drive UX only while backend permissions remain authoritative. |
 | Styling | Tailwind CSS 4 utilities with minimal global base CSS. |
 | Tooling | npm lockfile, Vite, ESLint, Vitest, jsdom, React Testing Library, Axios Mock Adapter, and lint/build/test scripts. |
-| Reference-driven redesign | Merged across Home, Post Detail, Post Create/Edit, Profiles, Administrator User Creation, and navigation/layout; automated baseline green, manual browser QA pending. |
+| Reference-driven redesign | Merged across Home, Post Detail, Post Create/Edit, Profiles, Administrator User Creation, and navigation/layout; automated baseline green and full-stack/browser verification completed with the qualified result documented below. |
 
 ---
 
@@ -1098,8 +1098,8 @@ The later reference-driven redesign of Home, Post Detail, Post Create/Edit, priv
 | Tags       | ✅ Completed                                                        |
 | Comments   | ✅ Completed                                                        |
 | Profiles   | ✅ Completed                                                        |
-| Editorial  | ✅ Implemented (post inventory/restore, taxonomy management, comment list/restore); Editor delete mismatch remains |
-| Account security | ✅ Implemented (password change/reset and email verification); fail-open refresh-token revocation requires Pre-QA closure |
+| Editorial  | ✅ Implemented (post inventory/detail/restore, taxonomy management, comment list/delete/restore) |
+| Account security | ✅ Implemented (password change/reset, transactional refresh-token revocation, and email verification) |
 
 
 ---
@@ -1121,7 +1121,7 @@ Implemented
 - POST `/api/auth/email/verify/send/`
 - POST `/api/auth/email/verify/confirm/`
 
-Public registration is closed; `/api/auth/register/` was removed in Feature 15. Login returns JSON access/refresh tokens, `/me/` returns the authoritative filtered application roles, refresh rotates and blacklists the previous refresh token, and logout requires both the bearer access token and submitted refresh token. Password change/reset invoke outstanding-refresh-token revocation, but silent exception handling is a required security-hardening gap documented below. Password-reset requests use enumeration-safe responses; email verification uses a purpose-specific expiring token.
+Public registration is closed; `/api/auth/register/` was removed in Feature 15. Login returns JSON access/refresh tokens, `/me/` returns the authoritative filtered application roles, refresh rotates and blacklists the previous refresh token, and logout requires both the bearer access token and submitted refresh token. Password change/reset transactionally combine password mutation with outstanding-refresh-token revocation and return a safe `503` if revocation fails. Password-reset requests use enumeration-safe responses; email verification uses a purpose-specific expiring token.
 
 ---
 
@@ -1259,12 +1259,13 @@ Current behavior includes closed registration, active-user creation, specialized
 Implemented under the dedicated `/api/editorial/` namespace:
 
 - GET `/api/editorial/posts/` — Authors see their own posts; Editors see all posts, including soft-deleted records
+- GET `/api/editorial/posts/{slug}/` — Authors see their own active Posts; Editors see any active Post; read-only management detail
 - POST `/api/editorial/posts/{slug}/restore/` — Editor only
 - GET/POST/PATCH `/api/editorial/categories/` and `/api/editorial/categories/{slug}/` — Editor only, including inactive records and activation changes
 - GET/POST/PATCH `/api/editorial/tags/` and `/api/editorial/tags/{slug}/` — Editor only, including inactive records and activation changes
-- GET `/api/editorial/comments/` and POST `/api/editorial/comments/{id}/restore/` — Editor only
+- GET `/api/editorial/comments/`, DELETE `/api/editorial/comments/{id}/`, and POST `/api/editorial/comments/{id}/restore/` — Editor only
 
-Known contract gap: no Editor-authorized comment delete action exists in the editorial namespace. The current frontend moderation delete call targets the public author-only `DELETE /api/comments/{id}/` endpoint, so deleting another user's comment is not implemented end-to-end.
+Editorial Comment deletion records the acting Editor and preserves the public owner-only Comment delete contract. Editorial Post detail excludes soft-deleted Posts; restoration remains a distinct Editor-only lifecycle action.
 
 ---
 
@@ -1447,7 +1448,7 @@ Implemented
 - Local-first logout and safe authentication error normalization
 - Protected/anonymous route guards and independent role-aware UX
 - Development CORS for `http://localhost:5173` with credentials disabled
-- Password change with current-password validation and attempted refresh-token revocation; failure handling remains fail-open and requires Pre-QA closure
+- Password change with current-password validation and transactional fail-closed refresh-token revocation
 - Enumeration-safe password-reset request and token-confirmation workflow
 - Email-verification send/confirmation workflow with purpose-isolated expiring tokens
 
@@ -1465,12 +1466,12 @@ Implemented
 | Document | Status | Coverage |
 | -------- | ------ | -------- |
 | README | ⚠️ Stale | Current-state sections stop at early frontend milestones and contradict later implementation. |
-| Architecture | ⚠️ Partial | Core backend and early frontend decisions are documented; current-state sections do not fully cover Frontend Features 04–11. |
+| Architecture | ⚠️ Partial | Core backend, early frontend decisions, and the current Pre-QA management/session architecture are documented; broader Frontend Features 04–11 reconciliation remains. |
 | Database Design | ⚠️ Partial | Core schema is documented; account-security `is_email_verified` and latest milestone framing need review. |
-| API Specification | ⚠️ Partial | Public APIs and Backend Feature 17 are documented; editorial/account-security contracts require a completeness review. |
-| Authentication Flow | ⚠️ Stale | Still lists password change/reset/email verification as remaining despite implemented APIs and UI. |
-| Testing Strategy | ⚠️ Partial | Contains historical suites and Backend Feature 17 coverage, but does not yet include the merged redesign's latest 92-file/489-test baseline. |
-| Project Status | ✅ Synchronized | Current implementation, completed milestones, merged redesign verification, known gaps, and Pre-QA workstream are reflected as of 2026-08-10. |
+| API Specification | ✅ Current for implemented contracts | Public, editorial management, and transactional account-security contracts are documented. |
+| Authentication Flow | ⚠️ Partial | Current editorial and credential-change flows are documented; broader historical milestone framing still requires later reconciliation. |
+| Testing Strategy | ✅ Current verification appended | Includes the 126-test backend result and 92-file/494-test frontend baseline for this workstream while preserving historical suites. |
+| Project Status | ✅ Synchronized | Current implementation, automated verification, qualified full-stack/manual result, SMTP limitation, and production-readiness state are reflected as of 2026-08-10. |
 | Frontend README | ⚠️ Internally inconsistent | Mentions Frontend Feature 11 but retains obsolete Frontend Feature 03 next-milestone text. |
 
 ---
@@ -1551,7 +1552,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-The following records preserve historical module-level manual verification for Authentication, User Administration, Posts, Categories, Tags, Comments, and Profiles. They do not constitute current browser verification of Frontend Feature 11, the later reference-driven redesign, or final full-stack QA.
+The following records preserve historical module-level manual verification for Authentication, User Administration, Posts, Categories, Tags, Comments, and Profiles. Current Pre-QA full-stack/browser verification is recorded separately below and does not rewrite those historical records.
 
 Verified:
 
@@ -1771,7 +1772,7 @@ No automated frontend tests were written during Frontend Feature 01 itself; the 
 * One real-stack defect corrected: the anonymous-only guard now preserves a safe attempted path when authentication completes; two route regression tests cover safe and unsafe state
 * Temporary accounts, outstanding tokens, blacklisted tokens, browser profile, and verification processes were removed after the run
 
-Current browser verification remains pending for the Frontend Feature 11 interfaces, the merged reference-driven redesign, and final full-stack QA. Historical Frontend Feature 02 browser checks do not verify those later workflows.
+At the Frontend Feature 02 milestone, browser verification of the later Feature 11 interfaces and reference-driven redesign had not yet occurred. The current Pre-QA full-stack/browser result is recorded below; the historical Feature 02 checks remain evidence only for their original scope.
 
 ---
 
@@ -1781,21 +1782,38 @@ Automated coverage exists across backend domain/API modules and across frontend 
 
 ### Current Frontend Baseline — 2026-08-10
 
-* `npm.cmd test` passed **92 test files and 489 tests**, with 0 failures.
+* `npm.cmd test` passed **92 test files and 494 tests**, with 0 failures.
 * `npm.cmd run lint` passed with 0 errors and 0 warnings.
 * `npm.cmd run build` passed and transformed 277 modules.
 * Vite emitted a non-blocking optimization advisory for the approximately 608.06 kB main JavaScript bundle.
-* Manual browser QA remains pending.
+* Manual/full-stack QA completed with the qualified result documented below.
 
 These results verify the merged reference-driven redesign and the wider frontend suite. Older counts in individual feature reports remain historical milestone evidence rather than the current frontend baseline.
 
 ### Current Backend Verification State — 2026-08-10
 
-* `python manage.py check` and the full Django suite could not execute because the active Python installation does not contain Django or DRF and no repository virtual environment is present. This is an environment limitation, not a passing or failing backend result.
-* Backend Feature 17 retains its historical targeted verification of **76/76 tests passed**.
-* Frontend Feature 11's backend work retains its historical milestone verification recorded in its Feature Completion Report.
+* `python manage.py check` passed with no issues.
+* `python manage.py test --verbosity 1 --noinput` passed **126 tests**, with 0 failures and 0 errors, against the isolated `test_blog_platform` database.
+* The test database was created, migrated, and destroyed by Django's test runner.
 
 Frontend and backend verification are reported separately; no aggregate project-wide test count is asserted.
+
+### Current Manual / Full-Stack QA — 2026-08-10
+
+**Overall result: PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION.** This is not an unconditional manual-QA pass.
+
+Verified against the live frontend/backend stack:
+
+* Editor deletion of another User's Comment through `/api/editorial/comments/{id}/`, acting-Editor `deleted_by` attribution, removal from the public listing, retrieval through the editorial deleted filter, and restoration
+* Administrator-only denial of moderation authority and preservation of owner-only deletion through the public Comment contract
+* Author retrieval of their own management Posts, denial for another Author's draft, Editor retrieval of another Author's active draft, Administrator-only denial, and soft-deleted management-detail `404`
+* Zero PATCH requests during initial Post Edit loading and successful deliberate Post updates
+* Password change, successful logout after the change, rejection of old credentials, acceptance of new credentials, and safe rejection of invalid-current-password and confirmation-mismatch cases
+* Authentication, session, Home/filtering, Post Detail, search, profiles, Administrator User Creation, navigation/layout, and responsive smoke scenarios
+
+Manual password-reset email delivery was **not** completed. `POST /api/auth/password/reset/` returned `500 Internal Server Error` because the local environment had no SMTP service listening at `127.0.0.1:25` (`ConnectionRefusedError`, WinError 10061). Automated password-reset, token, and revocation tests remain green. Current evidence classifies this as a local-development infrastructure limitation rather than an application defect; real provider configuration and end-to-end delivery verification remain production/deployment work. Graceful handling of provider outages may receive a separate production-hardening review.
+
+No application defect was identified by this manual/full-stack run. The SMTP limitation does not verify password-reset email delivery.
 
 ---
 
@@ -1803,46 +1821,44 @@ Frontend and backend verification are reported separately; no aggregate project-
 
 ## Product / Contract Work
 
-* Add an Editor-authorized comment soft-delete contract under the editorial API (or another unambiguous backend-authoritative endpoint) and point the moderation UI to it.
-* Add a read-only authorized post-management detail contract for draft/edit loading; remove the frontend's current `PATCH {}` fallback, which changes audit metadata while retrieving an unpublished post.
+* No remaining Product/Contract item from this Pre-QA closure. Editor comment deletion and read-only management Post detail are implemented and tested.
 
 ## Security / Pre-QA Work
 
-* Define an explicit, observable refresh-token revocation failure policy for password change/reset. `revoke_user_outstanding_tokens()` currently catches every exception and silently continues.
-* Add blacklist-state and revocation-failure tests.
-* Add Author/Editor/Administrator/anonymous permission matrices for the new editorial delete and management-detail contracts.
-* Review the accepted refresh-token localStorage exposure, cross-tab rotation, and lost-refresh-response limitations before production.
+* No scoped Pre-QA contract or session-security gap remains open.
+* Review the accepted refresh-token localStorage exposure, cross-tab rotation, lost-refresh-response behavior, and narrow concurrent token-issuance race before production. Closing the race or invalidating already-issued access tokens would require broader authentication/session architecture.
 
 ## QA Work
 
-* Re-establish the configured Django environment and run Django checks and the full backend suite.
-* Perform browser smoke verification for Home, Login/session restoration, Post Detail, Search/filtering, Profiles, Post Create/Edit, Editorial CMS, Administrator User Creation, and responsive navigation/layout.
-* Complete final full-stack QA after the contract and session-security gaps close.
+* The scoped browser smoke and full-stack Pre-QA matrix is complete with the result **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**.
+* Verify password-reset email delivery end to end after a real mail provider is configured; the local SMTP-dependent attempt remains unverified.
 
 ## Documentation Work
 
-* Synchronize factual drift in README, Architecture, API Specification, Authentication Flow, Database Design, Testing Strategy, Frontend README, and affected feature reports in a separate scoped documentation pass.
-* Document the final editorial contracts and session-revocation policy after implementation.
+* This scoped reconciliation synchronizes Project Status, Architecture, API Specification, Authentication Flow, Testing Strategy, the affected Feature 10/11 reports, ADR-030, and the Pre-QA Feature Completion Report.
+* Broader factual reconciliation remains outside this workstream for README, Database Design, Frontend README, and any other documentation not included in the approved scope.
 
 ## Production / Delivery Work
 
+* Real email-provider configuration and end-to-end password-reset delivery verification
 * Environment-driven production hosts and origins
 * Static and media production strategy
 * Production WSGI server and reverse proxy
-* Production logging and health checks
+* Production logging, observability, and health checks
 * HTTPS and security-header policy
-* Secrets operations
+* Secrets management and operations
 * Database backup/restore and rollback procedures
 * Docker and Docker Compose
 * CI/CD pipelines
 * Deployment documentation
+* Production-environment smoke verification
 
 ## Optional Enhancements
 
 * MFA and OAuth/social authentication
 * Threaded comments, avatars, rich-text editing, analytics, bookmarks, and likes
 
-Optional enhancements are not blockers for the currently defined product. Delivery infrastructure remains deferred until the required Pre-QA gaps are closed.
+Optional enhancements are not blockers for the currently defined product. Delivery infrastructure and production-environment verification remain outstanding despite completion of the scoped Pre-QA workstream.
 
 ---
 
@@ -1851,11 +1867,11 @@ Optional enhancements are not blockers for the currently defined product. Delive
 * **Frontend:** ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
 * **Backend:** ✅ Backend Feature 17 — Taxonomy Filtering for Published Posts
 
-Frontend Feature 11 remains an accepted completed historical milestone. It delivered the `/api/editorial/` orchestration layer and `/dashboard/` UI for role-scoped post inventory/restore, Editor taxonomy management, comment listing/restoration, plus password change/reset and email verification workflows. Post-audit Pre-QA gaps remain: Editor comment deletion is not complete end-to-end, refresh-token revocation fails open under exceptions, and manual browser verification was deferred.
+Frontend Feature 11 remains an accepted completed historical milestone. It delivered the `/api/editorial/` orchestration layer and `/dashboard/` UI for role-scoped post inventory/restore, Editor taxonomy management, comment listing/restoration, plus password change/reset and email verification workflows. The later Pre-QA workstream closed the Editor-delete, management-detail, and fail-open revocation gaps and completed the relevant browser/full-stack scenarios with the qualified result above.
 
-Backend Feature 17 is complete, has a dedicated Feature Completion Report, and historically passed its targeted 76-test suite. The active audit environment could not rerun Django.
+Backend Feature 17 is complete, has a dedicated Feature Completion Report, and historically passed its targeted 76-test suite. The current complete backend suite passes 126 tests.
 
-The later unnumbered reference-driven redesign is merged into `develop`. It covers Home, Post Detail, Post Create/Edit, private/public Profiles, Administrator User Creation, and shared navigation/layout. The current automated frontend baseline is green; manual browser QA remains pending.
+The later unnumbered reference-driven redesign is merged into `develop`. It covers Home, Post Detail, Post Create/Edit, private/public Profiles, Administrator User Creation, and shared navigation/layout. The current automated frontend baseline is green, and its full-stack/browser scenarios passed under the qualified overall manual-QA result.
 
 ---
 
@@ -1863,9 +1879,9 @@ The later unnumbered reference-driven redesign is merged into `develop`. It cove
 
 The backend domain/API foundation is complete through Backend Feature 17, with the later editorial and account-security backend work delivered as part of Frontend Feature 11. Frontend Features 01–11 provide the application/session foundation, public blog, comments, profiles, search, media, permissions UX, Administrator user management, post authoring lifecycle, Editorial CMS, and account-security workflows.
 
-Authors can create, edit, publish, unpublish, soft-delete, and manage images for their own posts; Editors can do so for any post and can restore posts, manage taxonomy, and restore comments. Administrators have user-management authority only unless separately assigned another role. Backend permissions remain authoritative.
+Authors can create, retrieve for management, edit, publish, unpublish, soft-delete, and manage images for their own posts; Editors can do so for any active post and can restore posts, manage taxonomy, and delete/restore comments. Administrators have user-management authority only unless separately assigned another role. Backend permissions remain authoritative.
 
-The project is close to product feature-complete, with two confirmed workflow/contract gaps: Editor comment deletion and a proper read-only management detail endpoint for loading unpublished posts in the edit page. The merged frontend baseline passes tests, lint, and production build, but the project is not QA-complete or production-ready: session-revocation hardening, current backend verification, browser smoke testing, documentation reconciliation, and production/deployment infrastructure remain outstanding.
+The confirmed Editor comment deletion, read-only management-detail, and session-revocation gaps are closed. The backend and frontend automated baselines, ESLint, production build, and scoped full-stack/browser matrix are complete. The project is still **NOT PRODUCTION READY**: real email-provider configuration and delivery verification, broader out-of-scope documentation reconciliation, production/deployment infrastructure, and production-environment smoke verification remain outstanding.
 
 ---
 
@@ -1873,19 +1889,23 @@ The project is close to product feature-complete, with two confirmed workflow/co
 
 ## Pre-QA Contract & Session Security Closure
 
-### Objective
+### Result
 
-Close the confirmed editorial contract and session-revocation gaps, verify the current backend baseline, and complete browser smoke QA before production hardening.
+**COMPLETED.** The editorial contract and session-revocation gaps are implemented, documented, and covered by current full backend/frontend automated verification plus scoped manual/full-stack verification. The manual result is **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION** because password-reset email delivery could not be completed without a local SMTP service.
 
-### Planned Areas
+### Completed Areas
 
-* Implement backend-authoritative Editor comment soft deletion and a read-only post-management detail contract; correct both frontend integrations
-* Define and test an explicit refresh-token revocation failure policy for password change/reset
-* Add backend/frontend permission and no-mutation-on-load regression coverage for the new contracts
-* Re-establish the configured Django environment and run checks/full backend tests
-* Review accepted refresh-token storage and cross-tab limitations
-* Perform targeted browser smoke verification and final full-stack QA
-* Begin production hardening only after the Pre-QA closure criteria pass
+* Implemented backend-authoritative Editor comment soft deletion and read-only Post management detail; corrected both frontend integrations
+* Implemented and tested transactional fail-closed refresh-token revocation for password change/reset
+* Added backend/frontend permission, lifecycle, rollback, and no-mutation-on-load coverage
+* Passed Django checks, the full backend suite, the full frontend suite, ESLint, and the production build
+* Passed the editorial, Post management, password-change, authentication/session, navigation, and reference-redesign browser/full-stack scenarios
+* Documented the unchanged 15-minute access-token residual lifetime and the narrow concurrent issuance race
+
+### Remaining Work Outside This Milestone
+
+* Configure a real email provider and verify password-reset delivery end to end
+* Complete production hardening, deployment infrastructure, and production-environment smoke verification
 
 ### Engineering Rule
 
@@ -2108,7 +2128,7 @@ Verification:
 * Historical targeted verification: `python manage.py check` reported 0 issues (0 silenced).
 * Historical targeted verification: `python manage.py test apps.posts.tests.test_post_taxonomy_filtering` passed 76/76 tests with 0 failures and 0 errors.
 * A dedicated Feature Completion Report exists alongside updates to `docs/API-Specification.md`, `docs/Architecture.md`, and `docs/Testing-Strategy.md`.
-* The current audit environment could not rerun Django because Django and DRF are unavailable to the active Python installation.
+* The current Pre-QA run later verified the complete backend suite: 126 tests passed after a clean Django system check.
 
 ---
 
@@ -2120,7 +2140,7 @@ Implemented surfaces:
 
 * **Home:** API-driven published-article discovery, Category/Tag filtering, controlled request states, pagination, and role-capability workspace links.
 * **Post Detail:** Responsive editorial layout with breadcrumbs, header, optional featured image, safe plain-text article body, sidebar, comments integration, taxonomy navigation, and permission-aware Edit navigation through `canEditPost`.
-* **Post Create/Edit:** Redesigned authoring form, taxonomy selection, validation, featured-image upload/removal, publishing controls, and deletion workflow. The existing `PATCH {}` draft-loading fallback remains a separate Pre-QA contract gap.
+* **Post Create/Edit:** Redesigned authoring form, taxonomy selection, validation, featured-image upload/removal, publishing controls, and deletion workflow. Initial edit loading now uses the read-only editorial management-detail GET contract.
 * **Profiles:** Redesigned private/public layouts, profile completion and account cards, edit flow, owner-only controls, and privacy-safe public rendering without email or date of birth.
 * **Administrator User Creation:** Redesigned form, password visibility/strength feedback, role selector, guidance sidebar, validation, and existing Administrator API integration.
 * **Navigation/Layout:** Shared BlogFlow shell, taxonomy menus, search, responsive role-aware navigation, account menu, and footer.
@@ -2130,12 +2150,12 @@ The redesign uses real API contracts and preserves backend-authoritative permiss
 Current merged verification:
 
 * Automated test files: 92 passed.
-* Automated tests: 489 passed.
+* Automated tests: 494 passed.
 * Failures: 0.
 * ESLint: 0 errors, 0 warnings.
 * Production build: passed; 277 modules transformed.
 * Build advisory: approximately 608.06 kB main JavaScript bundle; non-blocking optimization work.
-* Manual browser QA: pending.
+* Manual/full-stack QA: **PASS WITH NON-BLOCKING ENVIRONMENT LIMITATION**; password-reset email delivery remains unverified because local SMTP was unavailable.
 
 ---
 
@@ -2143,22 +2163,22 @@ Current merged verification:
 
 | Area | Backend | Frontend | Tests | Docs | Status | Priority | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Login/logout/refresh/restoration | Complete | Complete | Current frontend suite green; backend tests exist | Partial drift | COMPLETE implementation | Browser QA pending | `apps.users`, AuthProvider, token/API tests |
-| Password change/reset/email verification | Implemented | Complete UI | Backend/frontend tests exist; revocation assertions missing | Core auth docs stale | COMPLETED MILESTONE WITH REVOCATION GAP | High security | account-security source/tests, Feature 11 report |
-| Password-change/reset session revocation | Broad-exception fail-open risk | Re-authentication UX present | Blacklist-state/failure tests missing | Claims stronger guarantee | PARTIALLY COMPLETE | High security | `revoke_user_outstanding_tokens()` catches `Exception` |
+| Login/logout/refresh/restoration | Complete | Complete | Current frontend suite green; backend tests exist | Partial drift | COMPLETE implementation; manual smoke passed under qualified result | Production-environment smoke | `apps.users`, AuthProvider, token/API tests |
+| Password change/reset/email verification | Implemented | Complete UI | Backend/frontend tests include revocation and rollback | Current contract documented | COMPLETE implementation; password-change manual flow passed | Real provider configuration and password-reset delivery verification | account-security source/tests, ADR-030 |
+| Password-change/reset session revocation | Transactional fail-closed policy | Re-authentication UX present | Blacklist, old-refresh, partial-failure, reset-retry tests pass | Bounded guarantee documented | COMPLETE for scoped policy | Review concurrency risk before production | account-security service/views/tests |
 | MFA/OAuth | Missing | Missing | Missing | Optional | OPTIONAL | Low | No requirement or implementation found |
-| Public blog/search/filtering | Complete | Complete | Current frontend suite green | Partial | COMPLETE implementation | Browser QA pending | post/search APIs, Home/Post pages/tests |
-| Post authoring lifecycle | Complete | Complete except draft-load contract | Current frontend suite green; safe GET regression missing | Feature reports largely current | PARTIALLY COMPLETE | High contract | posts APIs/pages/hooks/tests |
+| Public blog/search/filtering | Complete | Complete | Current frontend suite green | Partial | COMPLETE implementation; manual smoke passed under qualified result | Production-environment smoke | post/search APIs, Home/Post pages/tests |
+| Post authoring lifecycle | Complete, including management GET | Complete | Current frontend suite green; no-mutation GET regression passes | Feature 10 has dated correction | COMPLETE implementation; manual management-load/update flow passed | Production-environment smoke | posts/editorial APIs/pages/tests |
 | Post restore | Complete (Editor) | Complete (Editor) | Backend/frontend coverage exists | Feature 11 | COMPLETE | — | editorial post restore/API/dashboard |
 | Category/Tag management | Complete (Editor) | Complete (Editor) | Backend/frontend coverage exists | Feature 11 | COMPLETE | — | editorial taxonomy APIs/pages/tests |
 | Comment owner lifecycle | Complete | Complete | Backend/frontend coverage exists | Partial | COMPLETE | — | comments APIs/components/tests |
 | Comment moderation list/restore | Complete (Editor) | Complete (Editor) | Coverage exists | Feature 11 | COMPLETE | — | editorial moderation source/tests |
-| Comment moderation delete | Backend missing | Calls wrong owner-only endpoint | No valid Editor delete regression | Feature report overstates completeness | PARTIALLY COMPLETE | High | `moderationApi.js`, `CommentViewSet`, `IsCommentAuthor` |
-| Unpublished post edit loading | Read-only management detail missing | Falls back to `PATCH {}` to fetch a draft | Page test does not validate safe GET semantics | Not documented as limitation | PARTIALLY COMPLETE | High | `PostEditPage.jsx`, `PostViewSet`, `EditorialPostViewSet` |
-| Profiles/privacy | Complete | Complete | Current frontend suite green, including privacy assertions | Partial | COMPLETE implementation | Browser QA pending | profile serializers/pages/tests |
-| Administrator user lifecycle | Complete except deletion by policy | Complete | Current frontend suite green | Feature 09 | COMPLETE implementation | Browser QA pending | admin API/service/pages/tests |
-| Backend automated baseline | Test modules exist | N/A | Environment-blocked in this audit | Historical counts only | REQUIRES VERIFICATION | High | active Python lacks Django |
-| Frontend automated baseline | N/A | N/A | 92 files / 489 tests passed; ESLint clean; build passed | Current in Project Status | GREEN | Maintain | verified merged redesign baseline |
+| Comment moderation delete | Editor-only editorial DELETE implemented | Uses editorial endpoint and refetches | Permission, audit, lifecycle, and owner regressions pass | ADR-030 and completion report | COMPLETE; manual delete/audit/public-hide/restore matrix passed | Production-environment smoke | editorial view/tests, moderation API/tests |
+| Unpublished post edit loading | Read-only active management detail implemented | Uses GET; no initial PATCH | Permission and full no-mutation regressions pass | ADR-030 and Feature 10 correction | COMPLETE; manual role/404/zero-PATCH/update matrix passed | Production-environment smoke | editorial view/tests, Post Edit API/page/tests |
+| Profiles/privacy | Complete | Complete | Current frontend suite green, including privacy assertions | Partial | COMPLETE implementation; manual smoke passed under qualified result | Production-environment smoke | profile serializers/pages/tests |
+| Administrator user lifecycle | Complete except deletion by policy | Complete | Current frontend suite green | Feature 09 | COMPLETE implementation; manual creation/navigation smoke passed | Production-environment smoke | admin API/service/pages/tests |
+| Backend automated baseline | Complete suite available | N/A | 126 tests passed; Django check clean | Current in Project Status/Testing Strategy | GREEN | Maintain | isolated test database run |
+| Frontend automated baseline | N/A | N/A | 92 files / 494 tests passed; ESLint clean; build passed | Current in Project Status | GREEN | Maintain | current full frontend run |
 | Production settings/security | Partial | Environment validation exists | No production configuration suite found | Planned/partial | PARTIALLY COMPLETE | High | settings files and requirements |
 | Static/media/WSGI/reverse proxy | Local/development only | N/A | Missing | Deferred | DEFERRED | High before deployment | no `STATIC_ROOT`, storage plan, Gunicorn, proxy config |
 | Docker/Compose/CI/CD | Missing | Missing | Missing | Deferred | DEFERRED DELIVERY | Medium after QA | no container or pipeline files found |
