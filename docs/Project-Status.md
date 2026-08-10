@@ -2,9 +2,13 @@
 
 **Project Name:** Production-Grade Blog Platform
 
-**Last Updated:** 2026-08-07
+**Last Updated:** 2026-08-10
 
-**Current Milestone:** ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
+**Latest Completed Numbered Frontend Milestone:** ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
+
+**Latest Completed Backend Feature:** ✅ Backend Feature 17 — Taxonomy Filtering for Published Posts
+
+**Current Workstream:** Pre-QA Contract & Session Security Closure
 
 ---
 
@@ -68,108 +72,53 @@ The project follows these architectural principles:
 
 ```text
 blog-platform/
-
 ├── backend/
 │   ├── apps/
 │   │   ├── core/
-│   │   │   └── permissions/
-│   │   │       ├── base.py
-│   │   │       ├── ownership.py
-│   │   │       └── roles.py
 │   │   ├── users/
-│   │   |    ├── authentication.py
-│   │   |    ├── admin.py
-│   │   |    ├── constants.py
-│   │   |    ├── models.py
-│   │   |    ├── serializers/
-│   │   |    ├── urls.py
-│   │   |    ├── views/
-│   │   |    ├── services/
-│   │   |    └── ...
+│   │   │   ├── serializers/
+│   │   │   ├── services/
+│   │   │   ├── tests/
+│   │   │   └── views/
 │   │   ├── posts/
 │   │   │   ├── admin/
 │   │   │   ├── serializers/
-│   │   │   ├── models.py
-│   │   │   ├── managers.py
-│   │   │   ├── pagination.py
-│   │   │   ├── constants.py
-│   │   │   ├── urls.py
-│   │   │   ├── views.py
-│   │   │   ├── choices.py
-│   │   │   └── ...
+│   │   │   ├── services/
+│   │   │   └── tests/
 │   │   ├── categories/
-│   │   |    ├── admin.py
-│   │   |    ├── models.py
-│   │   |    ├── serializers.py
-│   │   |    ├── urls.py
-│   │   |    ├── views.py
-│   │   |    └── ...
 │   │   ├── tags/
-│   │   |    ├── admin.py
-│   │   |    ├── models.py
-│   │   |    ├── serializers.py
-│   │   |    ├── urls.py
-│   │   |    ├── views.py
-│   │   |    └── ...
 │   │   ├── comments/
-│   │   |    ├── admin.py
-│   │   |    ├── apps.py
-│   │   |    ├── models.py
-│   │   |    ├── permissions.py
-│   │   |    ├── serializers.py
-│   │   |    ├── urls.py
-│   │   |    ├── views.py
-│   │   |    ├── migrations/
-│   │   |    └── tests/
-|   |   |
 │   │   ├── profiles/
-│   │   |    ├── admin.py
-│   │   |    ├── apps.py
-│   │   |    ├── models.py
-│   │   |    ├── serializers.py
-│   │   |    ├── signals.py
-│   │   |    ├── urls.py
-│   │   |    ├── views.py
-│   │   |    ├── migrations/
-│   │   |    └── tests/
-|   |   
-│   │
-│   ├── config/
-│   │   └── settings/
-│   │       ├── base.py
-│   │       ├── development.py
-│   │       └── production.py
-│   │
+│   │   └── editorial/
+│   ├── config/settings/
 │   └── manage.py
-│
 ├── frontend/
-│
-docs/
-├── ADR/
-│   ├── ADR-001-Project-Structure.md
-│   ├── ADR-002-Settings-Architecture.md
-│   ├── ADR-003-PostgreSQL.md
-│   ├── ADR-004-Apps-Directory.md
-│   ├── ADR-005-Core-App.md
-│   ├── ADR-006-Custom-User-Model.md
-│   └── ADR-007-JWT-Authentication.md
-│   └── ...
-│
-├── feature/
-│   ├── Feature 00 — Project Dashboard.md
-│   ├── Feature 01 — Project Foundation & Architecture.md
-│   ├── Feature 02 — Custom User Model & User App Architecture.md
-│   └── Feature-03-JWT-Authentication-Foundation.md
-│   └── ...
-│
-├── API-Specification.md
-├── Architecture.md
-├── Authentication-Flow.md
-├── Database-Design.md
-├── Project-Status.md
-├── Testing-Strategy.md
-│
-└── README.md
+│   └── src/
+│       ├── features/
+│       │   ├── account/
+│       │   ├── admin/
+│       │   ├── auth/
+│       │   ├── comments/
+│       │   ├── dashboard/
+│       │   ├── media/
+│       │   ├── moderation/
+│       │   ├── permissions/
+│       │   ├── posts/
+│       │   ├── profiles/
+│       │   ├── search/
+│       │   └── taxonomies/
+│       ├── layouts/
+│       ├── routes/
+│       └── pages/
+└── docs/
+    ├── ADR/
+    ├── feature/
+    ├── API-Specification.md
+    ├── Architecture.md
+    ├── Authentication-Flow.md
+    ├── Database-Design.md
+    ├── Project-Status.md
+    └── Testing-Strategy.md
 ```
 
 ---
@@ -1092,21 +1041,49 @@ Frontend role visibility is a user-experience control only. Django REST Framewor
 
 ---
 
+## ✅ Frontend Features 03–11 — Verified Delivery History
+
+Repository source, routes, automated tests, Feature Completion Reports, and ADRs verify the following completed milestones:
+
+| Feature | Verified scope | Completion evidence |
+| --- | --- | --- |
+| Frontend Feature 03 — Public Posts | Published-post list/detail, URL-owned pagination, loading/empty/error/not-found states | Source and tests under `src/features/posts/`; Feature Report; ADR-023 |
+| Frontend Feature 04 — Comments | Public listing, authenticated creation, owner edit/delete, pagination, permission-aware UX | Source and tests under `src/features/comments/`; Feature Report; ADR-024 |
+| Frontend Feature 05 — User Profiles | Private profile retrieval/edit and privacy-safe public profiles | Source and tests under `src/features/profiles/`; Feature Report; ADR-025 |
+| Frontend Feature 06 — Search | PostgreSQL-backed search UI, URL query/page state, controlled request states | Source and tests under `src/features/search/`; Feature Report; ADR-026 |
+| Frontend Feature 07 — Media Uploads | Featured-image upload, preview, replace, remove, and validation UX | Source and tests under `src/features/media/`; Feature Report; ADR-027 |
+| Frontend Feature 08 — Permissions & Authorization UX | Central role/ownership rules, hooks, guards, and declarative controls; UX only | Source and tests under `src/features/permissions/`; Feature Report; ADR-028 |
+| Frontend Feature 09 — User Administration | Administrator user create/list/detail, activation, deactivation, and role replacement | Source and tests under `src/features/admin/`; Feature Report; backend Feature 15 contracts |
+| Frontend Feature 10 — Post Authoring Workflow | Create/edit, taxonomy assignment, featured images, publish/unpublish, and soft delete | Source and tests under `src/features/posts/`; Feature Report |
+| Frontend Feature 11 — Editorial CMS & Account Workflows | Accepted completed milestone delivering role-scoped editorial inventory/restore, taxonomy management, comment list/restore, password change/reset, and email verification; later audit found Editor-delete and fail-open revocation gaps | `apps.editorial`, `src/features/dashboard`, `taxonomies`, `moderation`, and `account`; Feature Report; ADR-029 |
+
+Frontend Feature 11 remains the latest accepted numbered frontend milestone. Its historical completion is preserved; the current qualifications are summarized under Latest Completed Milestones and Pending Features.
+
+The later reference-driven redesign of Home, Post Detail, Post Create/Edit, private/public Profiles, Administrator User Creation, and shared navigation/layout is merged into `develop` and remains unnumbered.
+
+---
+
 # Current Frontend Modules
 
 | Area | Current status |
 | --- | --- |
-| Application foundation | `index.html` mounts `main.jsx`; React Strict Mode renders `App`. |
-| Routing | Central Data Mode router with `/`, `/login`, protected `/unauthorized`, `*`, pathless authentication guards, safe return paths, and an error boundary. |
-| Layout | Shared responsive header, authentication-aware navigation, main `Outlet`, and footer. |
+| Application foundation | React 19/Vite application with centralized routing, shared API client, Tailwind styling, and Vitest/RTL tooling. |
+| Routing | Public Home, Posts, Search, Post Detail, and Public Profile routes; protected authoring/profile/account routes; role-guarded editorial and Administrator routes. |
+| Layout | Merged responsive BlogFlow shell with taxonomy navigation, search, role-aware account controls, and shared footer. |
 | Authentication state | AuthProvider exposes authoritative current-user state, three lifecycle states, login/logout actions, safe errors, and independent role helpers. |
 | Token storage | Access token in module memory only; rotating refresh token under one namespaced localStorage key; no persisted user data. |
-| Pages | Home, Login, controlled Unauthorized, Not Found, and safe Route Error pages. |
+| Public blog | API-driven Home and post browsing, post detail, search, category/tag filtering, comments, public profiles, featured images, pagination, and controlled loading/empty/error states. |
+| Authoring | Create/edit posts, taxonomy selection, featured-image management, publish/unpublish, soft delete, and ownership-aware controls. |
+| Editorial CMS | Role-scoped post inventory, Editor restore, Category/Tag create/edit/activation management, and comment list/restore; Editor comment deletion remains a confirmed contract gap. |
+| Account security | Password change, password-reset request/confirmation, and email-verification request/confirmation pages; refresh-token revocation failure policy remains Pre-QA work. |
+| User administration | Administrator-only user create/list/detail, activation/deactivation, and complete application-role replacement. |
+| Profiles | Private profile retrieval/edit and privacy-safe public profile views without invented metrics or private-field leakage. |
 | Configuration | Build-time and browser-runtime validation of the public API URL. |
-| API integration | Login, `/me`, refresh, and logout functions plus a shared Axios client with bearer attachment, retry-once behavior, and single-flight refresh. |
-| Route and role UX | Protected, anonymous-only, and any-role guard foundations; `/me` roles drive independent badges while backend permissions remain authoritative. |
+| API integration | Authentication/session, public content, authoring, editorial, account-security, profile, media, comment, and user-administration contracts. |
+| Route and role UX | Protected, anonymous-only, and role guards; `/me` roles drive UX only while backend permissions remain authoritative. |
 | Styling | Tailwind CSS 4 utilities with minimal global base CSS. |
 | Tooling | npm lockfile, Vite, ESLint, Vitest, jsdom, React Testing Library, Axios Mock Adapter, and lint/build/test scripts. |
+| Reference-driven redesign | Merged across Home, Post Detail, Post Create/Edit, Profiles, Administrator User Creation, and navigation/layout; automated baseline green, manual browser QA pending. |
 
 ---
 
@@ -1121,6 +1098,8 @@ Frontend role visibility is a user-experience control only. Django REST Framewor
 | Tags       | ✅ Completed                                                        |
 | Comments   | ✅ Completed                                                        |
 | Profiles   | ✅ Completed                                                        |
+| Editorial  | ✅ Implemented (post inventory/restore, taxonomy management, comment list/restore); Editor delete mismatch remains |
+| Account security | ✅ Implemented (password change/reset and email verification); fail-open refresh-token revocation requires Pre-QA closure |
 
 
 ---
@@ -1136,8 +1115,13 @@ Implemented
 - POST `/api/auth/logout/`
 - POST `/api/auth/token/refresh/`
 - POST `/api/auth/token/verify/`
+- POST `/api/auth/password/change/`
+- POST `/api/auth/password/reset/`
+- POST `/api/auth/password/reset/confirm/`
+- POST `/api/auth/email/verify/send/`
+- POST `/api/auth/email/verify/confirm/`
 
-Public registration is closed; `/api/auth/register/` was removed in Feature 15. Login returns JSON access/refresh tokens, `/me/` returns the authoritative filtered application roles, refresh rotates and blacklists the previous refresh token, and logout requires both the bearer access token and submitted refresh token.
+Public registration is closed; `/api/auth/register/` was removed in Feature 15. Login returns JSON access/refresh tokens, `/me/` returns the authoritative filtered application roles, refresh rotates and blacklists the previous refresh token, and logout requires both the bearer access token and submitted refresh token. Password change/reset invoke outstanding-refresh-token revocation, but silent exception handling is a required security-hardening gap documented below. Password-reset requests use enumeration-safe responses; email verification uses a purpose-specific expiring token.
 
 ---
 
@@ -1147,6 +1131,7 @@ Implemented
 
 - POST `/api/posts/`
 - GET `/api/posts/`
+- GET `/api/posts/?category={slug}` and/or `?tag={slug}`
 - GET `/api/posts/{slug}/`
 - PATCH `/api/posts/{slug}/`
 - DELETE `/api/posts/{slug}/`
@@ -1179,7 +1164,7 @@ Featured Image Support
 - Public `featured_image_url` in detail responses
 - Public `featured_image_url` in search responses
 - Multipart upload support
-- Author-only image management
+- Own-post image management for Authors and any-post image management for Editors
 
 ---
 
@@ -1266,6 +1251,20 @@ Implemented (Administrator only)
 - PUT `/api/admin/users/{id}/roles/`
 
 Current behavior includes closed registration, active-user creation, specialized paginated listing with a default of 20 and maximum of 100, allowlisted role replacement, unrelated-Group preservation, idempotent activation/deactivation, self-protection, and last-active-Administrator protection.
+
+---
+
+## Editorial Management APIs
+
+Implemented under the dedicated `/api/editorial/` namespace:
+
+- GET `/api/editorial/posts/` — Authors see their own posts; Editors see all posts, including soft-deleted records
+- POST `/api/editorial/posts/{slug}/restore/` — Editor only
+- GET/POST/PATCH `/api/editorial/categories/` and `/api/editorial/categories/{slug}/` — Editor only, including inactive records and activation changes
+- GET/POST/PATCH `/api/editorial/tags/` and `/api/editorial/tags/{slug}/` — Editor only, including inactive records and activation changes
+- GET `/api/editorial/comments/` and POST `/api/editorial/comments/{id}/restore/` — Editor only
+
+Known contract gap: no Editor-authorized comment delete action exists in the editorial namespace. The current frontend moderation delete call targets the public author-only `DELETE /api/comments/{id}/` endpoint, so deleting another user's comment is not implemented end-to-end.
 
 ---
 
@@ -1448,13 +1447,14 @@ Implemented
 - Local-first logout and safe authentication error normalization
 - Protected/anonymous route guards and independent role-aware UX
 - Development CORS for `http://localhost:5173` with credentials disabled
+- Password change with current-password validation and attempted refresh-token revocation; failure handling remains fail-open and requires Pre-QA closure
+- Enumeration-safe password-reset request and token-confirmation workflow
+- Email-verification send/confirmation workflow with purpose-isolated expiring tokens
 
-## Planned
+## Optional / Not Implemented
 
-- Password Change
-- Password Reset
-- Email Verification
 - Multi-Factor Authentication (Optional)
+- OAuth/social authentication (Optional; no product requirement found)
 
 ---
 
@@ -1464,14 +1464,14 @@ Implemented
 
 | Document | Status | Coverage |
 | -------- | ------ | -------- |
-| README | ✅ Current | Project overview |
-| Architecture | ✅ Current | Backend Features 01–16 and Frontend Features 01–02 |
-| Database Design | ✅ Current | Features 01–16 |
-| API Specification | ✅ Current | Exact authentication contracts, rotated refresh, `/me` roles, and implemented APIs through Feature 16 |
-| Authentication Flow | ✅ Current | Backend JWT lifecycle and implemented React session architecture |
-| Testing Strategy | ✅ Current | Backend manual strategy and Frontend Feature 02 automated/manual coverage |
-| Project Status | ✅ Current | Frontend Feature 10 complete; next milestone awaits roadmap selection |
-| Frontend README | ✅ Current | Frontend foundation and authentication developer guide |
+| README | ⚠️ Stale | Current-state sections stop at early frontend milestones and contradict later implementation. |
+| Architecture | ⚠️ Partial | Core backend and early frontend decisions are documented; current-state sections do not fully cover Frontend Features 04–11. |
+| Database Design | ⚠️ Partial | Core schema is documented; account-security `is_email_verified` and latest milestone framing need review. |
+| API Specification | ⚠️ Partial | Public APIs and Backend Feature 17 are documented; editorial/account-security contracts require a completeness review. |
+| Authentication Flow | ⚠️ Stale | Still lists password change/reset/email verification as remaining despite implemented APIs and UI. |
+| Testing Strategy | ⚠️ Partial | Contains historical suites and Backend Feature 17 coverage, but does not yet include the merged redesign's latest 92-file/489-test baseline. |
+| Project Status | ✅ Synchronized | Current implementation, completed milestones, merged redesign verification, known gaps, and Pre-QA workstream are reflected as of 2026-08-10. |
+| Frontend README | ⚠️ Internally inconsistent | Mentions Frontend Feature 11 but retains obsolete Frontend Feature 03 next-milestone text. |
 
 ---
 
@@ -1496,8 +1496,18 @@ Completed Feature Reports:
 - ✅ Feature 14 — Permissions & Authorization
 - ✅ Feature 15 — User Administration & Role Management
 - ✅ Feature 16 — Performance Optimization
+- ✅ Feature 17 — Taxonomy Filtering for Published Posts
 - ✅ Frontend Feature 01 — React Foundation & Frontend Architecture
 - ✅ Frontend Feature 02 — Authentication & Session Architecture
+- ✅ Frontend Feature 03 — Public Posts Module
+- ✅ Frontend Feature 04 — Comments Module
+- ✅ Frontend Feature 05 — User Profiles Module
+- ✅ Frontend Feature 06 — Search Module
+- ✅ Frontend Feature 07 — Media Uploads Module
+- ✅ Frontend Feature 08 — Permissions & Authorization UX Module
+- ✅ Frontend Feature 09 — User Administration & Role Management UX Module
+- ✅ Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module
+- ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
 
 ---
 
@@ -1527,6 +1537,13 @@ The following Architecture Decision Records (ADRs) have been documented:
 - ✅ ADR-020 — Collection Pagination and Stable Ordering Architecture
 - ✅ ADR-021 — Frontend Foundation and Architecture
 - ✅ ADR-022 — Frontend Authentication and Session Architecture
+- ✅ ADR-023 — Frontend Public Posts Architecture
+- ✅ ADR-024 — Frontend Comments State and Mutation Architecture
+- ✅ ADR-025 — Frontend User Profiles Architecture
+- ✅ ADR-026 — Frontend Search Architecture
+- ✅ ADR-027 — Frontend Media Uploads Architecture
+- ✅ ADR-028 — Frontend Permissions and Authorization UX Architecture
+- ✅ ADR-029 — Editorial CMS Management and Account Workflows
 
 ---
 
@@ -1534,7 +1551,7 @@ The following Architecture Decision Records (ADRs) have been documented:
 
 ## Manual Testing
 
-Completed for the Authentication, User Administration, Posts, Categories, Tags, Comments, and Profiles modules.
+The following records preserve historical module-level manual verification for Authentication, User Administration, Posts, Categories, Tags, Comments, and Profiles. They do not constitute current browser verification of Frontend Feature 11, the later reference-driven redesign, or final full-stack QA.
 
 Verified:
 
@@ -1754,63 +1771,125 @@ No automated frontend tests were written during Frontend Feature 01 itself; the 
 * One real-stack defect corrected: the anonymous-only guard now preserves a safe attempted path when authentication completes; two route regression tests cover safe and unsafe state
 * Temporary accounts, outstanding tokens, blacklisted tokens, browser profile, and verification processes were removed after the run
 
+Current browser verification remains pending for the Frontend Feature 11 interfaces, the merged reference-driven redesign, and final full-stack QA. Historical Frontend Feature 02 browser checks do not verify those later workflows.
+
 ---
 
 ## Automated Testing
 
-Frontend authentication automation is implemented: 12 files and 135 tests. Backend pagination, query-count, ordering, visibility, and performance regression automation remains deferred to the planned backend quality-assurance phase.
+Automated coverage exists across backend domain/API modules and across frontend APIs, hooks, utilities, components, pages, layouts, and route guards. Important permission, ownership, authentication, validation, pagination, taxonomy filtering, editorial management, and account-security tests are present.
+
+### Current Frontend Baseline — 2026-08-10
+
+* `npm.cmd test` passed **92 test files and 489 tests**, with 0 failures.
+* `npm.cmd run lint` passed with 0 errors and 0 warnings.
+* `npm.cmd run build` passed and transformed 277 modules.
+* Vite emitted a non-blocking optimization advisory for the approximately 608.06 kB main JavaScript bundle.
+* Manual browser QA remains pending.
+
+These results verify the merged reference-driven redesign and the wider frontend suite. Older counts in individual feature reports remain historical milestone evidence rather than the current frontend baseline.
+
+### Current Backend Verification State — 2026-08-10
+
+* `python manage.py check` and the full Django suite could not execute because the active Python installation does not contain Django or DRF and no repository virtual environment is present. This is an environment limitation, not a passing or failing backend result.
+* Backend Feature 17 retains its historical targeted verification of **76/76 tests passed**.
+* Frontend Feature 11's backend work retains its historical milestone verification recorded in its Feature Completion Report.
+
+Frontend and backend verification are reported separately; no aggregate project-wide test count is asserted.
 
 ---
 
 # Pending Features
 
-## Frontend and Delivery Work
+## Product / Contract Work
 
-* Remaining frontend features
-* Backend automated testing and quality-assurance phase
-* Deployment and CI/CD
+* Add an Editor-authorized comment soft-delete contract under the editorial API (or another unambiguous backend-authoritative endpoint) and point the moderation UI to it.
+* Add a read-only authorized post-management detail contract for draft/edit loading; remove the frontend's current `PATCH {}` fallback, which changes audit metadata while retrieving an unpublished post.
 
-Deployment & CI/CD is intentionally deferred until backend and frontend development are complete.
+## Security / Pre-QA Work
+
+* Define an explicit, observable refresh-token revocation failure policy for password change/reset. `revoke_user_outstanding_tokens()` currently catches every exception and silently continues.
+* Add blacklist-state and revocation-failure tests.
+* Add Author/Editor/Administrator/anonymous permission matrices for the new editorial delete and management-detail contracts.
+* Review the accepted refresh-token localStorage exposure, cross-tab rotation, and lost-refresh-response limitations before production.
+
+## QA Work
+
+* Re-establish the configured Django environment and run Django checks and the full backend suite.
+* Perform browser smoke verification for Home, Login/session restoration, Post Detail, Search/filtering, Profiles, Post Create/Edit, Editorial CMS, Administrator User Creation, and responsive navigation/layout.
+* Complete final full-stack QA after the contract and session-security gaps close.
+
+## Documentation Work
+
+* Synchronize factual drift in README, Architecture, API Specification, Authentication Flow, Database Design, Testing Strategy, Frontend README, and affected feature reports in a separate scoped documentation pass.
+* Document the final editorial contracts and session-revocation policy after implementation.
+
+## Production / Delivery Work
+
+* Environment-driven production hosts and origins
+* Static and media production strategy
+* Production WSGI server and reverse proxy
+* Production logging and health checks
+* HTTPS and security-header policy
+* Secrets operations
+* Database backup/restore and rollback procedures
+* Docker and Docker Compose
+* CI/CD pipelines
+* Deployment documentation
+
+## Optional Enhancements
+
+* MFA and OAuth/social authentication
+* Threaded comments, avatars, rich-text editing, analytics, bookmarks, and likes
+
+Optional enhancements are not blockers for the currently defined product. Delivery infrastructure remains deferred until the required Pre-QA gaps are closed.
 
 ---
 
-# Current Milestone
+# Latest Completed Milestones
 
-✅ Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module
+* **Frontend:** ✅ Frontend Feature 11 — Editorial CMS Management & Account Workflows
+* **Backend:** ✅ Backend Feature 17 — Taxonomy Filtering for Published Posts
 
-Status: Post authoring, editing, and publishing workflow implemented as a dedicated feature module under `src/features/posts/`. Includes 11 API functions, 6 UI components, 2 custom hooks, 2 protected route pages, client-side form validation, DRF error normalization, and taxonomy picker integration. Routes guarded by `ProtectedRoute` and `RoleProtectedRoute` (Author, Editor). ESLint: 0 errors. Vite build: clean. Django system check: 0 issues. Vitest: 73 test files, 443 tests, 0 failures. Feature Completion Report at `docs/feature/Frontend-Feature-10-Post-Authoring-Editing-and-Publishing-Workflow-UX-Module.md`.
+Frontend Feature 11 remains an accepted completed historical milestone. It delivered the `/api/editorial/` orchestration layer and `/dashboard/` UI for role-scoped post inventory/restore, Editor taxonomy management, comment listing/restoration, plus password change/reset and email verification workflows. Post-audit Pre-QA gaps remain: Editor comment deletion is not complete end-to-end, refresh-token revocation fails open under exceptions, and manual browser verification was deferred.
 
-Frontend Feature 10 is complete. Backend automated regression testing and later roadmap-selected frontend work remain pending.
+Backend Feature 17 is complete, has a dedicated Feature Completion Report, and historically passed its targeted 76-test suite. The active audit environment could not rerun Django.
 
-Deployment and CI/CD are intentionally deferred until backend and frontend development are complete.
+The later unnumbered reference-driven redesign is merged into `develop`. It covers Home, Post Detail, Post Create/Edit, private/public Profiles, Administrator User Creation, and shared navigation/layout. The current automated frontend baseline is green; manual browser QA remains pending.
 
 ---
 
 # Current Project Status
 
-The backend domain/API foundation through Feature 16 is complete. Frontend Features 01–10 now provide the React/Vite foundation, a verified authentication/session layer, a public post list/detail module, full permissions and authorization infrastructure, user administration, comments, profiles, search, media uploads, and a complete post authoring, editing, and publishing workflow. Authors and Editors can create, edit, publish, unpublish, soft-delete, and manage featured images for posts through the authenticated UI.
+The backend domain/API foundation is complete through Backend Feature 17, with the later editorial and account-security backend work delivered as part of Frontend Feature 11. Frontend Features 01–11 provide the application/session foundation, public blog, comments, profiles, search, media, permissions UX, Administrator user management, post authoring lifecycle, Editorial CMS, and account-security workflows.
 
-Backend automated regression coverage, remaining roadmap-selected frontend modules, and deployment/CI/CD remain pending.
+Authors can create, edit, publish, unpublish, soft-delete, and manage images for their own posts; Editors can do so for any post and can restore posts, manage taxonomy, and restore comments. Administrators have user-management authority only unless separately assigned another role. Backend permissions remain authoritative.
+
+The project is close to product feature-complete, with two confirmed workflow/contract gaps: Editor comment deletion and a proper read-only management detail endpoint for loading unpublished posts in the edit page. The merged frontend baseline passes tests, lint, and production build, but the project is not QA-complete or production-ready: session-revocation hardening, current backend verification, browser smoke testing, documentation reconciliation, and production/deployment infrastructure remain outstanding.
 
 ---
 
-# Next Milestone
+# Current Workstream
 
-## Pending roadmap selection
+## Pre-QA Contract & Session Security Closure
 
 ### Objective
 
-Select the next frontend feature from the project roadmap after review of Frontend Feature 10. No later feature scope is assumed by this status document.
+Close the confirmed editorial contract and session-revocation gaps, verify the current backend baseline, and complete browser smoke QA before production hardening.
 
 ### Planned Areas
 
-* Review the completed post authoring workflow and known limitations
-* Choose the next user-facing module from the maintained frontend roadmap
-* Define its backend contract, authorization boundary, loading/error behavior, and testing scope before implementation
+* Implement backend-authoritative Editor comment soft deletion and a read-only post-management detail contract; correct both frontend integrations
+* Define and test an explicit refresh-token revocation failure policy for password change/reset
+* Add backend/frontend permission and no-mutation-on-load regression coverage for the new contracts
+* Re-establish the configured Django environment and run checks/full backend tests
+* Review accepted refresh-token storage and cross-tab limitations
+* Perform targeted browser smoke verification and final full-stack QA
+* Begin production hardening only after the Pre-QA closure criteria pass
 
 ### Engineering Rule
 
-Do not infer a business feature or add speculative routes until the roadmap selection and API contract are explicit.
+Do not broaden the milestone into optional product features. Preserve independent roles and require backend authorization for comment moderation.
 
 ---
 
@@ -1967,29 +2046,24 @@ Frontend Feature 02 additionally accepts:
 
 # Development Workflow
 
-Every feature follows the same engineering workflow:
+Every feature follows the applicable engineering workflow:
 
 1. Business Analysis
 2. Architecture Design
-3. Database Design
-4. API Design
+3. Database Design (when applicable)
+4. API Design / Contract Verification
 5. Implementation
-6. Manual Testing
-7. Documentation Updates
-8. Feature Completion Report
-9. Architecture Decision Record (ADR) _(when applicable)_
-10. Project Status Update
-11. Git Commit
+6. Automated Verification
+7. Manual Testing / Browser Verification (when scheduled or applicable)
+8. Documentation Updates
+9. Feature Completion Report
+10. Architecture Decision Record (ADR) (when applicable)
+11. Project Status Update
+12. Git Commit
 
 ---
 
-# Next Feature
-
-**Starting Point:** Review the completed Frontend Feature 07 report and select the next item from the maintained frontend roadmap (e.g. Frontend Feature 08 — Post Authoring / Dashboard). Deployment and CI/CD remain deferred.
-
----
-
-# Current Frontend Update — Frontend Feature 10
+# Historical Frontend Update — Frontend Feature 10
 
 Frontend Feature 10 — Post Authoring, Editing & Publishing Workflow UX Module is complete.
 
@@ -2004,7 +2078,7 @@ Implements:
 * top navigation header link in `AuthNavigation.jsx` conditionally exposing "Create Post" for Authors and Editors;
 * completion report in `docs/feature/Frontend-Feature-10-Post-Authoring-Editing-and-Publishing-Workflow-UX-Module.md`.
 
-Verification:
+Milestone verification at Feature 10 completion:
 * Vitest test suite: 73 test files passed, 443 tests passed (100% pass rate);
 * ESLint: 0 errors, 0 warnings;
 * Vite production build: passed cleanly;
@@ -2013,3 +2087,81 @@ Verification:
 No backend file, database model, migration, authentication contract, or permission rule was modified.
 
 
+---
+
+# Current Backend Update — Backend Feature 17
+
+Backend Feature 17 — Taxonomy Filtering for Published Posts is complete.
+
+Implements:
+
+* `PostQuerySet.for_category(category_slug: str)` — filters published posts by an active Category slug.
+* `PostQuerySet.for_tag(tag_slug: str)` — filters published posts by an active Tag slug.
+* `PostManager.for_category()` and `PostManager.for_tag()` — forwarding methods following the existing manager pattern.
+* `PostViewSet.get_queryset()` updated to read optional `?category=` and `?tag=` query parameters and chain the new domain methods on the public published-post list path only.
+* `backend/apps/posts/tests/` package created with `test_post_taxonomy_filtering.py` containing 76 test methods.
+
+No new endpoint, model, migration, permission, ADR, or response format was introduced. The search endpoint (`/api/posts/search/`) was not modified. No database schema change was required.
+
+Verification:
+
+* Historical targeted verification: `python manage.py check` reported 0 issues (0 silenced).
+* Historical targeted verification: `python manage.py test apps.posts.tests.test_post_taxonomy_filtering` passed 76/76 tests with 0 failures and 0 errors.
+* A dedicated Feature Completion Report exists alongside updates to `docs/API-Specification.md`, `docs/Architecture.md`, and `docs/Testing-Strategy.md`.
+* The current audit environment could not rerun Django because Django and DRF are unavailable to the active Python installation.
+
+---
+
+# Current Frontend Update — Reference-Driven Frontend Redesign
+
+The unnumbered reference-driven frontend redesign is merged into `develop`.
+
+Implemented surfaces:
+
+* **Home:** API-driven published-article discovery, Category/Tag filtering, controlled request states, pagination, and role-capability workspace links.
+* **Post Detail:** Responsive editorial layout with breadcrumbs, header, optional featured image, safe plain-text article body, sidebar, comments integration, taxonomy navigation, and permission-aware Edit navigation through `canEditPost`.
+* **Post Create/Edit:** Redesigned authoring form, taxonomy selection, validation, featured-image upload/removal, publishing controls, and deletion workflow. The existing `PATCH {}` draft-loading fallback remains a separate Pre-QA contract gap.
+* **Profiles:** Redesigned private/public layouts, profile completion and account cards, edit flow, owner-only controls, and privacy-safe public rendering without email or date of birth.
+* **Administrator User Creation:** Redesigned form, password visibility/strength feedback, role selector, guidance sidebar, validation, and existing Administrator API integration.
+* **Navigation/Layout:** Shared BlogFlow shell, taxonomy menus, search, responsive role-aware navigation, account menu, and footer.
+
+The redesign uses real API contracts and preserves backend-authoritative permission boundaries. Post Detail exposes permission-aware edit navigation; featured-image management remains in the Create/Edit authoring interfaces. No production mock/demo fallback, fake reading-time metric, invented profile metric, or required placeholder imagery was introduced.
+
+Current merged verification:
+
+* Automated test files: 92 passed.
+* Automated tests: 489 passed.
+* Failures: 0.
+* ESLint: 0 errors, 0 warnings.
+* Production build: passed; 277 modules transformed.
+* Build advisory: approximately 608.06 kB main JavaScript bundle; non-blocking optimization work.
+* Manual browser QA: pending.
+
+---
+
+# Repository Audit Gap Matrix — 2026-08-10
+
+| Area | Backend | Frontend | Tests | Docs | Status | Priority | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Login/logout/refresh/restoration | Complete | Complete | Current frontend suite green; backend tests exist | Partial drift | COMPLETE implementation | Browser QA pending | `apps.users`, AuthProvider, token/API tests |
+| Password change/reset/email verification | Implemented | Complete UI | Backend/frontend tests exist; revocation assertions missing | Core auth docs stale | COMPLETED MILESTONE WITH REVOCATION GAP | High security | account-security source/tests, Feature 11 report |
+| Password-change/reset session revocation | Broad-exception fail-open risk | Re-authentication UX present | Blacklist-state/failure tests missing | Claims stronger guarantee | PARTIALLY COMPLETE | High security | `revoke_user_outstanding_tokens()` catches `Exception` |
+| MFA/OAuth | Missing | Missing | Missing | Optional | OPTIONAL | Low | No requirement or implementation found |
+| Public blog/search/filtering | Complete | Complete | Current frontend suite green | Partial | COMPLETE implementation | Browser QA pending | post/search APIs, Home/Post pages/tests |
+| Post authoring lifecycle | Complete | Complete except draft-load contract | Current frontend suite green; safe GET regression missing | Feature reports largely current | PARTIALLY COMPLETE | High contract | posts APIs/pages/hooks/tests |
+| Post restore | Complete (Editor) | Complete (Editor) | Backend/frontend coverage exists | Feature 11 | COMPLETE | — | editorial post restore/API/dashboard |
+| Category/Tag management | Complete (Editor) | Complete (Editor) | Backend/frontend coverage exists | Feature 11 | COMPLETE | — | editorial taxonomy APIs/pages/tests |
+| Comment owner lifecycle | Complete | Complete | Backend/frontend coverage exists | Partial | COMPLETE | — | comments APIs/components/tests |
+| Comment moderation list/restore | Complete (Editor) | Complete (Editor) | Coverage exists | Feature 11 | COMPLETE | — | editorial moderation source/tests |
+| Comment moderation delete | Backend missing | Calls wrong owner-only endpoint | No valid Editor delete regression | Feature report overstates completeness | PARTIALLY COMPLETE | High | `moderationApi.js`, `CommentViewSet`, `IsCommentAuthor` |
+| Unpublished post edit loading | Read-only management detail missing | Falls back to `PATCH {}` to fetch a draft | Page test does not validate safe GET semantics | Not documented as limitation | PARTIALLY COMPLETE | High | `PostEditPage.jsx`, `PostViewSet`, `EditorialPostViewSet` |
+| Profiles/privacy | Complete | Complete | Current frontend suite green, including privacy assertions | Partial | COMPLETE implementation | Browser QA pending | profile serializers/pages/tests |
+| Administrator user lifecycle | Complete except deletion by policy | Complete | Current frontend suite green | Feature 09 | COMPLETE implementation | Browser QA pending | admin API/service/pages/tests |
+| Backend automated baseline | Test modules exist | N/A | Environment-blocked in this audit | Historical counts only | REQUIRES VERIFICATION | High | active Python lacks Django |
+| Frontend automated baseline | N/A | N/A | 92 files / 489 tests passed; ESLint clean; build passed | Current in Project Status | GREEN | Maintain | verified merged redesign baseline |
+| Production settings/security | Partial | Environment validation exists | No production configuration suite found | Planned/partial | PARTIALLY COMPLETE | High | settings files and requirements |
+| Static/media/WSGI/reverse proxy | Local/development only | N/A | Missing | Deferred | DEFERRED | High before deployment | no `STATIC_ROOT`, storage plan, Gunicorn, proxy config |
+| Docker/Compose/CI/CD | Missing | Missing | Missing | Deferred | DEFERRED DELIVERY | Medium after QA | no container or pipeline files found |
+| Logging/health/backups/rollback/deployment guide | Missing or undocumented | N/A | Missing | Missing | REQUIRED PRODUCTION WORK | High | repository-wide search |
+
+Production configuration details: `DEBUG=False` exists in `production.py`; secrets and PostgreSQL credentials are environment-driven; base `ALLOWED_HOSTS` and CORS allowlists are empty. No production host/origin loading, `STATIC_ROOT`, production media storage, WhiteNoise, Gunicorn/equivalent server, reverse-proxy configuration, health endpoint, production logging configuration, Docker artifacts, CI/CD workflow, backup strategy, HTTPS/security-header policy, deployment guide, or rollback plan was found. CSRF middleware exists, and the current JSON bearer-token design keeps CORS credentials disabled; deployment-specific CSRF/trusted-origin review remains required.
